@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send inntektsmelding – Tripletex</title>
+  <link rel="stylesheet" href="https://cdn.tripletex.no/google-fonts/rubik-400-500-800.css">
+  <link rel="stylesheet" href="../../_system/tokens.css">
+  <link rel="stylesheet" href="../../_system/components.css">
+  <link rel="stylesheet" href="../../_system/layout.css">
+  <style>
+    .page-title    { font: 400 30px/1.3 "Rubik", sans-serif; }
+    .page-subtitle { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); margin-top: var(--space-4); }
+
+    .section-title {
+      font: 500 16px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .form-section {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-16);
+    }
+
+    .period-nav .period-nav-label {
+      flex: 1;
+    }
+
+    .form-divider {
+      border: none;
+      border-top: 1px solid var(--border-faint);
+      margin: var(--space-12) 0;
+    }
+
+    .salary-box {
+      background: var(--surface-background);
+      border: 1px solid var(--border-faint);
+      border-radius: var(--radius-default);
+      padding: var(--space-16);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-16);
+    }
+
+    .salary-box-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-16);
+    }
+
+    .salary-box-label {
+      flex: 1;
+      font: 500 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+
+    .salary-box-select {
+      flex: 1;
+    }
+
+    .salary-data {
+      background: var(--surface-default);
+      border-radius: var(--radius-default);
+      padding: var(--space-16);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-8);
+    }
+
+    .salary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    .salary-row-label {
+      font-weight: 500;
+      color: var(--text-link);
+    }
+
+    .salary-row--avg {
+      border-top: 1px solid var(--border-faint);
+      padding-top: var(--space-8);
+      margin-top: var(--space-4);
+    }
+
+    .salary-row--avg .salary-row-label {
+      color: var(--text-primary);
+    }
+
+.input-with-icon {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-with-icon .input {
+      padding-right: var(--space-32);
+    }
+
+    .input-info-icon {
+      position: absolute;
+      right: var(--space-8);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: var(--space-24);
+      margin-top: var(--space-8);
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      font-size: 14px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .radio-label input[type="radio"] {
+      accent-color: var(--action-primary-rest);
+      width: 16px;
+      height: 16px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      font-size: 14px;
+      color: var(--text-primary);
+      cursor: pointer;
+      margin-bottom: var(--space-16);
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      accent-color: var(--action-primary-rest);
+      width: 16px;
+      height: 16px;
+    }
+
+    .autosave-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-4);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .page-header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-12);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- Topbar -->
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <button class="topbar-icon-btn" title="Meny">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </button>
+      <span class="topbar-logo">tripletex</span>
+      <span class="topbar-sep"></span>
+      <div class="topbar-company">
+        <span class="topbar-company-badge">T</span>
+        <span class="topbar-company-name">Tripletex AS</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-search">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 9.5L12.5 12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Søk
+      </div>
+      <button class="topbar-assistant">Assistent ✦</button>
+      <button class="topbar-icon-btn" title="Favoritter"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5 3.7.5-2.7 2.6.6 3.7L8 10.5l-3.1 1.8.6-3.7L3 5.5l3.7-.5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Last ned"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5v7M5.5 7l2.5 3 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Varsler"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5A4.5 4.5 0 003.5 6v3L2 11h12l-1.5-2V6A4.5 4.5 0 008 1.5z" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 11.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.3"/></svg></button>
+      <button class="topbar-icon-btn" title="Meldinger"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 13.5l1.5-2h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Hjelp"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 6.5a2 2 0 114 0c0 1.5-2 1.5-2 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Kunngjøringer"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1 3H13l-2.5 2 1 3L8 8.5 4.5 10l1-3L3 5h4L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Rapporter"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4M6 9h4M6 11.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-user-btn" title="Bruker"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <a class="nav-item" href="#">
+        <span class="nav-icon" style="color:var(--surface-warning-active);">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.6 3.6 3.9.6-2.8 2.7.7 3.9L8 10.5l-3.4 1.8.7-3.9L2.5 5.7l3.9-.6L8 1.5z"/></svg>
+        </span>Favoritter
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5l6-5 6 5V14H10.5v-4h-5v4H2V7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
+        Hjem
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Timeliste
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8.5L2 13l1.5-4.5L2 4l11.5 4.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
+        Reiser og utlegg
+      </a>
+      <div class="nav-item nav-item--active">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8h6M5 5.5h4M5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+        Fravær og ferie
+      </div>
+      <a class="nav-sub" href="fravaersoversikt.html"><span class="nav-bullet"></span>Fraværsoversikt</a>
+      <a class="nav-sub" href="avstemming-refusjoner.html"><span class="nav-bullet"></span>Avstemming av refusjoner</a>
+      <a class="nav-sub" href="inntektsmeldinger.html"><span class="nav-bullet"></span>Inntektsmeldinger</a>
+      <a class="nav-sub" href="statistikk.html"><span class="nav-bullet"></span>Statistikk</a>
+      <a class="nav-sub" href="ssb-rapporter.html"><span class="nav-bullet"></span>SSB-rapporter</a>
+      <a class="nav-sub" href="innstillinger.html"><span class="nav-bullet"></span>Innstillinger</a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 2h10v13l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 7h5M5.5 9.5h5M5.5 5h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+        Faktura
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 2v3H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+        Bilag
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M4 7V5M8 7V5M12 7V5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 5h13l-6.5-3L1.5 5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
+        Bank
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg></span>
+        Regnskap
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12V8M7 12V5M11 12V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        Rapporter
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="4.5" width="12" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.5v1M6.5 8.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+        Lønn
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2L2.5 5v6L8 14l5.5-3V5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 2v12M2.5 5L8 8l5.5-3" stroke="currentColor" stroke-width="1.3"/></svg></span>
+        Prosjekt
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.3"/></svg></span>
+        Dokument
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2.5 2.5L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        Oppgave
+      </a>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <div class="page">
+
+        <!-- Breadcrumb + sidehode -->
+        <div style="max-width: 720px;">
+          <nav class="breadcrumb" style="margin-bottom: var(--space-8);">
+            <a href="inntektsmeldinger.html">Inntektsmeldinger</a>
+            <span class="breadcrumb-sep">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5l3 3.5-3 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <span class="breadcrumb-current">Send inntektsmelding</span>
+          </nav>
+          <div class="page-header">
+            <h1 class="page-title">Send inntektsmelding</h1>
+            <div class="page-header-actions">
+              <span class="autosave-indicator">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3 3 6-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Lagret
+              </span>
+              <a href="inntektsmeldinger.html" class="btn btn-primary">
+                Send inntektsmelding
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+            </div>
+          </div>
+          <p class="page-subtitle">Inntektsmeldingen er forhåndsutfylt med informasjon hentet fra NAV. Se over og gjør eventuelle justeringer før du sender inn.</p>
+        </div>
+
+        <!-- Info-alert -->
+        <div class="alert alert--info" style="margin-top: var(--space-8); max-width: 720px;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg>
+          <span>Denne inntektsmeldingen er tilknyttet <a href="fravaersoversikt.html">Fraværsperiode (31.10.26–30.11.26), Ingrid Reigstad</a></span>
+        </div>
+
+        <!-- Skjemakort -->
+        <div class="card" style="max-width: 720px; margin-top: var(--space-12);">
+          <div class="card-body card-body--form">
+
+            <!-- Ansatt -->
+            <div class="form-group">
+              <label class="input-label" for="ansatt">Ansatt <span class="required">*</span></label>
+              <select class="input" id="ansatt">
+                <option selected>Ingrid Reigstad</option>
+                <option>Ole Berg</option>
+                <option>Maria Johansen</option>
+                <option>Lars Hansen</option>
+              </select>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- Kontaktperson -->
+            <div class="form-section">
+              <h2 class="section-title">Kontaktperson</h2>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-16);">
+                <div class="form-group">
+                  <label class="input-label" for="kontaktperson">Hvem skal følge opp ansatt mens hen er syk? <span class="required">*</span></label>
+                  <select class="input" id="kontaktperson">
+                    <option selected>Ole Jørgensen</option>
+                    <option>Ingrid Reigstad</option>
+                    <option>Maria Johansen</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="input-label" for="kontakttelefon">Kontaktpersonens telefonnummer <span class="required">*</span></label>
+                  <input class="input" id="kontakttelefon" type="tel" placeholder="Telefonnummer">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="input-label">Er kontaktperson i nær relasjon med den ansatte?</label>
+                <div class="radio-group">
+                  <label class="radio-label"><input type="radio" name="naer-relasjon" value="ja"> Ja</label>
+                  <label class="radio-label"><input type="radio" name="naer-relasjon" value="nei"> Nei</label>
+                </div>
+              </div>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- Arbeidsgiverperiode -->
+            <div class="form-section">
+              <h2 class="section-title">Arbeidsgiverperiode</h2>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-16);">
+                <div class="form-group">
+                  <label class="input-label">Arbeidsgiverperiode <span class="required">*</span></label>
+                  <div class="period-nav">
+                    <span class="period-nav-label">31.10.26–15.11.26</span>
+                    <div class="period-nav-arrows">
+                      <button class="period-nav-btn" title="Forrige"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 10L4 6l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <button class="period-nav-btn" title="Neste"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="input-label" for="forste-fravaersdag">Bestemmende (første) fraværsdag <span class="required">*</span></label>
+                  <input class="input" id="forste-fravaersdag" type="text" value="16.11.26">
+                </div>
+              </div>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- Lønn og ansettelsesforhold -->
+            <div class="form-section">
+              <h2 class="section-title">Lønn og ansettelsesforhold</h2>
+              <p style="font-size: 14px; color: var(--text-muted); margin: 0;">Beregningen av lønnsgrunnlaget er hentet fra NAV.</p>
+              <div class="salary-box">
+                <div class="salary-box-header">
+                  <span class="salary-box-label">Grunnlag for beregnet månedslønn</span>
+                  <select class="input salary-box-select" id="grunnlag-maned">
+                    <option selected>Siste 3 måneder</option>
+                    <option>Siste 6 måneder</option>
+                    <option>Siste 12 måneder</option>
+                  </select>
+                </div>
+                <div class="salary-data">
+                  <div class="salary-row">
+                    <span class="salary-row-label">Januar</span>
+                    <span class="chip">50 000,00</span>
+                  </div>
+                  <div class="salary-row">
+                    <span class="salary-row-label">Februar</span>
+                    <span class="chip">55 000,00</span>
+                  </div>
+                  <div class="salary-row">
+                    <span class="salary-row-label">Mars</span>
+                    <span class="chip">45 000,00</span>
+                  </div>
+                  <div class="salary-row salary-row--avg">
+                    <span class="salary-row-label">Gjennomsnitt</span>
+                    <span class="chip">50 000,00</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-16);">
+                <div class="form-group">
+                  <label class="input-label" for="manedslonn">
+                    Beregnet månedslønn <span class="required">*</span>
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="color:var(--text-muted);vertical-align:middle;margin-left:var(--space-4);"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M7 6.5v3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="5" r="0.6" fill="currentColor"/></svg>
+                  </label>
+                  <input class="input" id="manedslonn" type="text" value="50 000">
+                </div>
+                <div class="form-group">
+                  <label class="input-label" for="bruttobelop">Bruttobeløp utbetalt i arbeidsgiverperioden <span class="required">*</span></label>
+                  <input class="input" id="bruttobelop" type="text" value="38 800">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="input-label" for="begrunnelse-reduksjon">Begrunnelse for reduksjon</label>
+                <select class="input" id="begrunnelse-reduksjon">
+                  <option value="" selected>Begrunnelse</option>
+                  <option>Lovlig fravær</option>
+                  <option>Lovlig permisjon</option>
+                  <option>Streik eller lockout</option>
+                  <option>Ferie</option>
+                  <option>Permisjon uten lønn</option>
+                </select>
+              </div>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- Lovbestemt ferie -->
+            <div class="form-section">
+              <h2 class="section-title">Lovbestemt ferie</h2>
+              <p style="font-size: 14px; color: var(--text-muted); margin: 0;">Den ansatte har ikke rett på ytelser fra NAV hvis hen tar ut lovbestemt ferie innenfor fraværet.</p>
+              <div class="form-group">
+                <label class="input-label">Periode</label>
+                <div class="period-nav">
+                  <span class="period-nav-label">Velg periode</span>
+                  <div class="period-nav-arrows">
+                    <button class="period-nav-btn" title="Forrige"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 10L4 6l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    <button class="period-nav-btn" title="Neste"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- Refusjon -->
+            <div class="form-section">
+              <h2 class="section-title">Refusjon</h2>
+              <label class="checkbox-label">
+                <input type="checkbox" checked> Bedriften skal forskuttere
+              </label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-16);">
+                <div class="form-group">
+                  <label class="input-label">Periode det søkes refusjon for <span class="required">*</span></label>
+                  <div class="period-nav">
+                    <span class="period-nav-label">31.10.26–15.11.26</span>
+                    <div class="period-nav-arrows">
+                      <button class="period-nav-btn" title="Forrige"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 10L4 6l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                      <button class="period-nav-btn" title="Neste"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="input-label" for="refusjonsbelop">Månedsbeløp det søkes refusjon for <span class="required">*</span></label>
+                  <input class="input" id="refusjonsbelop" type="text" value="45 000">
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="card-footer">
+            <a href="inntektsmeldinger.html" class="btn btn-primary">
+              Send inntektsmelding
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+            <a href="inntektsmeldinger.html" class="btn btn-tertiary">Avbryt</a>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+</body>
+</html>
