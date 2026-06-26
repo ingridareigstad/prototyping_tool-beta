@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prototyper – Tripletex</title>
+  <link rel="stylesheet" href="https://cdn.tripletex.no/google-fonts/rubik-400-500-800.css">
+  <link rel="stylesheet" href="_system/tokens.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font: 14px/1.5 "Rubik", sans-serif;
+      color: var(--text-primary);
+      background: var(--surface-background);
+      min-height: 100vh;
+      padding: var(--space-64) var(--space-32);
+    }
+
+    .page { width: 100%; max-width: 720px; margin: 0 auto; }
+
+    .header { margin-bottom: var(--space-40); }
+
+    .header-eyebrow {
+      font: 500 11px/1 "Rubik", sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-8);
+    }
+
+    .header-title {
+      font: 500 26px/1.2 "Rubik", sans-serif;
+      color: var(--text-primary);
+      margin-bottom: var(--space-12);
+    }
+
+    .header-desc {
+      font: 14px/1.6 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+
+    /* Prototype-kort */
+    .proto-card {
+      display: flex;
+      align-items: center;
+      gap: var(--space-16);
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      margin-bottom: var(--space-16);
+      padding: var(--space-20) var(--space-24);
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .proto-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 2px 10px rgba(10, 65, 250, 0.07);
+    }
+
+    .proto-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-16);
+      flex: 1;
+      min-width: 0;
+    }
+
+    .proto-card-title {
+      font: 500 16px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+      margin-bottom: var(--space-4);
+    }
+
+    .proto-card-desc {
+      font: 13px/1.5 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+
+    .proto-card-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--space-8);
+      flex-shrink: 0;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-4);
+      font: 12px/1 "Rubik", sans-serif;
+      padding: var(--space-4) var(--space-8);
+      border-radius: var(--radius-full);
+    }
+
+    .status-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-badge--active {
+      background: var(--surface-success-rest);
+      color: var(--text-primary);
+    }
+    .status-badge--active::before { background: var(--surface-success-active); }
+
+    .status-badge--wip {
+      background: var(--surface-warning-rest);
+      color: var(--text-primary);
+    }
+    .status-badge--wip::before { background: var(--surface-warning-active); }
+
+    .status-badge--planned {
+      background: var(--surface-background);
+      border: 1px solid var(--border-muted);
+      color: var(--text-muted);
+    }
+    .status-badge--planned::before { background: var(--border-muted); }
+
+    .proto-date {
+      font: 12px/1 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+
+    .proto-card-arrow {
+      color: var(--border-muted);
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+
+    .proto-card:hover .proto-card-arrow {
+      color: var(--text-action);
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="header">
+    <div class="header-eyebrow">Tripletex</div>
+    <h1 class="header-title">Prototyper</h1>
+    <p class="header-desc">Oversikt over HTML/CSS-prototyper. Klikk på en side for å åpne den.</p>
+  </div>
+
+  <!-- Onboarding Fravær v1 -->
+  <a class="proto-card" href="prototyper/onboarding-fravaer-v1/velkommen.html" target="_blank">
+    <div class="proto-card-header">
+      <div>
+        <div class="proto-card-title">Onboarding Fravær V1</div>
+        <div class="proto-card-desc">Onboarding-flyt for fraværsmodulen: velkomstskjerm + 5 steg (Fraværsinnstillinger, Importer historikk, Ansatte med barn, Tilganger) med progress-stepper</div>
+      </div>
+      <div class="proto-card-meta">
+        <span class="status-badge status-badge--wip">Under arbeid</span>
+        <span class="proto-date">Opprettet 23. juni 2026</span>
+      </div>
+    </div>
+    <svg class="proto-card-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
+
+  <!-- Absence v1 -->
+  <a class="proto-card" href="prototyper/absence-v1/fravaersoversikt.html" target="_blank">
+    <div class="proto-card-header">
+      <div>
+        <div class="proto-card-title">Fravær og ferie</div>
+        <div class="proto-card-desc">Fraværsoversikt, inntektsmeldinger, avstemming av refusjoner, statistikk, SSB-rapporter og innstillinger</div>
+      </div>
+      <div class="proto-card-meta">
+        <span class="status-badge status-badge--wip">Under arbeid</span>
+        <span class="proto-date">Oppdatert 4. juni 2026</span>
+      </div>
+    </div>
+    <svg class="proto-card-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
+
+  <!-- Avstemming av refusjoner v2 -->
+  <a class="proto-card" href="prototyper/avstemming-refusjoner-v2/index.html" target="_blank">
+    <div class="proto-card-header">
+      <div>
+        <div class="proto-card-title">Avstemming av refusjoner — oversikt-først (v2)</div>
+        <div class="proto-card-desc">Tre oppsett (månedskort, ekspanderbar tabell, master-detalj) for å avstemme refusjoner gruppert på NAVs oppgjørsmåned, med drilldown og avstemming av månedssum</div>
+      </div>
+      <div class="proto-card-meta">
+        <span class="status-badge status-badge--wip">Under arbeid</span>
+        <span class="proto-date">Opprettet 18. juni 2026</span>
+      </div>
+    </div>
+    <svg class="proto-card-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
+
+  <!-- TEST Avstemming -->
+  <a class="proto-card" href="prototyper/test-avstemming/index.html" target="_blank">
+    <div class="proto-card-header">
+      <div>
+        <div class="proto-card-title">TEST Avstemming</div>
+        <div class="proto-card-desc">Avstemming av refusjoner – implementasjon av Figma-design (Statustype3). Månedstabs med godkjent/advarsel-ikoner, statistikkrad og tabell med avviksstatus per rad.</div>
+      </div>
+      <div class="proto-card-meta">
+        <span class="status-badge status-badge--wip">Under arbeid</span>
+        <span class="proto-date">Opprettet 19. juni 2026</span>
+      </div>
+    </div>
+    <svg class="proto-card-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
+
+  <!-- TEST Refusjoner -->
+  <a class="proto-card" href="prototyper/test-refusjoner/index.html" target="_blank">
+    <div class="proto-card-header">
+      <div>
+        <div class="proto-card-title">TEST Refusjoner</div>
+        <div class="proto-card-desc">Avstemming av refusjoner – implementasjon av Figma-design (Statustype3). Månedstabs-navigasjon, statistikkrad, og tabell med avstemstatus per rad.</div>
+      </div>
+      <div class="proto-card-meta">
+        <span class="status-badge status-badge--wip">Under arbeid</span>
+        <span class="proto-date">Opprettet 19. juni 2026</span>
+      </div>
+    </div>
+    <svg class="proto-card-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </a>
+
+</div>
+
+</body>
+</html>

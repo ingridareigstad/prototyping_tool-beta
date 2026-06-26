@@ -1,0 +1,3339 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fraværsoversikt – Tripletex</title>
+  <link rel="stylesheet" href="https://cdn.tripletex.no/google-fonts/rubik-400-500-800.css">
+  <link rel="stylesheet" href="../../_system/tokens.css">
+  <link rel="stylesheet" href="../../_system/components.css">
+  <link rel="stylesheet" href="../../_system/layout.css">
+  <style>
+
+    /* Tabs */
+    .tx-tabs {
+      display: flex;
+      gap: var(--space-12);
+      align-items: flex-end;
+    }
+    .tx-tab {
+      padding: var(--space-4) var(--space-4) 0;
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+      cursor: pointer;
+      border: none;
+      background: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      align-items: center;
+      height: 40px;
+      justify-content: flex-end;
+    }
+    .tx-tab--active { font-weight: 500; }
+    .tx-tab-underline {
+      height: 4px;
+      width: 100%;
+      border-radius: 2px;
+      background: transparent;
+    }
+    .tx-tab--active .tx-tab-underline {
+      background: var(--action-primary-rest);
+    }
+
+    /* Make page fill viewport height with scrollable split columns */
+    .main-content { overflow: hidden; }
+    .page { flex: 1; overflow: hidden; }
+
+    /* Content card wrapper */
+    .content-card {
+      flex: 1;
+      min-height: 0;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      overflow: hidden;
+      background: var(--surface-default);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Split view */
+    .split-body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+    .split-left {
+      width: 50%;
+      flex-shrink: 0;
+      overflow-y: auto;
+      min-width: 220px;
+    }
+    .split-divider {
+      width: 1px;
+      flex-shrink: 0;
+      cursor: col-resize;
+      background: var(--border-muted);
+      position: relative;
+      transition: background 0.15s;
+    }
+    .split-divider::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -5px;
+      right: -5px;
+    }
+    .split-divider:hover,
+    .split-divider--dragging {
+      background: var(--action-primary-rest);
+    }
+    .split-right {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--surface-default);
+      min-width: 300px;
+    }
+
+    /* Absence list items */
+    .absence-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: var(--space-16) var(--space-16) var(--space-16) var(--space-24);
+      border-bottom: 1px solid var(--border-muted);
+      cursor: pointer;
+      position: relative;
+      background: var(--surface-default);
+      transition: background 0.1s;
+    }
+    .absence-item:hover { background: var(--action-neutral-hover); }
+    /* Kort som krever oppmerksomhet (Krever handling / Ny) */
+    .absence-item--priority { background: color-mix(in srgb, var(--surface-info-rest) 50%, transparent); }
+    .absence-item--priority:hover { background: var(--action-neutral-hover); }
+    .absence-item--selected { background: var(--surface-info-rest); }
+
+    /* Ny-kort: hvit bakgrunn + Aktiv-status ETTER det er åpnet og lukket */
+    .absence-item--new:not(.absence-item--seen) .absence-status-active { display: none; }
+    .absence-item--new.absence-item--seen:not(.absence-item--selected) { background: var(--surface-default); }
+    .absence-item--new.absence-item--seen .absence-status-default { display: none; }
+    .absence-item--new.absence-item--seen .absence-status-active { display: inline-flex; }
+    .absence-item--selected::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--action-primary-rest);
+    }
+    .absence-item-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-8);
+      flex: 1;
+      min-width: 0;
+    }
+    .absence-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+    }
+    .absence-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      background: var(--surface-nav); /* #d4ebeb – turquoise-20 */
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 500 10px/1 "Rubik", sans-serif;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
+      user-select: none;
+    }
+    .absence-name {
+      font: 500 14px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .absence-name--light { font-weight: 400; }
+    .absence-sep { color: var(--text-muted); font-size: 14px; }
+    .absence-type {
+      font: 500 14px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .absence-type--light { font-weight: 400; }
+    .absence-dates-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+    }
+    .absence-dates {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+      font-feature-settings: 'lnum' 1, 'tnum' 1;
+    }
+    .absence-item-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      flex-shrink: 0;
+      margin-left: var(--space-16);
+      padding-top: var(--space-4);
+    }
+    .absence-kebab {
+      width: var(--size-large);
+      height: var(--size-large);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .absence-kebab:hover { background: var(--action-neutral-hover); }
+    .absence-kebab svg { width: 20px; height: 20px; }
+
+    /* Strikethrough row */
+    .absence-item--strikethrough .absence-name,
+    .absence-item--strikethrough .absence-sep,
+    .absence-item--strikethrough .absence-type {
+      text-decoration: line-through;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .absence-item--strikethrough .absence-dates { color: var(--text-muted); }
+    .absence-item--strikethrough .chip { color: var(--text-muted); }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-12);
+      padding: var(--space-48);
+      min-height: 400px;
+      height: 100%;
+      text-align: center;
+    }
+    .empty-state-title {
+      font: 500 16px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .empty-state-text {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+      max-width: 280px;
+    }
+
+    /* Detail panel */
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      padding: var(--space-16) var(--space-24) var(--space-4);
+    }
+    .detail-header-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      flex: 1;
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      font-feature-settings: 'lnum' 1, 'tnum' 1;
+    }
+    .detail-header-sep { color: var(--border-muted); }
+    .detail-sync {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+    .detail-sync svg { width: 14px; height: 14px; }
+    .detail-close {
+      width: var(--size-large);
+      height: var(--size-large);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .detail-close:hover { background: var(--action-neutral-hover); }
+    .detail-close svg { width: 16px; height: 16px; }
+
+    .detail-title-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-12);
+      padding: var(--space-4) var(--space-24) var(--space-12);
+    }
+    .detail-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-full);
+      background: var(--surface-nav); /* #d4ebeb */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font: 500 11px/1 "Rubik", sans-serif;
+      color: var(--text-primary);
+      user-select: none;
+    }
+    .detail-title-text {
+      font: 500 20px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .detail-title-name-group {
+      display: flex;
+      align-items: center;
+      gap: var(--space-12);
+      flex: 1;
+    }
+    .detail-alert {
+      border: 1px solid var(--border-warning);
+      border-radius: var(--radius-default);
+      padding: var(--space-12) var(--space-16);
+      display: flex;
+      gap: var(--space-12);
+      align-items: flex-start;
+      font: 14px/1.4 "Rubik", sans-serif;
+      background: var(--surface-warning-rest);
+    }
+    .detail-alert svg { flex-shrink: 0; margin-top: 2px; }
+    .detail-alert-close {
+      margin-left: auto;
+      flex-shrink: 0;
+      align-self: flex-start;
+      width: var(--size-medium);
+      height: var(--size-medium);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .detail-alert-close:hover { background: rgba(0,0,0,0.06); }
+    .detail-alert-close svg { margin-top: 0; }
+    .detail-kebab {
+      width: var(--size-large);
+      height: var(--size-large);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .detail-kebab:hover { background: var(--action-neutral-hover); }
+    .detail-kebab svg { width: 20px; height: 20px; }
+
+    .detail-content {
+      padding: var(--space-20) var(--space-24);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-16);
+    }
+
+    /* Detail section card */
+    .detail-section {
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      overflow: hidden;
+    }
+    .detail-section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: var(--space-20) var(--space-20) var(--space-8);
+    }
+    .detail-section-title {
+      font: 500 16px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+    }
+    .detail-section-icon {
+      width: 28px;
+      height: auto;
+      padding: 0 var(--space-4);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .detail-section-icon:hover { background: var(--action-neutral-hover); }
+    .detail-section-icon svg { width: 16px; height: 16px; }
+    .detail-section-body { padding: var(--space-8) var(--space-20) var(--space-24); }
+
+    /* Detaljer grid */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-16);
+    }
+    .detail-grid-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .detail-grid-label {
+      font: 500 13px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .detail-grid-value {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+
+    /* Handling box */
+    .handling-box {
+      border: 1px solid var(--border-info);
+      border-radius: var(--radius-default);
+      background: var(--surface-info-rest);
+      padding: var(--space-12);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .handling-box--warning {
+      border-color: var(--border-warning);
+      background: var(--surface-warning-rest);
+      flex-direction: row;
+      align-items: flex-start;
+      gap: var(--space-8);
+    }
+    .handling-box--warning svg { flex-shrink: 0; margin-top: 2px; }
+    .detail-grid-item--wide { grid-column: span 2; }
+    .detail-grid-label--with-icon { display: flex; align-items: center; gap: var(--space-4); }
+    .detail-grid-label--with-icon svg { color: var(--text-muted); flex-shrink: 0; }
+
+    .tooltip-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .tooltip-wrap .tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-tooltip, #2e384d);
+      color: #fff;
+      font: 14px/1.4 "Rubik", sans-serif;
+      padding: var(--space-8);
+      border-radius: var(--radius-default);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 20;
+    }
+    .tooltip-wrap .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: var(--surface-tooltip, #2e384d);
+    }
+    .tooltip-wrap:hover .tooltip { opacity: 1; }
+    .handling-box-title {
+      font: 500 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .handling-box-text {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+
+    /* Forløp timeline */
+    .forloep-list { display: flex; flex-direction: column; }
+    .forloep-item { display: flex; gap: var(--space-12); }
+    .forloep-icon-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .forloep-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 500 12px/1 "Rubik", sans-serif;
+      flex-shrink: 0;
+    }
+    .forloep-icon--filled {
+      background: var(--action-primary-rest);
+      color: var(--text-on-action);
+    }
+    .forloep-icon--outline {
+      background: transparent;
+      border: 1.5px solid var(--border-muted);
+      color: var(--text-muted);
+    }
+    .forloep-icon--blue-outline {
+      background: transparent;
+      border: 1.5px solid var(--action-primary-rest);
+      color: var(--action-primary-rest);
+    }
+    .forloep-line {
+      width: 2px;
+      flex: 1;
+      min-height: 12px;
+      background: var(--border-muted);
+      margin: 0;
+    }
+    .forloep-item-body {
+      padding-bottom: var(--space-16);
+      padding-top: var(--space-2);
+      flex: 1;
+    }
+    .forloep-item:last-child .forloep-item-body { padding-bottom: 0; }
+    .forloep-step-name {
+      font: 500 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .forloep-step-name--blue { color: var(--text-action); cursor: pointer; }
+    .forloep-step-name--regular { font-weight: 400; }
+    .forloep-step-info {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+
+    /* Fravær i denne perioden */
+    .detail-section-header-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .periode-subtitle {
+      font: 14px/1.5 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+    .periode-table {
+      border-radius: var(--radius-default);
+      background: var(--surface-background);
+      overflow: hidden;
+      margin-bottom: var(--space-12);
+      padding: var(--space-8) 0;
+    }
+    .periode-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      padding: var(--space-8) var(--space-12);
+    }
+    .periode-table > .periode-row:nth-last-child(2) {
+      padding-bottom: var(--space-12);
+      position: relative;
+    }
+    .periode-table > .periode-row:nth-last-child(2)::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: var(--space-12);
+      right: var(--space-12);
+      height: 1px;
+      background: var(--border-faint);
+    }
+    .periode-name {
+      font: 500 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-action);
+    }
+    .periode-date {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+      font-feature-settings: 'lnum' 1, 'tnum' 1;
+    }
+    .periode-row .chip,
+    .periode-sum .chip {
+      margin-left: auto;
+    }
+    .periode-sum {
+      display: flex;
+      align-items: center;
+      gap: var(--space-16);
+      padding: var(--space-12) var(--space-12) var(--space-8);
+      font: 14px/1.4 "Rubik", sans-serif;
+      font-feature-settings: 'lnum' 1, 'tnum' 1;
+    }
+    .periode-sum-label { font-weight: 500; color: var(--text-primary); }
+    .periode-sum-dates { color: var(--text-muted); }
+
+    /* Toggle switch */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      flex-shrink: 0;
+    }
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border-muted);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::after {
+      content: '';
+      position: absolute;
+      left: 3px; top: 3px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--action-primary-rest); }
+    .toggle input:checked + .toggle-slider::after { transform: translateX(18px); }
+    .toggle-label {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    /* Page title (30px per Figma) */
+    .page-title { font: 400 30px/1.3 "Rubik", sans-serif; }
+
+    /* Filter dropdown */
+    .filter-btn-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .filter-dropdown {
+      position: absolute;
+      top: calc(100% + var(--space-4));
+      left: 0;
+      width: 375px;
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .filter-section {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-8);
+      padding: var(--space-12);
+    }
+
+    .filter-section + .filter-section {
+      border-top: 1px solid var(--border-muted);
+    }
+
+    .filter-section-header {
+      display: flex;
+      align-items: center;
+      min-height: 32px;
+    }
+
+    .filter-section-title {
+      flex: 1;
+      font: 500 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+
+    .filter-section-toggle-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: var(--radius-default);
+      cursor: pointer;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .filter-section-toggle-btn:hover {
+      background: var(--action-tertiary-hover);
+    }
+
+    .filter-saved-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-8);
+    }
+
+    .filter-preset-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      min-width: 150px;
+      padding: var(--space-12) var(--space-32) var(--space-12) var(--space-8);
+      background: var(--surface-background);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+      cursor: pointer;
+      position: relative;
+      text-align: left;
+    }
+
+    .filter-preset-btn:hover {
+      border-color: var(--border-primary);
+    }
+
+    .filter-preset-delete {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: var(--radius-default);
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .filter-preset-delete:hover {
+      background: var(--action-tertiary-hover);
+      color: var(--text-primary);
+    }
+
+    .filter-actions-row {
+      display: flex;
+      justify-content: space-between;
+      font: 14px/1.4 "Rubik", sans-serif;
+    }
+
+    .filter-actions-row a {
+      color: var(--text-action);
+      text-decoration: none;
+    }
+
+    .filter-actions-row a:hover {
+      text-decoration: underline;
+    }
+
+    .filter-period-input {
+      display: flex;
+      align-items: center;
+      height: var(--size-large);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-default);
+      background: var(--surface-background);
+      padding-left: var(--space-16);
+      padding-right: var(--space-4);
+      gap: var(--space-4);
+      width: 100%;
+    }
+
+    .filter-period-input span {
+      flex: 1;
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-placeholder);
+    }
+
+    .filter-period-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: var(--radius-default);
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .filter-period-btn:hover {
+      background: var(--action-tertiary-hover);
+      color: var(--text-primary);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal {
+      background: var(--surface-default);
+      border-radius: var(--radius-default);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+      width: 660px;
+      max-width: calc(100vw - var(--space-48));
+      max-height: calc(100vh - var(--space-48));
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-24) var(--space-24) var(--space-20);
+    }
+    .modal-title {
+      font: 500 20px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .modal-close {
+      width: var(--size-large);
+      height: var(--size-large);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .modal-close:hover { background: var(--action-neutral-hover); }
+    .modal-close svg { width: 16px; height: 16px; }
+    .modal-body {
+      padding: var(--space-4) var(--space-24) var(--space-24);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-20);
+    }
+    .modal-footer {
+      display: flex;
+      gap: var(--space-8);
+      padding: var(--space-20) var(--space-24) var(--space-24);
+      border-top: 1px solid var(--border-muted);
+    }
+    .modal-date-row {
+      display: flex;
+      gap: var(--space-16);
+    }
+    .modal-date-row .form-group { flex: 1; margin: 0; }
+    .input-date-wrap { position: relative; }
+    .input-date-wrap .input { padding-right: var(--space-40); }
+    .input-date-icon {
+      position: absolute;
+      right: var(--space-12);
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Mitt fravær — kvotekort */
+    .mitt-stats {
+      display: flex;
+      gap: var(--space-16);
+      flex-shrink: 0;
+    }
+    .stat-card {
+      flex: 1;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      background: var(--surface-default);
+      padding: var(--space-16) var(--space-20);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-8);
+    }
+    .stat-card-label {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+    .stat-card-value {
+      font: 500 28px/1.2 "Rubik", sans-serif;
+      color: var(--text-primary);
+      font-feature-settings: 'lnum' 1, 'tnum' 1;
+    }
+    .stat-card-multi {
+      display: flex;
+      gap: var(--space-32);
+    }
+    .stat-card-sub {
+      display: block;
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- TOPBAR -->
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <button class="topbar-icon-btn" title="Meny">
+        <svg viewBox="0 0 16 16" fill="none"><rect y="2.5" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="7" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="11.5" width="16" height="1.5" rx="0.75" fill="currentColor"/></svg>
+      </button>
+      <span class="topbar-logo">tripletex</span>
+      <span class="topbar-sep"></span>
+      <div class="topbar-company">
+        <span class="topbar-company-badge">T</span>
+        <span class="topbar-company-name">Tripletex AS</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-search">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 9.5L12.5 12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Søk
+      </div>
+      <button class="topbar-assistant">Assistent ✦</button>
+      <button class="topbar-icon-btn" title="Favoritter"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5 3.7.5-2.7 2.6.6 3.7L8 10.5l-3.1 1.8.6-3.7L3 5.5l3.7-.5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Last ned"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5v7M5.5 7l2.5 3 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Varsler"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5A4.5 4.5 0 003.5 6v3L2 11h12l-1.5-2V6A4.5 4.5 0 008 1.5z" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 11.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.3"/></svg></button>
+      <button class="topbar-icon-btn" title="Meldinger"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 13.5l1.5-2h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Hjelp"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 6.5a2 2 0 114 0c0 1.5-2 1.5-2 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Kunngjøringer"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8V5a5 5 0 0110 0v3" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 8h13v1a2 2 0 01-2 2h-9a2 2 0 01-2-2V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Rapporter"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4M6 9h4M6 11.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-user-btn" title="Bruker"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a class="nav-item" href="#"><span class="nav-icon" style="color:var(--surface-warning-active);"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.6 3.6 3.9.6-2.8 2.7.7 3.9L8 10.5l-3.4 1.8.7-3.9L2.5 5.7l3.9-.6L8 1.5z"/></svg></span>Favoritter</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5l6-5 6 5V14H10.5v-4h-5v4H2V7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Hjem</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Timeliste</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8.5L2 13l1.5-4.5L2 4l11.5 4.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Reiser og utlegg</a>
+      <div class="nav-item nav-item--active"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8h6M5 5.5h4M5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Fravær og ferie</div>
+      <a class="nav-sub nav-sub--active" href="inntektsmeldinger.html"><span class="nav-bullet"></span>Fraværsoversikt</a>
+      <a class="nav-sub" href="avstemming-refusjoner.html"><span class="nav-bullet"></span>Avstemming av refusjoner</a>
+      <a class="nav-sub" href="inntektsmeldinger.html"><span class="nav-bullet"></span>Inntektsmeldinger</a>
+      <a class="nav-sub" href="statistikk.html"><span class="nav-bullet"></span>Statistikk</a>
+      <a class="nav-sub" href="ssb-rapporter.html"><span class="nav-bullet"></span>SSB-rapporter</a>
+      <a class="nav-sub" href="innstillinger.html"><span class="nav-bullet"></span>Innstillinger</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 2h10v13l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 7h5M5.5 9.5h5M5.5 5h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Faktura</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 2v3H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Bilag</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M4 7V5M8 7V5M12 7V5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 5h13l-6.5-3L1.5 5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Bank</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg></span>Regnskap</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12V8M7 12V5M11 12V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Rapporter</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="4.5" width="12" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.5v1M6.5 8.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Lønn</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2L2.5 5v6L8 14l5.5-3V5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 2v12M2.5 5L8 8l5.5-3" stroke="currentColor" stroke-width="1.3"/></svg></span>Prosjekt</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.3"/></svg></span>Dokument</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2.5 2.5L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Oppgave</a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="page">
+
+        <!-- SIDEHODE -->
+        <div class="page-header">
+          <h1 class="page-title">Fraværsoversikt</h1>
+          <div class="page-actions">
+            <button class="btn btn-primary" onclick="openNyttFravaer()">
+              Registrer fravær
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 10h10M10 5v10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tx-tabs">
+          <button class="tx-tab tx-tab--active" id="tab-btn-ansatte" onclick="switchTab('ansatte')">
+            Ansattes fravær
+            <span class="tx-tab-underline"></span>
+          </button>
+          <button class="tx-tab" id="tab-btn-mitt" onclick="switchTab('mitt')">
+            Mitt fravær
+            <span class="tx-tab-underline"></span>
+          </button>
+        </div>
+
+        <div id="tab-ansatte" style="display:contents;">
+        <!-- INNHOLDSKORT med split view -->
+        <div class="content-card">
+
+          <!-- FILTERLINJE -->
+          <div class="table-toolbar">
+            <div class="table-toolbar-filters">
+
+              <div class="filter-btn-wrap">
+                <button class="btn btn-secondary" id="filter-toggle-btn" onclick="toggleFilterDropdown()">
+                  Filter
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+
+                <div class="filter-dropdown" id="filter-dropdown" style="display:none;">
+
+                  <!-- Lagrede filtre -->
+                  <div class="filter-section">
+                    <div class="filter-section-header">
+                      <span class="filter-section-title">Lagrede filtre</span>
+                      <button class="filter-section-toggle-btn" title="Skjul">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 13l5-5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="filter-saved-list">
+                      <div class="filter-preset-btn">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        Årsrapport
+                        <span class="filter-preset-delete" onclick="event.stopPropagation()" title="Slett" role="button" tabindex="0">
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        </span>
+                      </div>
+                      <div class="filter-preset-btn">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        SSB-rapport
+                        <span class="filter-preset-delete" onclick="event.stopPropagation()" title="Slett" role="button" tabindex="0">
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Filtervalg -->
+                  <div class="filter-section">
+                    <div class="filter-section-header">
+                      <span class="filter-section-title">Filtervalg</span>
+                    </div>
+                    <div class="filter-actions-row">
+                      <a href="#">Lagre filter</a>
+                      <a href="#">Tilbakestill</a>
+                    </div>
+                    <div class="toggle-wrap" style="margin-top: var(--space-4);">
+                      <label class="toggle">
+                        <input type="checkbox">
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <span class="toggle-label">Skjul avsluttede fravær</span>
+                    </div>
+                    <div class="form-group" style="margin-top: var(--space-8);">
+                      <label class="input-label">Fraværstyper <span class="required">*</span></label>
+                      <select class="input">
+                        <option>(Alle fraværstyper)</option>
+                        <option>Egenmelding</option>
+                        <option>Sykemelding</option>
+                        <option>Foreldrepermisjon</option>
+                        <option>Ferie</option>
+                        <option>Omsorgsdager</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="margin-top: var(--space-8);">
+                      <label class="input-label">Periode <span class="required">*</span></label>
+                      <div class="filter-period-input">
+                        <span>Velg periode</span>
+                        <button class="filter-period-btn" title="Forrige">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <button class="filter-period-btn" title="Neste">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <div class="input-search-wrap">
+                <input class="input" type="search" placeholder="Søk...">
+                <svg class="input-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+
+              <select class="input toolbar-select">
+                <option>Alle ansatte</option>
+                <option>Jakob Pettersen</option>
+                <option>Ingrid Reigstad</option>
+              </select>
+
+              <select class="input toolbar-select">
+                <option>Alle avdelinger</option>
+                <option>Oslokontoret</option>
+                <option>Bergenskontoret</option>
+              </select>
+
+              <div class="toggle-wrap">
+                <label class="toggle">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">Samle fravær med samme arbeidsgiverperiode</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- SPLIT VIEW -->
+          <div class="split-body">
+
+            <!-- VENSTRE KOLONNE: liste over fravær -->
+            <div class="split-left">
+
+              <!-- 1. Jakob Pettersen – Egenmelding og sykemelding -->
+              <div id="card-jakob" class="absence-item absence-item--priority" onclick="selectAbsence('card-jakob', true)">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">JP</span>
+                    <span class="absence-name">Jakob Pettersen</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type">Egenmelding og sykemelding</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">31.10.26–30.11.26</span>
+                    <span class="chip">31 dager</span>
+                    <span class="chip">2 enkeltfravær</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span class="status-dot status-dot--warning">Krever handling</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 2. Lars Eriksen – Egenmelding og sykemelding (Krever handling, lenger i prosess) -->
+              <div id="card-lars" class="absence-item absence-item--priority" onclick="selectAbsence('card-lars', 'lars')">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">LE</span>
+                    <span class="absence-name">Lars Eriksen</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type">Egenmelding og sykemelding</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">01.07.26–30.09.26</span>
+                    <span class="chip">92 dager</span>
+                    <span class="chip">2 enkeltfravær</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span class="status-dot status-dot--warning">Krever handling</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Erik Dahl – Ferie (Krever handling) -->
+              <div id="card-erik" class="absence-item absence-item--priority" onclick="selectAbsence('card-erik', 'ferie')">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">ED</span>
+                    <span class="absence-name">Erik Dahl</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type">Ferie</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">18.11.26–21.11.26</span>
+                    <span class="chip">4 dager</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span id="card-erik-status" class="status-dot status-dot--warning">Krever handling</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Ingrid Reigstad – Egenmelding -->
+              <div id="card-ingrid" class="absence-item absence-item--priority absence-item--new" onclick="selectAbsence('card-ingrid', 'egenmelding')">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">IR</span>
+                    <span class="absence-name">Ingrid Reigstad</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type">Egenmelding</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">01.11.26–02.11.26</span>
+                    <span class="chip">2 dager</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span class="status-dot status-dot--info absence-status-default">Ny</span>
+                  <span class="status-dot status-dot--success absence-status-active">Aktiv</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Sofia Berg – Foreldrepermisjon -->
+              <div id="card-sofia-fp" class="absence-item" onclick="selectAbsence('card-sofia-fp', 'foreldrepermisjon')">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">SB</span>
+                    <span class="absence-name absence-name--light">Sofia Berg</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type absence-type--light">Foreldrepermisjon</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">01.09.26–28.02.27</span>
+                    <span class="chip">181 dager</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span class="status-dot status-dot--success">Aktiv</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 4. Thomas Lie – Omsorgsdager -->
+              <div id="card-thomas" class="absence-item" onclick="selectAbsence('card-thomas', 'omsorgsdager')">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">TL</span>
+                    <span class="absence-name absence-name--light">Thomas Lie</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type absence-type--light">Omsorgsdager</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">10.11.26–12.11.26</span>
+                    <span class="chip">3 dager</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span class="status-dot status-dot--success">Aktiv</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 6. Martin Johansen – Egenmelding -->
+              <div id="card-martin" class="absence-item" onclick="selectAbsence('card-martin', 'egenmelding')">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">MJ</span>
+                    <span class="absence-name absence-name--light">Martin Johansen</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type absence-type--light">Egenmelding</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">05.10.26–07.10.26</span>
+                    <span class="chip">3 dager</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span class="status-dot status-dot--neutral">Avsluttet</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 7. Sofia Berg – Egenmelding (avvist, strøket) -->
+              <div id="card-sofia-eg" class="absence-item absence-item--strikethrough" onclick="selectAbsence('card-sofia-eg', 'egenmelding')">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">SB</span>
+                    <span class="absence-name">Sofia Berg</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type">Egenmelding</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">01.08.26</span>
+                    <span class="chip">1 dag</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span class="status-dot status-dot--neutral">Avvist</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 8. Kari Laurstad – Egenmelding -->
+              <div id="card-kari" class="absence-item" onclick="selectAbsence('card-kari', 'egenmelding')">
+                <div class="absence-item-content">
+                  <div class="absence-meta">
+                    <span class="absence-avatar">KL</span>
+                    <span class="absence-name absence-name--light">Kari Laurstad</span>
+                    <span class="absence-sep">·</span>
+                    <span class="absence-type absence-type--light">Egenmelding</span>
+                  </div>
+                  <div class="absence-dates-row">
+                    <span class="absence-dates">15.08.26–17.08.26</span>
+                    <span class="chip">3 dager</span>
+                  </div>
+                </div>
+                <div class="absence-item-right">
+                  <span class="status-dot status-dot--neutral">Avsluttet</span>
+                  <button class="absence-kebab" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+            <!-- /split-left -->
+
+            <div class="split-divider" id="split-divider"></div>
+
+            <!-- HØYRE KOLONNE -->
+            <div class="split-right">
+
+              <!-- EMPTY STATE -->
+              <div id="state-empty" class="empty-state">
+                <!-- Planet-illustrasjon -->
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <!-- Sparkle star -->
+                  <path d="M16 12l1.5 3.5L21 17l-3.5 1.5L16 22l-1.5-3.5L11 17l3.5-1.5L16 12z" fill="var(--action-primary-rest)" opacity="0.7"/>
+                  <!-- Planet body -->
+                  <circle cx="44" cy="44" r="18" fill="var(--surface-info-rest)" stroke="var(--action-primary-rest)" stroke-width="2"/>
+                  <!-- Ring -->
+                  <ellipse cx="44" cy="44" rx="30" ry="10" fill="none" stroke="var(--surface-success-active)" stroke-width="2.5" transform="rotate(-20 44 44)"/>
+                  <!-- Ring overlap (planet in front of ring) -->
+                  <path d="M32 38 Q44 26 56 38" fill="var(--surface-info-rest)" stroke="none"/>
+                  <ellipse cx="44" cy="44" rx="18" ry="18" fill="none" stroke="var(--surface-info-active)" stroke-width="0"/>
+                  <!-- Pink accent -->
+                  <path d="M20 52 Q32 62 56 46" fill="none" stroke="var(--surface-error-active)" stroke-width="2" opacity="0.5" stroke-linecap="round"/>
+                </svg>
+                <p class="empty-state-title">Ingen valgte</p>
+                <p class="empty-state-text">Velg et fravær til venstre for å se detaljer og handlinger.</p>
+              </div>
+
+              <!-- DETALJPANEL: Jakob Pettersen – Egenmelding og sykemelding -->
+              <div id="state-detail" style="display:none;">
+
+                <!-- Toprad med metadata -->
+                <div class="detail-header">
+                  <div class="detail-header-meta">
+                    <span>31.10.26–30.11.26</span>
+                    <span class="chip">31 dager</span>
+                    <span class="detail-header-sep">·</span>
+                    <span>Oslokontoret</span>
+                    <span class="detail-header-sep">·</span>
+                    <span class="detail-sync">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5A6 6 0 018 1.5a5.9 5.9 0 014.24 1.76L14 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v3h-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 8.5A6 6 0 018 14.5a5.9 5.9 0 01-4.24-1.76L2 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 14v-3h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Synkronisert med Altinn
+                    </span>
+                  </div>
+                  <button class="detail-close" onclick="closeDetail()" title="Lukk">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <!-- Tittellinje -->
+                <div class="detail-title-row">
+                  <span class="detail-avatar">JP</span>
+                  <span class="detail-title-text">Jakob Pettersen · Sykemelding og egenmelding</span>
+                </div>
+
+                <!-- INNHOLD -->
+                <div class="detail-content">
+
+                  <!-- Seksjon 1: Detaljer -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">Detaljer</span>
+                      <button class="detail-section-icon" title="Kommentar">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M2 2.5h12v8H9.5L7 13V10.5H2V2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="detail-grid">
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværstype</span>
+                          <span class="detail-grid-value">Egenmelding og sykemelding</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Lengde</span>
+                          <span class="detail-grid-value">31 dager</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Periode</span>
+                          <span class="detail-grid-value">31.10.26–30.11.26</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværsgrad</span>
+                          <span class="detail-grid-value">100%</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Arbeidsgiverperiode</span>
+                          <span class="detail-grid-value">31.10.26–15.11.26</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 2: Krever handling -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">
+                        Krever handling
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg>
+                      </span>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="handling-box">
+                        <p class="handling-box-title">Send inntektsmelding til NAV</p>
+                        <p class="handling-box-text">NAV trenger inntektsmelding for å behandle sykepengesøknaden.</p>
+                        <div style="margin-top: var(--space-8);">
+                          <a href="inntektsmeldinger-skjema.html" class="btn btn-primary" style="height: var(--size-medium); font-size: 13px;">Send inntektsmelding</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 3: Forløp -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">
+                        Forløp
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg>
+                      </span>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="forloep-list">
+
+                        <!-- Steg 1: Egenmelding (fullført) -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--blue-outline">
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--blue">Egenmelding</p>
+                            <p class="forloep-step-info">31.10.26</p>
+                          </div>
+                        </div>
+
+                        <!-- Steg 2: Sykemelding (aktiv) -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--filled">2</span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name">Sykemelding</p>
+                            <p class="forloep-step-info">01.11.26–30.11.26 (aktiv)</p>
+                          </div>
+                        </div>
+
+                        <!-- Steg 3: Inntektsmelding (krever handling) -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--filled">3</span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name">Inntektsmelding sendes til NAV</p>
+                            <p class="forloep-step-info">NAV trenger inntektsmelding for å behandle sykepengesøknaden.</p>
+                          </div>
+                        </div>
+
+                        <!-- Steg 4: Overgang til sykepenger -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--outline">4</span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--regular">Arbeidsgiverperiode slutt</p>
+                            <p class="forloep-step-info">F.o.m. 16.11.26 dekkes sykepenger av NAV.</p>
+                            <p class="forloep-step-info">Hvis du forskutterer skal dere motta refusjon f.o.m. denne datoen.</p>
+                          </div>
+                        </div>
+
+                        <!-- Steg 5: Dialogmøte -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--outline">5</span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--regular">Dialogmøte</p>
+                            <p class="forloep-step-info">Gjennomføres mellom 01.11.24–31.12.24.</p>
+                          </div>
+                        </div>
+
+                        <!-- Steg 6: Siste dag -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--outline">6</span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--regular">Siste dag for sykepenger utbetalt av NAV</p>
+                            <p class="forloep-step-info">30.10.27</p>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 4: Fravær i denne perioden -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <div class="detail-section-header-group">
+                        <span class="detail-section-title">Fravær i denne perioden</span>
+                        <p class="periode-subtitle">Her ser du alle fravær som inngår i samme sykefraværsperiode. Etter dag 16 av den totale fraværsperioden dekkes lønn av NAV.</p>
+                      </div>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="periode-table">
+                        <div class="periode-row">
+                          <span class="periode-name">Egenmelding</span>
+                          <span class="periode-date">31.10.26</span>
+                          <span class="chip">1 dag</span>
+                        </div>
+                        <div class="periode-row">
+                          <span class="periode-name">Sykemelding</span>
+                          <span class="periode-date">01.11.26–30.11.26</span>
+                          <span class="chip">30 dager</span>
+                        </div>
+                        <div class="periode-sum">
+                          <span class="periode-sum-label">Sum</span>
+                          <span class="periode-sum-dates">31.10.26–30.11.26</span>
+                          <span class="chip">31 dager</span>
+                        </div>
+                      </div>
+
+                      <a href="#" class="btn btn-tertiary">
+                        Rediger fraværsperiode
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10.5 2.5l3 3L5 14H2v-3L10.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                      </a>
+                    </div>
+                  </div>
+
+                </div>
+                <!-- /detail-content -->
+
+              </div>
+              <!-- /state-detail -->
+
+              <!-- DETALJPANEL: Lars Eriksen – Egenmelding og sykemelding (lenger i prosess) -->
+              <div id="state-detail-lars" style="display:none;">
+
+                <div class="detail-header">
+                  <div class="detail-header-meta">
+                    <span>01.07.26–30.09.26</span>
+                    <span class="chip">92 dager</span>
+                    <span class="detail-header-sep">·</span>
+                    <span>Oslokontoret</span>
+                    <span class="detail-header-sep">·</span>
+                    <span class="detail-sync">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5A6 6 0 018 1.5a5.9 5.9 0 014.24 1.76L14 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v3h-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 8.5A6 6 0 018 14.5a5.9 5.9 0 01-4.24-1.76L2 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 14v-3h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Synkronisert med Altinn
+                    </span>
+                  </div>
+                  <button class="detail-close" onclick="closeDetail()" title="Lukk">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <div class="detail-title-row">
+                  <span class="detail-avatar">LE</span>
+                  <span class="detail-title-text">Lars Eriksen · Egenmelding og sykemelding</span>
+                </div>
+
+                <div class="detail-content">
+
+                  <!-- Seksjon 1: Detaljer -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">Detaljer</span>
+                      <button class="detail-section-icon" title="Kommentar">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M2 2.5h12v8H9.5L7 13V10.5H2V2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="detail-grid">
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværstype</span>
+                          <span class="detail-grid-value">Egenmelding og sykemelding</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Lengde</span>
+                          <span class="detail-grid-value">92 dager</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Periode</span>
+                          <span class="detail-grid-value">01.07.26–30.09.26</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværsgrad</span>
+                          <span class="detail-grid-value">100%</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Arbeidsgiverperiode</span>
+                          <span class="detail-grid-value">01.07.26–16.07.26</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 2: Krever handling -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">
+                        Krever handling
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg>
+                      </span>
+                    </div>
+                    <div class="detail-section-body">
+                      <div id="lars-handling-box" class="handling-box" style="position:relative;">
+                        <button onclick="document.getElementById('lars-handling-box').style.display='none'" title="Lukk" style="position:absolute;top:var(--space-8);right:var(--space-8);background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;justify-content:center;padding:2px;">
+                          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        </button>
+                        <p class="handling-box-title" style="padding-right:var(--space-20);">Sjekk refusjon fra NAV</p>
+                        <p class="handling-box-text">NAV har utbetalt refusjon for perioden 17.07.26–30.09.26. Kontroller at beløpet stemmer med faktisk utbetalt lønn i sykefraværsperioden.</p>
+                        <div style="margin-top: var(--space-8);">
+                          <button class="btn btn-primary" style="height: var(--size-medium); font-size: 13px;" onclick="window.location.href='avstemming-refusjoner.html?employee=lars'">Åpne refusjonsoversikt</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 3: Forløp -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">
+                        Forløp
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg>
+                      </span>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="forloep-list">
+
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--blue-outline">
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--blue">Egenmelding</p>
+                            <p class="forloep-step-info">01.07.26</p>
+                          </div>
+                        </div>
+
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--filled">2</span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name">Sykemelding</p>
+                            <p class="forloep-step-info">02.07.26–30.09.26</p>
+                          </div>
+                        </div>
+
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--blue-outline">
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--blue">Inntektsmelding sendes til NAV</p>
+                            <p class="forloep-step-info">Inntektsmeldingen er sendt og behandles av NAV.</p>
+                          </div>
+                        </div>
+
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--blue-outline">
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--blue">Arbeidsgiverperiode slutt</p>
+                            <p class="forloep-step-info">F.o.m. 17.07.26 dekkes sykepenger av NAV.</p>
+                          </div>
+                        </div>
+
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--outline">5</span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--regular">Dialogmøte</p>
+                            <p class="forloep-step-info">Gjennomføres mellom 01.08.26–30.09.26.</p>
+                          </div>
+                        </div>
+
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--outline">6</span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--regular">Siste dag for sykepenger utbetalt av NAV</p>
+                            <p class="forloep-step-info">30.06.27</p>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 4: Fravær i denne perioden -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <div class="detail-section-header-group">
+                        <span class="detail-section-title">Fravær i denne perioden</span>
+                        <p class="periode-subtitle">Her ser du alle fravær som inngår i samme sykefraværsperiode. Etter dag 16 av den totale fraværsperioden dekkes lønn av NAV.</p>
+                      </div>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="periode-table">
+                        <div class="periode-row">
+                          <span class="periode-name">Egenmelding</span>
+                          <span class="periode-date">01.07.26</span>
+                          <span class="chip">1 dag</span>
+                        </div>
+                        <div class="periode-row">
+                          <span class="periode-name">Sykemelding</span>
+                          <span class="periode-date">02.07.26–30.09.26</span>
+                          <span class="chip">91 dager</span>
+                        </div>
+                        <div class="periode-sum">
+                          <span class="periode-sum-label">Sum</span>
+                          <span class="periode-sum-dates">01.07.26–30.09.26</span>
+                          <span class="chip">92 dager</span>
+                        </div>
+                      </div>
+                      <a href="#" class="btn btn-tertiary">
+                        Rediger fraværsperiode
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10.5 2.5l3 3L5 14H2v-3L10.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                      </a>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+              <!-- /state-detail-lars -->
+
+              <!-- DETALJPANEL: Egenmelding (dynamisk) -->
+              <div id="state-detail-egenmelding" style="display:none;">
+
+                <!-- Toprad -->
+                <div class="detail-header">
+                  <div class="detail-header-meta">
+                    <span id="eg-dates"></span>
+                    <span class="chip" id="eg-days-chip"></span>
+                    <span class="detail-header-sep">·</span>
+                    <span id="eg-department"></span>
+                  </div>
+                  <button class="btn btn-tertiary" id="eg-action-btn">Avvis fravær</button>
+                  <button class="detail-close" onclick="closeDetail()" title="Lukk">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <!-- Tittellinje -->
+                <div class="detail-title-row">
+                  <span class="detail-avatar" id="eg-avatar"></span>
+                  <span class="detail-title-text" id="eg-name"></span>
+                </div>
+
+                <!-- INNHOLD -->
+                <div class="detail-content">
+
+                  <!-- Varsler (vises ved avvist/kvote-problem) -->
+                  <div id="eg-warnings" style="display:none; flex-direction:column; gap:var(--space-8);"></div>
+
+                  <!-- Seksjon 1: Detaljer -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">Detaljer</span>
+                      <button class="detail-section-icon" title="Kommentar">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M2 2.5h12v8H9.5L7 13V10.5H2V2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="detail-grid">
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværstype</span>
+                          <span class="detail-grid-value">Egenmelding</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Lengde</span>
+                          <span class="detail-grid-value" id="eg-lengde"></span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Periode</span>
+                          <span class="detail-grid-value" id="eg-periode"></span>
+                        </div>
+                        <div class="detail-grid-item" id="eg-kommentar-row">
+                          <span class="detail-grid-label">Kommentar</span>
+                          <span class="detail-grid-value" id="eg-kommentar"></span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label detail-grid-label--with-icon">
+                            Egenmeldingskvote
+                            <span class="tooltip-wrap">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                              <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                            </span>
+                          </span>
+                          <span class="detail-grid-value" id="eg-kvote"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+                <!-- /detail-content -->
+
+              </div>
+              <!-- /state-detail-egenmelding -->
+
+              <!-- DETALJPANEL: Omsorgsdager (dynamisk) -->
+              <div id="state-detail-omsorgsdager" style="display:none;">
+
+                <div class="detail-header">
+                  <div class="detail-header-meta">
+                    <span id="om-dates"></span>
+                    <span class="chip" id="om-days-chip"></span>
+                    <span class="detail-header-sep">·</span>
+                    <span id="om-department"></span>
+                  </div>
+                  <button class="btn btn-tertiary">Avvis fravær</button>
+                  <button class="detail-close" onclick="closeDetail()" title="Lukk">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <div class="detail-title-row">
+                  <span class="detail-avatar" id="om-avatar"></span>
+                  <span class="detail-title-text" id="om-name"></span>
+                </div>
+
+                <div class="detail-content">
+
+                  <div id="om-warning" class="detail-alert" style="display:none;">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L14.5 13H1.5L8 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.75" fill="currentColor"/></svg>
+                    <span id="om-warning-text"></span>
+                  </div>
+
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">Detaljer</span>
+                      <button class="detail-section-icon" title="Kommentar">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M2 2.5h12v8H9.5L7 13V10.5H2V2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="detail-grid">
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværstype</span>
+                          <span class="detail-grid-value">Omsorgsdager</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Lengde</span>
+                          <span class="detail-grid-value" id="om-lengde"></span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Periode</span>
+                          <span class="detail-grid-value" id="om-periode"></span>
+                        </div>
+                        <div class="detail-grid-item" id="om-kommentar-row">
+                          <span class="detail-grid-label">Kommentar</span>
+                          <span class="detail-grid-value" id="om-kommentar"></span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label detail-grid-label--with-icon">
+                            Omsorgsdager kvote
+                            <span class="tooltip-wrap">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                              <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                            </span>
+                          </span>
+                          <span class="detail-grid-value" id="om-kvote"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+              <!-- /state-detail-omsorgsdager -->
+
+              <!-- DETALJPANEL: Foreldrepermisjon (Sofia Berg) -->
+              <div id="state-detail-foreldrepermisjon" style="display:none;">
+
+                <div class="detail-header">
+                  <div class="detail-header-meta">
+                    <span>01.09.26–28.02.27</span>
+                    <span class="chip">181 dager</span>
+                    <span class="detail-header-sep">·</span>
+                    <span>Oslokontoret</span>
+                    <span class="detail-header-sep">·</span>
+                    <span class="detail-sync">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5A6 6 0 018 1.5a5.9 5.9 0 014.24 1.76L14 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v3h-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 8.5A6 6 0 018 14.5a5.9 5.9 0 01-4.24-1.76L2 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 14v-3h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Synkronisert med Altinn
+                    </span>
+                  </div>
+                  <button class="detail-close" onclick="closeDetail()" title="Lukk">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <div class="detail-title-row">
+                  <span class="detail-avatar">SB</span>
+                  <span class="detail-title-text">Sofia Berg · Foreldrepermisjon</span>
+                </div>
+
+                <div class="detail-content">
+
+                  <!-- Seksjon 1: Detaljer -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">Detaljer</span>
+                      <button class="detail-section-icon" title="Kommentar">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M2 2.5h12v8H9.5L7 13V10.5H2V2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="detail-grid">
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværstype</span>
+                          <span class="detail-grid-value">Foreldrepermisjon</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Lengde</span>
+                          <span class="detail-grid-value">181 dager</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Periode</span>
+                          <span class="detail-grid-value">01.09.26–28.02.27</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværsgrad</span>
+                          <span class="detail-grid-value">100%</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Dekningsgrad</span>
+                          <span class="detail-grid-value">80%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 2: Krever handling -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">
+                        Krever handling
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg>
+                      </span>
+                    </div>
+                    <div class="detail-section-body">
+                      <div style="display:flex; align-items:center; gap:var(--space-24);">
+                        <svg width="80" height="80" viewBox="0 0 80 80" fill="none" style="flex-shrink:0;">
+                          <path d="M18 62L36 22l24 24L18 62z" fill="#5B8DEF"/>
+                          <path d="M36 22L18 62" stroke="#3A6FD8" stroke-width="1.5"/>
+                          <circle cx="58" cy="16" r="4" fill="#F9C74F"/>
+                          <rect x="50" y="8" width="6" height="4" rx="1" fill="#F94144" transform="rotate(25 50 8)"/>
+                          <rect x="62" y="24" width="5" height="3" rx="1" fill="#90BE6D" transform="rotate(-15 62 24)"/>
+                          <circle cx="66" cy="14" r="3" fill="#F3722C"/>
+                          <circle cx="46" cy="6" r="2.5" fill="#9B5DE5"/>
+                          <path d="M44 20 Q52 12 60 18" stroke="#F9C74F" stroke-width="2" stroke-linecap="round" fill="none"/>
+                          <path d="M48 30 Q56 22 62 30" stroke="#9B5DE5" stroke-width="2" stroke-linecap="round" fill="none"/>
+                          <rect x="68" y="32" width="4" height="3" rx="1" fill="#F9C74F" transform="rotate(10 68 32)"/>
+                        </svg>
+                        <div style="display:flex; flex-direction:column; gap:var(--space-8);">
+                          <p style="font:500 16px/1.3 'Rubik',sans-serif; color:var(--text-primary);">Ingen handlinger</p>
+                          <p style="font:14px/1.4 'Rubik',sans-serif; color:var(--text-primary);">Du har gjort alt du skal for nå.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 3: Forløp -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">
+                        Forløp
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg>
+                      </span>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="forloep-list">
+
+                        <!-- Steg 1: Foreldrepermisjon (aktiv) -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--filled">1</span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name">Foreldrepermisjon</p>
+                            <p class="forloep-step-info">01.09.26–28.02.27</p>
+                          </div>
+                        </div>
+
+                        <!-- Steg 2: Inntektsmelding (aktiv/pending) -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--filled">2</span>
+                            <span class="forloep-line"></span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name">Inntektsmelding sendes til NAV</p>
+                            <p class="forloep-step-info">NAV trenger inntektsmelding for å behandle foreldrepengesøknaden.</p>
+                          </div>
+                        </div>
+
+                        <!-- Steg 3: Siste dag (fremtidig) -->
+                        <div class="forloep-item">
+                          <div class="forloep-icon-col">
+                            <span class="forloep-icon forloep-icon--outline">3</span>
+                          </div>
+                          <div class="forloep-item-body">
+                            <p class="forloep-step-name forloep-step-name--regular">Siste dag for foreldrepenger utbetalt av NAV</p>
+                            <p class="forloep-step-info">28.02.27</p>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+              <!-- /state-detail-foreldrepermisjon -->
+
+              <!-- DETALJPANEL: Ferie (Erik Dahl) -->
+              <div id="state-detail-ferie" style="display:none;">
+
+                <div class="detail-header">
+                  <div class="detail-header-meta">
+                    <span>18.11.26–21.11.26</span>
+                    <span class="chip">4 dager</span>
+                    <span class="detail-header-sep">·</span>
+                    <span>Oslokontoret</span>
+                  </div>
+                  <button class="detail-close" onclick="closeDetail()" title="Lukk">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+
+                <div class="detail-title-row">
+                  <span class="detail-avatar">ED</span>
+                  <span class="detail-title-text">Erik Dahl · Ferie</span>
+                </div>
+
+                <div class="detail-content">
+
+                  <!-- Seksjon 1: Detaljer -->
+                  <div class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">Detaljer</span>
+                      <button class="detail-section-icon" title="Kommentar">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M2 2.5h12v8H9.5L7 13V10.5H2V2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="detail-grid">
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Fraværstype</span>
+                          <span class="detail-grid-value">Ferie</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Lengde</span>
+                          <span class="detail-grid-value">4 dager</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Periode</span>
+                          <span class="detail-grid-value">18.11.26–21.11.26</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Kommentar</span>
+                          <span class="detail-grid-value">–</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label detail-grid-label--with-icon">
+                            Feriekvote
+                            <span class="tooltip-wrap">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                              <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                            </span>
+                          </span>
+                          <span class="detail-grid-value">5/25 dager brukt</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Seksjon 2: Krever handling -->
+                  <div id="ferie-krever-handling" class="detail-section">
+                    <div class="detail-section-header">
+                      <span class="detail-section-title">
+                        Krever handling
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg>
+                      </span>
+                    </div>
+                    <div class="detail-section-body">
+                      <div class="handling-box">
+                        <p class="handling-box-title">Bekreft fravær</p>
+                        <p class="handling-box-text">Erik Dahl har søkt om ferie 18.11.26–21.11.26. Godkjenn søknaden, eller avvis med begrunnelse.</p>
+                        <div style="display:flex; gap:var(--space-8); margin-top: var(--space-8);">
+                          <button class="btn btn-primary" style="height: var(--size-medium); font-size: 13px;" onclick="approveFerie()">Godkjenn fravær</button>
+                          <button class="btn btn-tertiary" style="height: var(--size-medium); font-size: 13px;">Avvis</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+              <!-- /state-detail-ferie -->
+
+            </div>
+            <!-- /split-right -->
+
+          </div>
+          <!-- /split-body -->
+
+        </div>
+        <!-- /content-card -->
+        </div><!-- /tab-ansatte -->
+
+        <!-- TAB: Mitt fravær -->
+        <div id="tab-mitt" style="display:none;">
+
+          <!-- KVOTEKORT -->
+          <div class="mitt-stats">
+            <div class="stat-card">
+              <span class="stat-card-label">Feriedager</span>
+              <span class="stat-card-value">12/25</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-card-label">Egenmeldingskvote</span>
+              <div class="stat-card-multi">
+                <div>
+                  <span class="stat-card-value">8/12</span>
+                  <span class="stat-card-sub">Dager (maks 3 per periode)</span>
+                </div>
+                <div>
+                  <span class="stat-card-value">3/4</span>
+                  <span class="stat-card-sub">Perioder</span>
+                </div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-card-label">Omsorgsdager</span>
+              <span class="stat-card-value">3/10</span>
+            </div>
+          </div>
+
+          <!-- INNHOLDSKORT -->
+          <div class="content-card">
+
+            <div class="table-toolbar">
+              <div class="table-toolbar-filters">
+                <div class="input-search-wrap">
+                  <input class="input" type="search" placeholder="Søk...">
+                  <svg class="input-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="split-body">
+
+              <!-- VENSTRE: Ingrid sine fravær -->
+              <div class="split-left" id="mitt-split-left">
+
+                <div id="mitt-card-ferie1" class="absence-item absence-item--priority" onclick="selectMittAbsence('mitt-card-ferie1', 'mitt-detail-ferie')">
+                  <div class="absence-item-content">
+                    <div class="absence-meta">
+                      <span class="absence-avatar">IR</span>
+                      <span class="absence-name absence-name--light">Ingrid Reigstad</span>
+                      <span class="absence-sep">·</span>
+                      <span class="absence-type absence-type--light">Ferie</span>
+                    </div>
+                    <div class="absence-dates-row">
+                      <span class="absence-dates">18.11.26–21.11.26</span>
+                      <span class="chip">4 dager</span>
+                    </div>
+                  </div>
+                  <div class="absence-item-right">
+                    <span class="status-dot status-dot--warning">Til godkjenning</span>
+                    <button class="absence-kebab" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg></button>
+                  </div>
+                </div>
+
+                <div id="mitt-card-eg1" class="absence-item" onclick="selectMittAbsence('mitt-card-eg1', 'mitt-detail-egenmelding')">
+                  <div class="absence-item-content">
+                    <div class="absence-meta">
+                      <span class="absence-avatar">IR</span>
+                      <span class="absence-name">Ingrid Reigstad</span>
+                      <span class="absence-sep">·</span>
+                      <span class="absence-type">Egenmelding</span>
+                    </div>
+                    <div class="absence-dates-row">
+                      <span class="absence-dates">01.11.26–02.11.26</span>
+                      <span class="chip">2 dager</span>
+                    </div>
+                  </div>
+                  <div class="absence-item-right">
+                    <span class="status-dot status-dot--success">Aktiv</span>
+                    <button class="absence-kebab" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg></button>
+                  </div>
+                </div>
+
+                <div id="mitt-card-fp" class="absence-item" onclick="selectMittAbsence('mitt-card-fp', 'mitt-detail-fp')">
+                  <div class="absence-item-content">
+                    <div class="absence-meta">
+                      <span class="absence-avatar">IR</span>
+                      <span class="absence-name absence-name--light">Ingrid Reigstad</span>
+                      <span class="absence-sep">·</span>
+                      <span class="absence-type absence-type--light">Foreldrepermisjon</span>
+                    </div>
+                    <div class="absence-dates-row">
+                      <span class="absence-dates">01.09.26–28.02.27</span>
+                      <span class="chip">181 dager</span>
+                    </div>
+                  </div>
+                  <div class="absence-item-right">
+                    <span class="status-dot status-dot--neutral">Fullført</span>
+                    <button class="absence-kebab" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg></button>
+                  </div>
+                </div>
+
+                <div id="mitt-card-omsorg" class="absence-item" onclick="selectMittAbsence('mitt-card-omsorg', 'mitt-detail-omsorg')">
+                  <div class="absence-item-content">
+                    <div class="absence-meta">
+                      <span class="absence-avatar">IR</span>
+                      <span class="absence-name absence-name--light">Ingrid Reigstad</span>
+                      <span class="absence-sep">·</span>
+                      <span class="absence-type absence-type--light">Omsorgsdager</span>
+                    </div>
+                    <div class="absence-dates-row">
+                      <span class="absence-dates">10.11.26–12.11.26</span>
+                      <span class="chip">3 dager</span>
+                    </div>
+                  </div>
+                  <div class="absence-item-right">
+                    <span class="status-dot status-dot--neutral">Fullført</span>
+                    <button class="absence-kebab" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg></button>
+                  </div>
+                </div>
+
+                <div id="mitt-card-ferie2" class="absence-item" onclick="selectMittAbsence('mitt-card-ferie2', 'mitt-detail-ferie2')">
+                  <div class="absence-item-content">
+                    <div class="absence-meta">
+                      <span class="absence-avatar">IR</span>
+                      <span class="absence-name absence-name--light">Ingrid Reigstad</span>
+                      <span class="absence-sep">·</span>
+                      <span class="absence-type absence-type--light">Ferie</span>
+                    </div>
+                    <div class="absence-dates-row">
+                      <span class="absence-dates">18.11.26–21.11.26</span>
+                      <span class="chip">4 dager</span>
+                    </div>
+                  </div>
+                  <div class="absence-item-right">
+                    <span class="status-dot status-dot--neutral">Fullført</span>
+                    <button class="absence-kebab" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg></button>
+                  </div>
+                </div>
+
+                <div id="mitt-card-eg2" class="absence-item" onclick="selectMittAbsence('mitt-card-eg2', 'mitt-detail-eg2')">
+                  <div class="absence-item-content">
+                    <div class="absence-meta">
+                      <span class="absence-avatar">IR</span>
+                      <span class="absence-name absence-name--light">Ingrid Reigstad</span>
+                      <span class="absence-sep">·</span>
+                      <span class="absence-type absence-type--light">Egenmelding</span>
+                    </div>
+                    <div class="absence-dates-row">
+                      <span class="absence-dates">05.10.26–07.10.26</span>
+                      <span class="chip">3 dager</span>
+                    </div>
+                  </div>
+                  <div class="absence-item-right">
+                    <span class="status-dot status-dot--neutral">Fullført</span>
+                    <button class="absence-kebab" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg></button>
+                  </div>
+                </div>
+
+                <div id="mitt-card-eg3" class="absence-item" onclick="selectMittAbsence('mitt-card-eg3', 'mitt-detail-eg3')">
+                  <div class="absence-item-content">
+                    <div class="absence-meta">
+                      <span class="absence-avatar">IR</span>
+                      <span class="absence-name absence-name--light">Ingrid Reigstad</span>
+                      <span class="absence-sep">·</span>
+                      <span class="absence-type absence-type--light">Egenmelding</span>
+                    </div>
+                    <div class="absence-dates-row">
+                      <span class="absence-dates">01.08.26</span>
+                      <span class="chip">1 dag</span>
+                    </div>
+                  </div>
+                  <div class="absence-item-right">
+                    <span class="status-dot status-dot--neutral">Fullført</span>
+                    <button class="absence-kebab" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg></button>
+                  </div>
+                </div>
+
+                <div id="mitt-card-eg4" class="absence-item" onclick="selectMittAbsence('mitt-card-eg4', 'mitt-detail-eg4')">
+                  <div class="absence-item-content">
+                    <div class="absence-meta">
+                      <span class="absence-avatar">IR</span>
+                      <span class="absence-name absence-name--light">Ingrid Reigstad</span>
+                      <span class="absence-sep">·</span>
+                      <span class="absence-type absence-type--light">Egenmelding</span>
+                    </div>
+                    <div class="absence-dates-row">
+                      <span class="absence-dates">15.08.26–17.08.26</span>
+                      <span class="chip">3 dager</span>
+                    </div>
+                  </div>
+                  <div class="absence-item-right">
+                    <span class="status-dot status-dot--neutral">Fullført</span>
+                    <button class="absence-kebab" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg></button>
+                  </div>
+                </div>
+
+              </div><!-- /mitt-split-left -->
+
+              <div class="split-divider"></div>
+
+              <!-- HØYRE: Detaljpanel -->
+              <div class="split-right">
+
+                <!-- Empty state -->
+                <div id="mitt-state-empty" class="empty-state" style="display:flex;">
+                  <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                    <path d="M16 12l1.5 3.5L21 17l-3.5 1.5L16 22l-1.5-3.5L11 17l3.5-1.5L16 12z" fill="var(--action-primary-rest)" opacity="0.7"/>
+                    <circle cx="44" cy="44" r="18" fill="var(--surface-info-rest)" stroke="var(--action-primary-rest)" stroke-width="2"/>
+                    <ellipse cx="44" cy="44" rx="30" ry="10" fill="none" stroke="var(--surface-success-active)" stroke-width="2.5" transform="rotate(-20 44 44)"/>
+                    <path d="M32 38 Q44 26 56 38" fill="var(--surface-info-rest)" stroke="none"/>
+                    <path d="M20 52 Q32 62 56 46" fill="none" stroke="var(--surface-error-active)" stroke-width="2" opacity="0.5" stroke-linecap="round"/>
+                  </svg>
+                  <p class="empty-state-title">Ingen valgte</p>
+                  <p class="empty-state-text">Velg et fravær til venstre for å se detaljer.</p>
+                </div>
+
+                <!-- Detail: Egenmelding (aktiv, kvote-advarsel) -->
+                <div id="mitt-detail-egenmelding" style="display:none;">
+                  <div class="detail-header">
+                    <div class="detail-header-meta">
+                      <span>01.11.26–02.11.26</span>
+                      <span class="chip">2 dager</span>
+                      <span class="detail-header-sep">·</span>
+                      <span>Oslokontoret</span>
+                    </div>
+                    <button class="detail-close" onclick="closeMittDetail()" title="Lukk">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <div class="detail-title-row">
+                    <span class="detail-avatar">IR</span>
+                    <span class="detail-title-text">Ingrid Reigstad · Egenmelding</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="alert alert--warning">
+                      <svg class="alert-icon" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 8v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <circle cx="12" cy="15.5" r="0.75" fill="currentColor"/>
+                      </svg>
+                      <p class="alert-message">Dette er din siste periode fra egenmeldingskvoten. Lederen din kan kreve sykemelding for neste egenmeldingsperiode.</p>
+                    </div>
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Detaljer</span>
+                        <button class="detail-section-icon" title="Kommentar">
+                          <svg viewBox="0 0 16 16" fill="none"><path d="M2 2.5h12v8H9.5L7 13V10.5H2V2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                        </button>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="detail-grid">
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværstype</span>
+                            <span class="detail-grid-value">Egenmelding</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Lengde</span>
+                            <span class="detail-grid-value">2 dager</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Periode</span>
+                            <span class="detail-grid-value">01.11.26–02.11.26</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Kommentar</span>
+                            <span class="detail-grid-value">«Influensa disse dagene.»</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label detail-grid-label--with-icon">
+                              Egenmeldingskvote
+                              <span class="tooltip-wrap">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                                <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                              </span>
+                            </span>
+                            <div class="handling-box handling-box--warning">
+                              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                              <span class="handling-box-text">4/4 perioder og 11/12 dager brukt</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- /mitt-detail-egenmelding -->
+
+                <!-- Detail: Ferie (Til godkjenning) -->
+                <div id="mitt-detail-ferie" style="display:none;">
+                  <div class="detail-header">
+                    <div class="detail-header-meta">
+                      <span>18.11.26–21.11.26</span>
+                      <span class="chip">4 dager</span>
+                      <span class="detail-header-sep">·</span>
+                      <span>Oslokontoret</span>
+                    </div>
+                    <button class="detail-close" onclick="closeMittDetail()" title="Lukk">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <div class="detail-title-row">
+                    <span class="detail-avatar">IR</span>
+                    <span class="detail-title-text">Ingrid Reigstad · Ferie</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="alert alert--warning">
+                      <svg class="alert-icon" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 8v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <circle cx="12" cy="15.5" r="0.75" fill="currentColor"/>
+                      </svg>
+                      <p class="alert-message">Venter på godkjenning fra leder.</p>
+                    </div>
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Detaljer</span>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="detail-grid">
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværstype</span>
+                            <span class="detail-grid-value">Ferie</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Lengde</span>
+                            <span class="detail-grid-value">4 dager</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Periode</span>
+                            <span class="detail-grid-value">18.11.26–21.11.26</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label detail-grid-label--with-icon">
+                              Feriekvote
+                              <span class="tooltip-wrap">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                                <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                              </span>
+                            </span>
+                            <span class="detail-grid-value">5/25 dager brukt</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- /mitt-detail-ferie -->
+
+                <!-- Detail: Foreldrepermisjon (Fullført) -->
+                <div id="mitt-detail-fp" style="display:none;">
+                  <div class="detail-header">
+                    <div class="detail-header-meta">
+                      <span>01.09.26–28.02.27</span>
+                      <span class="chip">181 dager</span>
+                      <span class="detail-header-sep">·</span>
+                      <span>Oslokontoret</span>
+                    </div>
+                    <button class="detail-close" onclick="closeMittDetail()" title="Lukk">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <div class="detail-title-row">
+                    <span class="detail-avatar">IR</span>
+                    <span class="detail-title-text">Ingrid Reigstad · Foreldrepermisjon</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Detaljer</span>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="detail-grid">
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværstype</span>
+                            <span class="detail-grid-value">Foreldrepermisjon</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Lengde</span>
+                            <span class="detail-grid-value">181 dager</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Periode</span>
+                            <span class="detail-grid-value">01.09.26–28.02.27</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværsgrad</span>
+                            <span class="detail-grid-value">100%</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Dekningsgrad</span>
+                            <span class="detail-grid-value">80%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Forløp <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted)"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.7" fill="currentColor"/></svg></span>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="forloep-list">
+                          <div class="forloep-item">
+                            <div class="forloep-icon-col">
+                              <span class="forloep-icon forloep-icon--blue-outline"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                              <span class="forloep-line"></span>
+                            </div>
+                            <div class="forloep-item-body">
+                              <p class="forloep-step-name forloep-step-name--blue">Foreldrepermisjon</p>
+                              <p class="forloep-step-info">01.09.26–28.02.27</p>
+                            </div>
+                          </div>
+                          <div class="forloep-item">
+                            <div class="forloep-icon-col">
+                              <span class="forloep-icon forloep-icon--blue-outline"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7l3.5 3.5 5.5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                              <span class="forloep-line"></span>
+                            </div>
+                            <div class="forloep-item-body">
+                              <p class="forloep-step-name forloep-step-name--blue">Inntektsmelding sendt til NAV</p>
+                              <p class="forloep-step-info">Arbeidsgiver har sendt inntektsmelding.</p>
+                            </div>
+                          </div>
+                          <div class="forloep-item">
+                            <div class="forloep-icon-col">
+                              <span class="forloep-icon forloep-icon--outline">3</span>
+                            </div>
+                            <div class="forloep-item-body">
+                              <p class="forloep-step-name forloep-step-name--regular">Siste dag for foreldrepenger utbetalt av NAV</p>
+                              <p class="forloep-step-info">28.02.27</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- /mitt-detail-fp -->
+
+                <!-- Detail: Omsorgsdager (Fullført) -->
+                <div id="mitt-detail-omsorg" style="display:none;">
+                  <div class="detail-header">
+                    <div class="detail-header-meta">
+                      <span>10.11.26–12.11.26</span>
+                      <span class="chip">3 dager</span>
+                      <span class="detail-header-sep">·</span>
+                      <span>Oslokontoret</span>
+                    </div>
+                    <button class="detail-close" onclick="closeMittDetail()" title="Lukk">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <div class="detail-title-row">
+                    <span class="detail-avatar">IR</span>
+                    <span class="detail-title-text">Ingrid Reigstad · Omsorgsdager</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Detaljer</span>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="detail-grid">
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværstype</span>
+                            <span class="detail-grid-value">Omsorgsdager</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Lengde</span>
+                            <span class="detail-grid-value">3 dager</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Periode</span>
+                            <span class="detail-grid-value">10.11.26–12.11.26</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Kommentar</span>
+                            <span class="detail-grid-value">«Hjemme med Sofia.»</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label detail-grid-label--with-icon">
+                              Omsorgsdager kvote
+                              <span class="tooltip-wrap">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                                <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                              </span>
+                            </span>
+                            <span class="detail-grid-value">3/10 dager brukt</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- /mitt-detail-omsorg -->
+
+                <!-- Detail: Ferie 2 (Fullført) -->
+                <div id="mitt-detail-ferie2" style="display:none;">
+                  <div class="detail-header">
+                    <div class="detail-header-meta">
+                      <span>18.11.26–21.11.26</span>
+                      <span class="chip">4 dager</span>
+                      <span class="detail-header-sep">·</span>
+                      <span>Oslokontoret</span>
+                    </div>
+                    <button class="detail-close" onclick="closeMittDetail()" title="Lukk">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <div class="detail-title-row">
+                    <span class="detail-avatar">IR</span>
+                    <span class="detail-title-text">Ingrid Reigstad · Ferie</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Detaljer</span>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="detail-grid">
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværstype</span>
+                            <span class="detail-grid-value">Ferie</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Lengde</span>
+                            <span class="detail-grid-value">4 dager</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Periode</span>
+                            <span class="detail-grid-value">18.11.26–21.11.26</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label detail-grid-label--with-icon">
+                              Feriekvote
+                              <span class="tooltip-wrap">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                                <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                              </span>
+                            </span>
+                            <span class="detail-grid-value">9/25 dager brukt</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- /mitt-detail-ferie2 -->
+
+                <!-- Detail: Egenmelding eg2 (Fullført, 05.10.26) -->
+                <div id="mitt-detail-eg2" style="display:none;">
+                  <div class="detail-header">
+                    <div class="detail-header-meta">
+                      <span>05.10.26–07.10.26</span>
+                      <span class="chip">3 dager</span>
+                      <span class="detail-header-sep">·</span>
+                      <span>Oslokontoret</span>
+                    </div>
+                    <button class="detail-close" onclick="closeMittDetail()" title="Lukk">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <div class="detail-title-row">
+                    <span class="detail-avatar">IR</span>
+                    <span class="detail-title-text">Ingrid Reigstad · Egenmelding</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Detaljer</span>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="detail-grid">
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværstype</span>
+                            <span class="detail-grid-value">Egenmelding</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Lengde</span>
+                            <span class="detail-grid-value">3 dager</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Periode</span>
+                            <span class="detail-grid-value">05.10.26–07.10.26</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Kommentar</span>
+                            <span class="detail-grid-value">–</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label detail-grid-label--with-icon">
+                              Egenmeldingskvote
+                              <span class="tooltip-wrap">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                                <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                              </span>
+                            </span>
+                            <span class="detail-grid-value">6/12 dager, 2/4 perioder</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- /mitt-detail-eg2 -->
+
+                <!-- Detail: Egenmelding eg3 (Fullført, 01.08.26) -->
+                <div id="mitt-detail-eg3" style="display:none;">
+                  <div class="detail-header">
+                    <div class="detail-header-meta">
+                      <span>01.08.26</span>
+                      <span class="chip">1 dag</span>
+                      <span class="detail-header-sep">·</span>
+                      <span>Oslokontoret</span>
+                    </div>
+                    <button class="detail-close" onclick="closeMittDetail()" title="Lukk">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <div class="detail-title-row">
+                    <span class="detail-avatar">IR</span>
+                    <span class="detail-title-text">Ingrid Reigstad · Egenmelding</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Detaljer</span>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="detail-grid">
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværstype</span>
+                            <span class="detail-grid-value">Egenmelding</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Lengde</span>
+                            <span class="detail-grid-value">1 dag</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Periode</span>
+                            <span class="detail-grid-value">01.08.26</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Kommentar</span>
+                            <span class="detail-grid-value">–</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label detail-grid-label--with-icon">
+                              Egenmeldingskvote
+                              <span class="tooltip-wrap">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                                <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                              </span>
+                            </span>
+                            <span class="detail-grid-value">1/12 dager, 1/4 perioder</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- /mitt-detail-eg3 -->
+
+                <!-- Detail: Egenmelding eg4 (Fullført, 15.08.26) -->
+                <div id="mitt-detail-eg4" style="display:none;">
+                  <div class="detail-header">
+                    <div class="detail-header-meta">
+                      <span>15.08.26–17.08.26</span>
+                      <span class="chip">3 dager</span>
+                      <span class="detail-header-sep">·</span>
+                      <span>Oslokontoret</span>
+                    </div>
+                    <button class="detail-close" onclick="closeMittDetail()" title="Lukk">
+                      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    </button>
+                  </div>
+                  <div class="detail-title-row">
+                    <span class="detail-avatar">IR</span>
+                    <span class="detail-title-text">Ingrid Reigstad · Egenmelding</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="detail-section">
+                      <div class="detail-section-header">
+                        <span class="detail-section-title">Detaljer</span>
+                      </div>
+                      <div class="detail-section-body">
+                        <div class="detail-grid">
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Fraværstype</span>
+                            <span class="detail-grid-value">Egenmelding</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Lengde</span>
+                            <span class="detail-grid-value">3 dager</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Periode</span>
+                            <span class="detail-grid-value">15.08.26–17.08.26</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label">Kommentar</span>
+                            <span class="detail-grid-value">–</span>
+                          </div>
+                          <div class="detail-grid-item">
+                            <span class="detail-grid-label detail-grid-label--with-icon">
+                              Egenmeldingskvote
+                              <span class="tooltip-wrap">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+                                <span class="tooltip">Kvoten inkluderer dette fraværet.</span>
+                              </span>
+                            </span>
+                            <span class="detail-grid-value">4/12 dager, 2/4 perioder</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div><!-- /mitt-detail-eg4 -->
+
+              </div><!-- /split-right -->
+
+            </div><!-- /split-body -->
+
+          </div><!-- /content-card -->
+
+        </div><!-- /tab-mitt -->
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- MODAL: Nytt fravær (Ansattes fravær – leder) -->
+<div class="modal-overlay" id="modal-nytt-fravaer-leder" style="display:none;" onclick="if(event.target===this)closeNyttFravaerLeder()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Nytt fravær</span>
+      <button class="modal-close" onclick="closeNyttFravaerLeder()" title="Lukk">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-group" style="margin:0;">
+        <label class="input-label">Velg fraværstype <span class="required">*</span></label>
+        <select class="input" id="leder-modal-fravartype">
+          <option value="" disabled selected>Fraværstype</option>
+          <option value="egenmelding">Egenmelding</option>
+          <option value="omsorgsdager">Omsorgsdager</option>
+          <option value="ferie">Ferie</option>
+          <option value="ulonnet">Ulønnet permisjon</option>
+          <option value="velferd">Velferdspermisjon</option>
+          <option value="permittering">Permittering</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label class="input-label" id="leder-ansatt-label">Velg ansatt <span class="required">*</span></label>
+        <select class="input" id="leder-modal-ansatt">
+          <option value="" disabled selected>Ansatt</option>
+          <option value="jakob">Jakob Pettersen</option>
+          <option value="lars">Lars Eriksen</option>
+          <option value="erik">Erik Dahl</option>
+          <option value="ingrid">Ingrid Reigstad</option>
+          <option value="sofia">Sofia Berg</option>
+          <option value="thomas">Thomas Lie</option>
+          <option value="martin">Martin Johansen</option>
+          <option value="kari">Kari Laurstad</option>
+        </select>
+      </div>
+
+      <!-- Standard-felter (alle typer unntatt Permittering) -->
+      <div id="leder-default-fields">
+        <div class="modal-date-row">
+          <div class="form-group">
+            <label class="input-label">Startdato <span class="required">*</span></label>
+            <div class="input-date-wrap">
+              <input class="input" type="text" placeholder="YYYY-MM-DD">
+              <span class="input-date-icon">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v3M11 2v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/></svg>
+              </span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Sluttdato</label>
+            <div class="input-date-wrap">
+              <input class="input" type="text" placeholder="YYYY-MM-DD">
+              <span class="input-date-icon">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v3M11 2v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:var(--space-8); margin-top:var(--space-20);">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0; margin-top:2px; color:var(--text-muted);"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+          <p style="font:14px/1.4 'Rubik',sans-serif; color:var(--text-primary);">Ved innsendt skjema registreres fraværet og din ansatt får beskjed. Timelisten vil bli oppdatert automatisk.</p>
+        </div>
+      </div>
+
+      <!-- Permittering-felter -->
+      <div id="leder-permittering-fields" style="display:none; flex-direction:column; gap:var(--space-20);">
+        <div class="form-group" style="margin:0;">
+          <label class="input-label">Varslingsdato <span class="required">*</span></label>
+          <div class="input-date-wrap">
+            <input class="input" type="text" placeholder="YYYY-MM-DD">
+            <span class="input-date-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v3M11 2v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/></svg>
+            </span>
+          </div>
+        </div>
+        <div class="modal-date-row">
+          <div class="form-group">
+            <label class="input-label">Startdato <span class="required">*</span></label>
+            <div class="input-date-wrap">
+              <input class="input" type="text" placeholder="YYYY-MM-DD">
+              <span class="input-date-icon">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v3M11 2v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/></svg>
+              </span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="input-label">Sluttdato</label>
+            <div class="input-date-wrap">
+              <input class="input" type="text" placeholder="YYYY-MM-DD">
+              <span class="input-date-icon">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v3M11 2v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="input-label">Fraværsprosent <span class="required">*</span></label>
+          <input class="input" type="text" placeholder="50%">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="input-label">Årsak til permittering</label>
+          <select class="input">
+            <option value="" disabled selected>Årsak</option>
+            <option>Mangel på arbeid</option>
+            <option>Teknisk stans</option>
+            <option>Naturkatastrofe</option>
+            <option>Annet</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; gap:var(--space-8);">
+          <input type="checkbox" id="leder-nav-checkbox" style="width:16px; height:16px; flex-shrink:0; accent-color:var(--action-primary-rest); cursor:pointer;">
+          <label for="leder-nav-checkbox" style="font:14px/1.4 'Rubik',sans-serif; color:var(--text-primary); cursor:pointer; display:flex; align-items:center; gap:var(--space-4);">
+            Meld fra til NAV om permitteringen
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="color:var(--text-muted); flex-shrink:0;"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+          </label>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:var(--space-8);">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0; margin-top:2px; color:var(--text-muted);"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+          <p style="font:14px/1.4 'Rubik',sans-serif; color:var(--text-primary);">Ved innsendt skjema registreres fraværet og din ansatt får beskjed. Timelisten vil bli oppdatert automatisk.</p>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeNyttFravaerLeder()">Registrer fravær</button>
+      <button class="btn btn-secondary" onclick="closeNyttFravaerLeder()">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nytt fravær (Mitt fravær) -->
+<div class="modal-overlay" id="modal-nytt-fravaer" style="display:none;" onclick="closeModalOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Nytt fravær</span>
+      <button class="modal-close" onclick="closeNyttFravaer()" title="Lukk">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-group" style="margin:0;">
+        <label class="input-label">Velg fraværstype <span class="required">*</span></label>
+        <select class="input" id="modal-fravartype">
+          <option value="" disabled selected>Fraværstype</option>
+          <option value="egenmelding">Egenmelding</option>
+          <option value="omsorgsdager">Omsorgsdager</option>
+          <option value="ferie">Ferie</option>
+          <option value="ulonnet">Ulønnet permisjon</option>
+          <option value="velferd">Velferdspermisjon</option>
+        </select>
+      </div>
+
+      <div class="modal-date-row">
+        <div class="form-group">
+          <label class="input-label">Startdato <span class="required">*</span></label>
+          <div class="input-date-wrap">
+            <input class="input" type="text" placeholder="YYYY-MM-DD">
+            <span class="input-date-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v3M11 2v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/></svg>
+            </span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Sluttdato</label>
+          <div class="input-date-wrap">
+            <input class="input" type="text" placeholder="YYYY-MM-DD">
+            <span class="input-date-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v3M11 2v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin:0;">
+        <label class="input-label">Kommentar til leder</label>
+        <textarea class="input" rows="3" placeholder="Din kommentar"></textarea>
+        <span class="input-hint">Unngå å dele sensitive personopplysninger som diagnoser, symptomer og/eller behandling.</span>
+      </div>
+
+      <div style="display:flex; align-items:flex-start; gap:var(--space-8);">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0; margin-top:2px; color:var(--text-muted);"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>
+        <p style="font:14px/1.4 'Rubik',sans-serif; color:var(--text-primary);">Ved innsendt skjema registreres fraværet og din leder får beskjed. Timelisten vil bli oppdatert automatisk.</p>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeNyttFravaer()">Send inn</button>
+      <button class="btn btn-secondary" onclick="closeNyttFravaer()">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tab) {
+    document.getElementById('tab-btn-ansatte').classList.toggle('tx-tab--active', tab === 'ansatte');
+    document.getElementById('tab-btn-mitt').classList.toggle('tx-tab--active', tab === 'mitt');
+    document.getElementById('tab-ansatte').style.display = tab === 'ansatte' ? 'contents' : 'none';
+    document.getElementById('tab-mitt').style.display = tab === 'mitt' ? 'contents' : 'none';
+  }
+
+  var mittDetailIds = ['mitt-state-empty', 'mitt-detail-egenmelding', 'mitt-detail-ferie', 'mitt-detail-fp', 'mitt-detail-omsorg', 'mitt-detail-ferie2', 'mitt-detail-eg2', 'mitt-detail-eg3', 'mitt-detail-eg4'];
+
+  function selectMittAbsence(cardId, detailId) {
+    document.querySelectorAll('#mitt-split-left .absence-item').forEach(function(el) {
+      el.classList.remove('absence-item--selected');
+    });
+    document.getElementById(cardId).classList.add('absence-item--selected');
+    mittDetailIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    if (detailId) {
+      var el = document.getElementById(detailId);
+      if (el) el.style.display = 'block';
+    } else {
+      document.getElementById('mitt-state-empty').style.display = 'flex';
+    }
+  }
+
+  function closeMittDetail() {
+    document.querySelectorAll('#mitt-split-left .absence-item').forEach(function(el) {
+      el.classList.remove('absence-item--selected');
+    });
+    mittDetailIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    document.getElementById('mitt-state-empty').style.display = 'flex';
+  }
+
+  function openNyttFravaer() {
+    var ansatteTab = document.getElementById('tab-btn-ansatte');
+    if (ansatteTab && ansatteTab.classList.contains('tx-tab--active')) {
+      document.getElementById('modal-nytt-fravaer-leder').style.display = 'flex';
+      document.getElementById('leder-modal-fravartype').value = '';
+      document.getElementById('leder-modal-ansatt').value = '';
+      document.getElementById('leder-default-fields').style.display = 'block';
+      document.getElementById('leder-permittering-fields').style.display = 'none';
+      document.getElementById('leder-ansatt-label').innerHTML = 'Velg ansatt <span class="required">*</span>';
+    } else {
+      document.getElementById('modal-nytt-fravaer').style.display = 'flex';
+      document.getElementById('modal-fravartype').value = '';
+    }
+  }
+
+  function closeNyttFravaerLeder() {
+    document.getElementById('modal-nytt-fravaer-leder').style.display = 'none';
+  }
+
+  document.getElementById('leder-modal-fravartype').addEventListener('change', function() {
+    var isPermittering = this.value === 'permittering';
+    document.getElementById('leder-default-fields').style.display = isPermittering ? 'none' : 'block';
+    document.getElementById('leder-permittering-fields').style.display = isPermittering ? 'flex' : 'none';
+    var label = document.getElementById('leder-ansatt-label');
+    label.innerHTML = isPermittering
+      ? 'Velg ansatt(e) <span class="required">*</span>'
+      : 'Velg ansatt <span class="required">*</span>';
+  });
+
+  function closeNyttFravaer() {
+    document.getElementById('modal-nytt-fravaer').style.display = 'none';
+  }
+
+  function closeModalOnOverlay(e) {
+    if (e.target === document.getElementById('modal-nytt-fravaer')) {
+      closeNyttFravaer();
+    }
+  }
+
+  function markSeenAndDeselect() {
+    document.querySelectorAll('.absence-item--selected').forEach(function(el) {
+      if (el.classList.contains('absence-item--new')) {
+        el.classList.add('absence-item--seen');
+      }
+      el.classList.remove('absence-item--selected');
+    });
+  }
+
+  var allDetailPanels = ['state-detail', 'state-detail-egenmelding', 'state-detail-omsorgsdager', 'state-detail-foreldrepermisjon', 'state-detail-ferie', 'state-detail-lars'];
+
+  var omsorgsdagData = {
+    'card-thomas': {
+      name: 'Thomas Lie', initials: 'TL',
+      dates: '10.11.26–12.11.26', days: '3 dager', department: 'Oslokontoret',
+      kommentar: '«Hjemme med Sofia.»', kvote: '2/10 dager brukt',
+      warning: null
+    }
+  };
+
+  function populateOmsorgsdagDetail(cardId) {
+    var d = omsorgsdagData[cardId];
+    if (!d) return;
+    document.getElementById('om-dates').textContent = d.dates;
+    document.getElementById('om-days-chip').textContent = d.days;
+    document.getElementById('om-department').textContent = d.department;
+    document.getElementById('om-avatar').textContent = d.initials;
+    document.getElementById('om-name').textContent = d.name + ' · Omsorgsdager';
+    document.getElementById('om-lengde').textContent = d.days;
+    document.getElementById('om-periode').textContent = d.dates;
+    document.getElementById('om-kommentar').textContent = d.kommentar || '–';
+    document.getElementById('om-kvote').textContent = d.kvote || '—';
+    var warningEl = document.getElementById('om-warning');
+    if (d.warning) {
+      document.getElementById('om-warning-text').textContent = d.warning;
+      warningEl.style.display = 'flex';
+    } else {
+      warningEl.style.display = 'none';
+    }
+  }
+
+  var egenmeldingData = {
+    'card-ingrid': {
+      name: 'Ingrid Reigstad', initials: 'IR',
+      dates: '01.11.26–02.11.26', days: '2 dager', department: 'Oslokontoret',
+      kommentar: '«Influensa disse dagene.»', kvote: '9/12 dager, 3/4 perioder',
+      warning: null
+    },
+    'card-martin': {
+      name: 'Martin Johansen', initials: 'MJ',
+      dates: '05.10.26–07.10.26', days: '3 dager', department: 'Oslokontoret',
+      kommentar: null, kvote: '3/12 dager, 1/4 perioder',
+      warning: null
+    },
+    'card-sofia-eg': {
+      name: 'Sofia Berg', initials: 'SB',
+      dates: '01.08.26', days: '1 dag', department: 'Oslokontoret',
+      kommentar: 'Du har ikke flere egenmeldinger og må evnten ta ubetalt fri eller vise sykemelding for denne egenmeldingen',
+      kvote: '12/12 dager, 4/4 perioder',
+      actionBtn: 'Angre avvisning',
+      warnings: [
+        'Fraværet er avvist. <a href="#" class="text-link">Angre</a>',
+        'Fraværet overskrider egenmeldingskvoten. Du kan kreve sykemelding for dette fraværet.'
+      ]
+    },
+    'card-kari': {
+      name: 'Kari Laurstad', initials: 'KL',
+      dates: '15.08.26–17.08.26', days: '3 dager', department: 'Oslokontoret',
+      kommentar: null, kvote: '6/12 dager, 2/4 perioder',
+      warning: null
+    }
+  };
+
+  function populateEgenmeldingDetail(cardId) {
+    var d = egenmeldingData[cardId];
+    if (!d) return;
+    document.getElementById('eg-dates').textContent = d.dates;
+    document.getElementById('eg-days-chip').textContent = d.days;
+    document.getElementById('eg-department').textContent = d.department;
+    document.getElementById('eg-action-btn').textContent = d.actionBtn || 'Avvis fravær';
+    document.getElementById('eg-avatar').textContent = d.initials;
+    document.getElementById('eg-name').textContent = d.name + ' · Egenmelding';
+    document.getElementById('eg-lengde').textContent = d.days;
+    document.getElementById('eg-periode').textContent = d.dates;
+    document.getElementById('eg-kommentar').textContent = d.kommentar || '–';
+    document.getElementById('eg-kvote').textContent = d.kvote || '—';
+    var warningsSvg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L14.5 13H1.5L8 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.75" fill="currentColor"/></svg>';
+    var warningsEl = document.getElementById('eg-warnings');
+    var list = d.warnings || (d.warning ? [d.warning] : []);
+    if (list.length) {
+      var closeBtn = '<button class="detail-alert-close" onclick="this.closest(\'.detail-alert\').remove()">' +
+        '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' +
+        '</button>';
+      warningsEl.innerHTML = list.map(function(w) {
+        return '<div class="detail-alert">' + warningsSvg + '<span>' + w + '</span>' + closeBtn + '</div>';
+      }).join('');
+      warningsEl.style.display = 'flex';
+    } else {
+      warningsEl.innerHTML = '';
+      warningsEl.style.display = 'none';
+    }
+  }
+
+  function selectAbsence(cardId, detailId) {
+    markSeenAndDeselect();
+    document.getElementById(cardId).classList.add('absence-item--selected');
+    document.getElementById('state-empty').style.display = 'none';
+    allDetailPanels.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    if (!detailId) {
+      document.getElementById('state-empty').style.display = 'flex';
+    } else {
+      var panelId = (detailId === true) ? 'state-detail' : 'state-detail-' + detailId;
+      var el = document.getElementById(panelId);
+      if (el) el.style.display = 'block';
+      if (detailId === 'egenmelding') populateEgenmeldingDetail(cardId);
+      if (detailId === 'omsorgsdager') populateOmsorgsdagDetail(cardId);
+    }
+  }
+
+  function approveFerie() {
+    var card = document.getElementById('card-erik');
+    card.classList.remove('absence-item--priority');
+    card.querySelector('.absence-name').classList.add('absence-name--light');
+    card.querySelector('.absence-type').classList.add('absence-type--light');
+    var statusEl = document.getElementById('card-erik-status');
+    statusEl.className = 'status-dot status-dot--neutral';
+    statusEl.textContent = 'Kommende';
+    document.getElementById('ferie-krever-handling').style.display = 'none';
+    var anchor = document.getElementById('card-thomas');
+    anchor.parentNode.insertBefore(card, anchor.nextSibling);
+  }
+
+  function closeDetail() {
+    markSeenAndDeselect();
+    allDetailPanels.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    document.getElementById('state-empty').style.display = 'flex';
+  }
+
+  (function() {
+    var divider = document.getElementById('split-divider');
+    var splitLeft = document.querySelector('.split-left');
+    var dragging = false;
+
+    divider.addEventListener('mousedown', function(e) {
+      dragging = true;
+      divider.classList.add('split-divider--dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (!dragging) return;
+      var rect = divider.parentElement.getBoundingClientRect();
+      var newWidth = e.clientX - rect.left;
+      newWidth = Math.max(220, Math.min(rect.width * 0.75, newWidth));
+      splitLeft.style.width = newWidth + 'px';
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (!dragging) return;
+      dragging = false;
+      divider.classList.remove('split-divider--dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  })();
+
+  function toggleFilterDropdown() {
+    var dropdown = document.getElementById('filter-dropdown');
+    var isOpen = dropdown.style.display !== 'none';
+    dropdown.style.display = isOpen ? 'none' : 'block';
+  }
+
+  document.addEventListener('click', function(e) {
+    var wrap = document.querySelector('.filter-btn-wrap');
+    var dropdown = document.getElementById('filter-dropdown');
+    if (dropdown && dropdown.style.display !== 'none' && wrap && !wrap.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importer historikk – Tripletex</title>
+  <link rel="stylesheet" href="https://cdn.tripletex.no/google-fonts/rubik-400-500-800.css">
+  <link rel="stylesheet" href="../../_system/tokens.css">
+  <link rel="stylesheet" href="../../_system/components.css">
+  <link rel="stylesheet" href="../../_system/layout.css">
+  <style>
+    /* ----------------------------------------
+     * ONBOARDING WIZARD — prototype-only layout
+     * Bygget kun med tokens. Stepper finnes ikke som
+     * systemkomponent ennå; resten er systemklasser.
+     * ---------------------------------------- */
+
+    .wizard-row {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-24);
+    }
+
+    .wizard {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      overflow: hidden;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .wizard-stepper {
+      flex-shrink: 0;
+      width: 300px;
+      background: var(--surface-background);
+      padding: var(--space-32) var(--space-24);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-32);
+    }
+
+    .wizard-content {
+      flex: 1 1 0;
+      min-width: 0;
+      background: var(--surface-default);
+      padding: var(--space-32) var(--space-24);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: var(--space-48);
+      min-height: calc(100vh - var(--size-xl) - var(--space-24) * 2);
+    }
+
+    /* Progress stepper (venstre kolonne) */
+    .stepper-head {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .stepper-title {
+      font: 500 16px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .stepper-progress {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+
+    .stepper-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-24);
+    }
+    .stepper-step {
+      display: flex;
+      align-items: center;
+      gap: var(--space-16);
+      font: 16px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .stepper-step--active {
+      font-weight: 500;
+    }
+    /* Klikkbare steg (de vi har laget sider for) */
+    a.stepper-step {
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+    a.stepper-step:hover .stepper-label {
+      color: var(--text-action);
+    }
+    .stepper-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+    }
+    .stepper-icon--done    { color: var(--surface-success-active); }
+    .stepper-icon--active  { color: var(--action-primary-rest); }
+    .stepper-icon--upcoming { color: var(--border-secondary); }
+
+    /* Innholdshode */
+    .wizard-body {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-32);
+    }
+    .wizard-heading {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-16);
+    }
+    .wizard-heading h1 {
+      font: 500 30px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .wizard-lead {
+      font: 16px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+      max-width: 720px;
+    }
+
+    .wizard-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .wizard-footer-end {
+      display: flex;
+      align-items: center;
+      gap: var(--space-16);
+    }
+
+    /* ----------------------------------------
+     * "Last opp historikk"-kort med indre 3-stegs wizard
+     * (prototype-only — indre stepper finnes ikke i systemet)
+     * ---------------------------------------- */
+    .upload-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-16);
+    }
+
+    /* Kortfot: Forrige til venstre, Neste til høyre (som i steg 1) */
+    .upload-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Indre horisontal stepper */
+    .upload-steps {
+      display: flex;
+    }
+    .upload-step {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-8);
+      text-align: center;
+      position: relative;
+    }
+    /* Strek mellom sirklene: trekkes senter-til-senter BAK sirklene.
+       Sirklene har ugjennomsiktig bakgrunn og dekker endene, så streken
+       ser ut til å gå fra sirkel til sirkel. */
+    .upload-step:not(:first-child)::before {
+      content: '';
+      position: absolute;
+      top: var(--space-12);
+      transform: translateY(-50%);
+      left: -50%;
+      right: 50%;
+      height: 2px;
+      background: var(--border-muted);
+      z-index: 0;
+    }
+    /* Strek fram til nådd steg (aktivt/fullført) er blå.
+       :not(:first-child) for å matche spesifisiteten til regelen over. */
+    .upload-step--active:not(:first-child)::before,
+    .upload-step--done:not(:first-child)::before {
+      background: var(--action-primary-rest);
+    }
+    .upload-step-num {
+      position: relative;
+      z-index: 1;
+      width: var(--size-small);
+      height: var(--size-small);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 14px/1 "Rubik", sans-serif;
+      border: 2px solid var(--border-secondary);
+      background: var(--surface-default);
+      color: var(--text-primary);
+    }
+    .upload-step-num svg {
+      width: 14px;
+      height: 14px;
+    }
+    .upload-step-label {
+      font: 14px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .upload-step--active .upload-step-num {
+      background: var(--action-primary-rest);
+      border-color: var(--action-primary-rest);
+      color: var(--text-on-action);
+    }
+    .upload-step--active .upload-step-label {
+      font-weight: 500;
+    }
+    .upload-step--done .upload-step-num {
+      border-color: var(--action-primary-rest);
+      color: var(--action-primary-rest);
+    }
+
+    /* ----------------------------------------
+     * Oppgaveliste (Velg oppgaver) — prototype-only
+     * ---------------------------------------- */
+    .tasks-found {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-12);
+    }
+    .task-row {
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      background: var(--surface-default);
+      overflow: hidden;
+    }
+    .task-row-head {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-12);
+      padding: var(--space-16);
+    }
+    /* Klikkbart område som toggler avhuking (alt unntatt chevron) */
+    .task-row-main {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-12);
+      cursor: pointer;
+    }
+    .task-row-main .checkbox-box {
+      margin-top: var(--space-2);
+    }
+    .task-text {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .task-title {
+      font: 500 16px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .task-sub {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+    /* Chevron-knapp som åpner/lukker kortet */
+    .task-chevron-btn {
+      flex-shrink: 0;
+      margin-top: var(--space-2);
+      padding: 0;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+    }
+    .task-chevron {
+      width: 24px;
+      height: 24px;
+      transition: transform 0.15s;
+    }
+    .task-chevron-btn[aria-expanded="true"] .task-chevron {
+      transform: rotate(180deg);
+    }
+    .task-row--warning {
+      background: var(--surface-warning-rest);
+      border-color: var(--border-warning);
+    }
+    /* Varselpille inne i oppgaverad — chip-stil, highlight-gul bakgrunn, ingen kant */
+    .task-warning {
+      align-self: flex-start;
+      margin-top: var(--space-4);
+      background: var(--surface-warning-highlight);
+      border-color: transparent;
+    }
+    .task-warning svg {
+      width: var(--icon-size-small);
+      height: var(--icon-size-small);
+    }
+
+    /* Instansliste i åpnet kort */
+    .task-instances {
+      border-top: 1px solid var(--border-muted);
+      background: var(--surface-default);
+    }
+    .task-instances[hidden] {
+      display: none;
+    }
+    .task-instance {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      padding: var(--space-12) var(--space-16);
+      border-bottom: 1px solid var(--border-faint);
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .task-instance:last-child {
+      border-bottom: none;
+    }
+    .task-instance-icon {
+      width: var(--icon-size-small);
+      height: var(--icon-size-small);
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .task-instance-name {
+      color: var(--text-primary);
+    }
+    .task-instance-date {
+      color: var(--text-muted);
+    }
+    .task-instance-del {
+      margin-left: auto;
+      flex-shrink: 0;
+      padding: 0;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+    }
+    .task-instance-del:hover {
+      color: var(--text-primary);
+    }
+    .task-instance-del svg {
+      width: var(--icon-size-small);
+      height: var(--icon-size-small);
+    }
+
+    /* Sammleggbart område (gjenkjente instanser + ev. ikke-importert-seksjon).
+       Scroller samlet, så "Ikke importert" havner nederst i lista. */
+    .task-expand {
+      max-height: calc(var(--size-large) * 6);
+      overflow-y: auto;
+    }
+    .task-expand[hidden] {
+      display: none;
+    }
+
+    /* "Ikke importert"-seksjon: rader AI-en ikke kunne koble til en handling */
+    .task-skipped {
+      border-top: 1px solid var(--border-warning);
+      background: var(--surface-warning-rest);
+      padding: var(--space-12) var(--space-16);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-12);
+    }
+    .task-skipped-head {
+      font: 500 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .task-skipped-row {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-8);
+    }
+    .task-skipped-icon {
+      width: var(--icon-size-small);
+      height: var(--icon-size-small);
+      color: var(--text-primary);
+      flex-shrink: 0;
+      margin-top: var(--space-2);
+    }
+    .task-skipped-text {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      min-width: 0;
+    }
+    .task-skipped-raw {
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .task-skipped-reason {
+      font: 12px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+    }
+    /* "Legg til"-knapp per ikke-importert rad */
+    .task-skipped-add {
+      margin-left: auto;
+      align-self: center;
+      flex-shrink: 0;
+    }
+
+    /* Modal "Ny rad" */
+    .modal {
+      width: 600px;
+    }
+    .modal-section-title {
+      font: 500 16px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .modal-barns {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-24);
+    }
+    .modal-barn {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-16);
+    }
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-16);
+    }
+    .modal-radio-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-16);
+      min-height: var(--size-large);
+    }
+    .modal-add-child {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Tips-banner kolonne */
+    .wizard-side {
+      flex: 0 0 240px;
+      max-width: 240px;
+    }
+    .wizard-side .banner {
+      border: 1px solid var(--border-active);
+    }
+    .wizard-side .chip {
+      background: var(--surface-info-highlight);
+      border-color: transparent;
+      align-self: flex-start;
+    }
+    .wizard-side .chip svg {
+      width: var(--icon-size-small);
+      height: var(--icon-size-small);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- TOPBAR -->
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <button class="topbar-icon-btn" title="Meny">
+        <svg viewBox="0 0 16 16" fill="none"><rect y="2.5" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="7" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="11.5" width="16" height="1.5" rx="0.75" fill="currentColor"/></svg>
+      </button>
+      <span class="topbar-logo">tripletex</span>
+      <span class="topbar-sep"></span>
+      <div class="topbar-company">
+        <span class="topbar-company-badge">T</span>
+        <span class="topbar-company-name">Tripletex AS</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-search">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 9.5L12.5 12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Søk
+      </div>
+      <button class="topbar-assistant">Assistent ✦</button>
+      <button class="topbar-icon-btn" title="Favoritter"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5 3.7.5-2.7 2.6.6 3.7L8 10.5l-3.1 1.8.6-3.7L3 5.5l3.7-.5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Last ned"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5v7M5.5 7l2.5 3 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Varsler"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5A4.5 4.5 0 003.5 6v3L2 11h12l-1.5-2V6A4.5 4.5 0 008 1.5z" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 11.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.3"/></svg></button>
+      <button class="topbar-icon-btn" title="Meldinger"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 13.5l1.5-2h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Hjelp"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 6.5a2 2 0 114 0c0 1.5-2 1.5-2 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Kunngjøringer"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1 3H13l-2.5 2 1 3L8 8.5 4.5 10l1-3L3 5h4L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Rapporter"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4M6 9h4M6 11.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-user-btn" title="Bruker"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a class="nav-item" href="#"><span class="nav-icon" style="color:var(--surface-warning-active);"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.6 3.6 3.9.6-2.8 2.7.7 3.9L8 10.5l-3.4 1.8.7-3.9L2.5 5.7l3.9-.6L8 1.5z"/></svg></span>Favoritter</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5l6-5 6 5V14H10.5v-4h-5v4H2V7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Hjem</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Timeliste</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8.5L2 13l1.5-4.5L2 4l11.5 4.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Reiser og utlegg</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 2v3H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Bilag</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M4 7V5M8 7V5M12 7V5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 5h13l-6.5-3L1.5 5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Bank</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg></span>Regnskap</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12V8M7 12V5M11 12V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Rapporter</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2L2.5 5v6L8 14l5.5-3V5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 2v12M2.5 5L8 8l5.5-3" stroke="currentColor" stroke-width="1.3"/></svg></span>Prosjekt</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4M6 9h4M6 11.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Faktura</a>
+      <div class="nav-item nav-item--active"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="4.5" width="12" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.5v1M6.5 8.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Lønn</div>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2.5 2.5L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Oppgave</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.3"/></svg></span>Dokument</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="6" width="12" height="8" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 6V5a2.5 2.5 0 015 0v1" stroke="currentColor" stroke-width="1.3"/></svg></span>Selskap</a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="page">
+
+        <div class="wizard-row">
+
+          <!-- WIZARD -->
+          <div class="wizard">
+
+            <!-- Progress stepper -->
+            <div class="wizard-stepper">
+              <div class="stepper-head">
+                <div class="stepper-title">Onboarding av fraværsmodulen</div>
+                <div class="stepper-progress">Steg 3 av 5</div>
+              </div>
+
+              <div class="stepper-steps">
+                <a class="stepper-step" href="velkommen.html">
+                  <svg class="stepper-icon stepper-icon--done" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8 12l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="stepper-label">Velkommen</span>
+                </a>
+
+                <a class="stepper-step" href="fravaersinnstillinger.html">
+                  <svg class="stepper-icon stepper-icon--done" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8 12l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="stepper-label">Fraværsinnstillinger</span>
+                </a>
+
+                <a class="stepper-step stepper-step--active" href="importer-historikk.html">
+                  <svg class="stepper-icon stepper-icon--active" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 12h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M12.5 6.5L18 12l-5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="stepper-label">Importer historikk</span>
+                </a>
+
+                <a class="stepper-step" href="ansatte-med-barn.html">
+                  <svg class="stepper-icon stepper-icon--done" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8 12l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="stepper-label">Ansatte med barn under 12 år</span>
+                </a>
+
+                <a class="stepper-step" href="tilganger.html">
+                  <svg class="stepper-icon stepper-icon--done" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8 12l3 3 5-5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="stepper-label">Tilganger</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Innhold -->
+            <div class="wizard-content">
+
+              <div class="wizard-body">
+
+                <div class="wizard-heading">
+                  <h1>Importer historikk</h1>
+                  <p class="wizard-lead">Har du eksisterende fraværsdata fra et annet system eller regneark? Da kan du laste dem opp som csv-filer, så bruker vi KI til å generere historikk i systemet.</p>
+                </div>
+
+                <!-- Last opp historikk-kort -->
+                <div class="card">
+                  <div class="card-header">
+                    <div class="upload-card-header" style="flex:1;">
+                      <div class="card-title">Last opp historikk</div>
+                      <button class="icon-btn" title="Lukk" aria-label="Lukk">
+                        <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="card-body card-body--form">
+
+                    <!-- Indre 3-stegs stepper -->
+                    <div class="upload-steps">
+                      <div class="upload-step upload-step--done">
+                        <div class="upload-step-num">
+                          <svg viewBox="0 0 24 24" fill="none"><path d="M6 12.5l4 4 8-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div class="upload-step-label">Last opp filer</div>
+                      </div>
+                      <div class="upload-step upload-step--active">
+                        <div class="upload-step-num">2</div>
+                        <div class="upload-step-label">Velg hva som skal importeres</div>
+                      </div>
+                      <div class="upload-step">
+                        <div class="upload-step-num">3</div>
+                        <div class="upload-step-label">Oppsummering</div>
+                      </div>
+                    </div>
+
+                    <p class="tasks-found" id="tasks-found"></p>
+
+                    <div class="task-list" id="task-list"></div>
+
+                  </div>
+
+                  <div class="card-footer upload-card-footer">
+                    <a href="importer-historikk.html" class="text-link">Forrige</a>
+                    <a href="importer-oppsummering.html" class="btn btn-primary" id="card-neste">Neste</a>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Navigasjon (ytre wizard) -->
+              <div class="wizard-footer">
+                <a href="fravaersinnstillinger.html" class="btn btn-secondary">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M20 12H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M11.5 6.5L6 12l5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Forrige
+                </a>
+                <div class="wizard-footer-end">
+                  <a href="#" class="text-link">Hopp over</a>
+                  <button class="btn btn-primary" disabled>
+                    Neste
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12.5 6.5L18 12l-5.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- TIPS-BANNER -->
+          <div class="wizard-side">
+            <div class="banner banner--info">
+              <span class="chip">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M9 18h6M10 21h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 3a6 6 0 00-3.5 10.9c.6.45 1 1.15 1 1.9v.2h5v-.2c0-.75.4-1.45 1-1.9A6 6 0 0012 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                Tips
+              </span>
+              <p class="banner-heading">Hva kan du laste opp?</p>
+              <p class="banner-body">Csv-filer med tidligere fravær, fraværskvoter eller ansattes barn – eksportert fra et annet system eller regneark. Filene trenger ingen bestemt mal; ta med ansattnavn eller -nummer og datoer, så kjenner AI-assistenten igjen resten.</p>
+              <button class="banner-close" aria-label="Lukk" onclick="this.closest('.banner').remove()">
+                <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- MODAL: Ny rad (Legg til barn manuelt) -->
+<div class="modal-backdrop" id="modal-ny-rad" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ny-rad-title">
+    <div class="modal-header">
+      <p class="modal-title" id="ny-rad-title">Ny rad</p>
+      <p class="modal-subtitle">Velg ansatt og antall barn</p>
+    </div>
+    <button class="modal-close" aria-label="Lukk" onclick="document.getElementById('modal-ny-rad').hidden = true">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="input-label">Velg ansatt <span class="required">*</span></label>
+        <select class="input">
+          <option>Ola Nordmann</option>
+          <option>Ingrid Reigstad</option>
+          <option>Kari Hansen</option>
+          <option>Per Johansen</option>
+          <option>Mette Olsen</option>
+          <option>Lars Berg</option>
+        </select>
+      </div>
+
+      <div class="modal-barns">
+        <div class="modal-barn">
+          <p class="modal-section-title">Barn 1</p>
+          <div class="modal-grid">
+            <div class="form-group">
+              <label class="input-label">Fødselsdato <span class="required">*</span></label>
+              <input class="input modal-fodselsdato" type="text" placeholder="00.00.0000">
+            </div>
+            <div class="form-group">
+              <label class="input-label">Har aleneomsorg for barnet <span class="required">*</span></label>
+              <div class="modal-radio-row">
+                <label class="radio-label"><input type="radio" class="radio-input" name="aleneomsorg-1"><span class="radio-circle"></span>Nei</label>
+                <label class="radio-label"><input type="radio" class="radio-input" name="aleneomsorg-1"><span class="radio-circle"></span>Ja</label>
+              </div>
+            </div>
+          </div>
+          <div class="modal-grid">
+            <div class="form-group">
+              <label class="input-label">Ekstra sykt barn dager</label>
+              <input class="input" type="text" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label class="input-label">Øvre alder (år) for bruk av sykt barn dager</label>
+              <input class="input" type="text" value="12">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-add-child">
+        <button class="btn btn-secondary btn-small" type="button" id="add-barn">
+          Legg til barn
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="document.getElementById('modal-ny-rad').hidden = true">Fullfør</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-ny-rad').hidden = true">Avbryt</button>
+    </div>
+  </div>
+</div>
+
+<script src="onboarding-import.js"></script>
+<script>
+  // Velg hva som skal importeres — kortene bygges fra filene som ble lastet opp i steg 1
+  (function () {
+    var OI = window.OnboardingImport;
+    var tasks = OI.load() || [];
+    var listEl = document.getElementById('task-list');
+    var foundEl = document.getElementById('tasks-found');
+    var modal = document.getElementById('modal-ny-rad');
+
+    foundEl.textContent = tasks.length + ' ' + (tasks.length === 1 ? 'oppgave funnet' : 'oppgaver funnet');
+
+    if (!tasks.length) {
+      listEl.innerHTML = '<p class="task-sub">Last opp filer i steget «Last opp filer» for å se oppgaver her.</p>';
+    } else {
+      listEl.innerHTML = tasks.map(function (t) {
+        var warn = t.skipped && t.skipped.length;
+        var instHTML = t.instances.map(OI.instanceRowHTML).join('');
+        var skippedHTML = warn
+          ? '<div class="task-skipped"><div class="task-skipped-head">Ikke importert · ' + t.skipped.length + ' rader</div>'
+            + t.skipped.map(OI.skippedRowHTML).join('') + '</div>'
+          : '';
+        var warnChip = warn
+          ? '<span class="chip task-warning"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 7.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="16" r="0.75" fill="currentColor"/></svg>'
+            + t.skipped.length + ' rader ble ikke gjenkjent og blir ikke importert</span>'
+          : '';
+        return '<div class="task-row' + (warn ? ' task-row--warning' : '') + '" data-id="' + t.id + '">'
+          + '<div class="task-row-head">'
+          + '<label class="task-row-main"><input type="checkbox" class="checkbox-input"><span class="checkbox-box"></span>'
+          + '<div class="task-text"><span class="task-title">' + OI.esc(t.title) + '</span>'
+          + '<span class="task-sub">' + OI.esc(t.subtitle) + '</span>' + warnChip + '</div></label>'
+          + '<button class="task-chevron-btn" type="button" aria-expanded="false" aria-label="Vis enkeltinstanser">' + OI.chevronSVG + '</button>'
+          + '</div>'
+          + '<div class="task-expand" hidden><div class="task-instances">' + instHTML + '</div>' + skippedHTML + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    OI.wireCommon(listEl);
+
+    // Modal "Ny rad" — legg til manuelt fra en ikke-importert rad
+    var barnCount = 1;
+    function openNyRad(ansatt) {
+      var barns = modal.querySelector('.modal-barns');
+      while (barns.querySelectorAll('.modal-barn').length > 1) { barns.lastElementChild.remove(); }
+      barnCount = 1;
+      var sel = modal.querySelector('select.input');
+      if (ansatt) {
+        var finnes = [].some.call(sel.options, function (o) { return o.text === ansatt; });
+        if (!finnes) { var opt = document.createElement('option'); opt.text = ansatt; sel.add(opt, 0); }
+        sel.value = ansatt;
+      }
+      modal.hidden = false;
+    }
+    listEl.addEventListener('click', function (e) {
+      var add = e.target.closest('.task-skipped-add');
+      if (add) { openNyRad(add.getAttribute('data-ansatt')); }
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) { modal.hidden = true; } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { modal.hidden = true; } });
+    document.getElementById('add-barn').addEventListener('click', function () {
+      barnCount++;
+      var barns = modal.querySelector('.modal-barns');
+      var clone = barns.querySelector('.modal-barn').cloneNode(true);
+      clone.querySelector('.modal-section-title').textContent = 'Barn ' + barnCount;
+      clone.querySelectorAll('input').forEach(function (inp) { if (inp.type === 'radio') { inp.name = 'aleneomsorg-' + barnCount; inp.checked = false; } });
+      barns.appendChild(clone);
+    });
+
+    // Lagre brukerens valg før vi går til oppsummeringen
+    document.getElementById('card-neste').addEventListener('click', function () {
+      [].forEach.call(listEl.querySelectorAll('.task-row'), function (row) {
+        var t = tasks.filter(function (x) { return x.id === row.getAttribute('data-id'); })[0];
+        if (t) { t.selected = row.querySelector('.checkbox-input').checked; }
+      });
+      OI.save(tasks);
+    });
+  })();
+</script>
+
+</body>
+</html>

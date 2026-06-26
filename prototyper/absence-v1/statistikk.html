@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fraværsstatistikk – Tripletex</title>
+  <link rel="stylesheet" href="https://cdn.tripletex.no/google-fonts/rubik-400-500-800.css">
+  <link rel="stylesheet" href="../../_system/tokens.css">
+  <link rel="stylesheet" href="../../_system/components.css">
+  <link rel="stylesheet" href="../../_system/layout.css">
+  <style>
+
+
+    /* Page title (30px per design) */
+    .page-title { font: 400 30px/1.3 "Rubik", sans-serif; }
+
+    /* Tabs */
+    .tx-tabs { display: flex; gap: var(--space-12); align-items: flex-end; }
+    .tx-tab {
+      padding: var(--space-4) var(--space-4) 0;
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+      cursor: pointer;
+      border: none;
+      background: none;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      align-items: center;
+      height: 40px;
+      justify-content: flex-end;
+    }
+    .tx-tab--active { font-weight: 500; }
+    .tx-tab-underline { height: 4px; width: 100%; border-radius: 2px; background: transparent; }
+    .tx-tab--active .tx-tab-underline { background: var(--action-primary-rest); }
+
+    /* Visualization layout: 2×2 grid, equal columns, equal-height rows */
+    .viz-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+    }
+    .viz-left-top    { grid-area: 1 / 1; border-right: 1px solid var(--border-muted); border-bottom: 1px solid var(--border-muted); }
+    .viz-right-top   { grid-area: 1 / 2; border-bottom: 1px solid var(--border-muted); }
+    .viz-left-bottom { grid-area: 2 / 1; border-right: 1px solid var(--border-muted); }
+    .viz-right-bottom{ grid-area: 2 / 2; }
+
+    .viz-section { padding: var(--space-24); }
+    .viz-section + .viz-section { border-top: 1px solid var(--border-muted); }
+
+    /* Fraværsdager section */
+    .viz-stat-label { font: 16px/1.3 "Rubik", sans-serif; color: var(--text-primary); margin-bottom: var(--space-12); }
+    .viz-stat-value-row { display: flex; align-items: center; gap: var(--space-8); }
+    .viz-stat-number { font: 500 30px/1.3 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-badge-success {
+      background: var(--surface-success-rest);
+      color: var(--status-success);
+      font: 500 13px/1 "Rubik", sans-serif;
+      padding: 3px var(--space-8);
+      border-radius: var(--radius-default);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-4);
+      white-space: nowrap;
+    }
+    .viz-stat-sub { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); margin-top: var(--space-8); }
+    .viz-stat-sub a { color: var(--text-action); text-decoration: none; }
+    .viz-stat-sub a:hover { text-decoration: underline; }
+
+    /* Nær kvote section */
+    .viz-quota-row { display: flex; gap: var(--space-32); }
+    .viz-quota-item { display: flex; flex-direction: column; gap: var(--space-8); }
+    .viz-quota-label { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    .viz-quota-value-row { display: flex; align-items: center; gap: var(--space-8); }
+    .viz-quota-number { font: 500 30px/1.3 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-icon-btn-warn { width: 32px; height: 32px; background: var(--surface-warning-rest); border: 1px solid var(--border-warning); border-radius: var(--radius-default); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: var(--text-primary); }
+    .viz-icon-btn-error { width: 32px; height: 32px; background: var(--surface-error-rest); border: 1px solid var(--border-error); border-radius: var(--radius-default); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: var(--text-primary); }
+    .viz-link { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-action); text-decoration: none; }
+    .viz-link:hover { text-decoration: underline; }
+
+    /* Chart section */
+    .viz-chart-title { font: 16px/1.3 "Rubik", sans-serif; color: var(--text-primary); margin-bottom: var(--space-16); }
+    .viz-chart-total-label { font: 13px/1.3 "Rubik", sans-serif; color: var(--text-muted); }
+    .viz-chart-total-number { font: 500 30px/1.3 "Rubik", sans-serif; color: var(--text-primary); margin-bottom: var(--space-12); }
+    .viz-chart-svg-wrap { overflow: visible; }
+    .viz-legend { display: flex; gap: var(--space-32); flex-wrap: wrap; padding-top: var(--space-16); }
+    .viz-legend-item { display: flex; flex-direction: column; gap: var(--space-4); font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-legend-item-label { font: 13px/1.3 "Rubik", sans-serif; color: var(--text-muted); }
+    .viz-legend-days { font: 500 14px/1 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-legend-item-row { display: flex; align-items: center; gap: var(--space-8); }
+    .viz-legend-dot { width: 12px; height: 12px; border-radius: var(--radius-full); flex-shrink: 0; }
+
+    /* Fraværsprosent section */
+    .viz-fp-number { font: 500 30px/1.3 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-fp-sub { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); margin-top: var(--space-8); display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+    .viz-fp-sub strong { color: var(--text-primary); font-weight: 500; }
+    .viz-color-bar { display: flex; height: 20px; border-radius: var(--radius-default); overflow: hidden; width: 100%; margin-top: var(--space-20); }
+    .viz-bar-legend { display: flex; gap: var(--space-24); flex-wrap: wrap; margin-top: var(--space-12); }
+    .viz-bar-legend-item { display: flex; align-items: center; gap: var(--space-8); font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    .viz-bar-legend-pct { font: 500 14px/1 "Rubik", sans-serif; color: var(--text-primary); }
+
+    /* Modal overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--surface-modal);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.is-open { display: flex; }
+
+    .modal {
+      background: var(--surface-default);
+      border-radius: var(--radius-default);
+      width: 710px;
+      max-width: calc(100vw - var(--space-32));
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-24);
+      padding: var(--space-32);
+      position: relative;
+      overflow: hidden;
+    }
+    .modal-header { display: flex; flex-direction: column; gap: 4px; }
+    .modal-title { font: 500 20px/1.3 "Rubik", sans-serif; color: var(--text-primary); }
+    .modal-subtitle { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    .modal-status { display: flex; align-items: center; gap: var(--space-4); font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+    .modal-status-dot { width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0; }
+    .modal-close-btn {
+      position: absolute;
+      top: var(--space-8);
+      right: var(--space-8);
+      width: var(--size-medium);
+      height: var(--size-medium);
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      color: var(--text-primary);
+    }
+    .modal-close-btn:hover { background: var(--action-neutral-hover); }
+
+    .modal-slot {
+      height: 329px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-table-wrap {
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .modal-search-bar {
+      padding: var(--space-12);
+      border-bottom: 1px solid var(--border-muted);
+      background: var(--surface-default);
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .modal-search-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .modal-search-input-wrap .input {
+      padding-right: var(--space-40);
+      background: var(--surface-background);
+    }
+    .modal-search-icon {
+      position: absolute;
+      right: var(--space-12);
+      color: var(--text-muted);
+      pointer-events: none;
+      width: 20px;
+      height: 20px;
+    }
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      font: 14px/1.4 "Rubik", sans-serif;
+    }
+    .modal-table thead { background: var(--surface-info-rest); }
+    .modal-table th {
+      padding: var(--space-8) var(--space-12);
+      text-align: left;
+      font-weight: 500;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border-muted);
+      font-size: 14px;
+    }
+    .modal-table th.col-right { text-align: right; }
+    .modal-table td {
+      padding: var(--space-8) var(--space-12);
+      border-bottom: 1px solid var(--border-muted);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+    .modal-table td.col-right { text-align: right; font-variant-numeric: tabular-nums lining-nums; }
+    .modal-table td.col-bold { font-weight: 500; }
+    .modal-emp-cell { display: flex; align-items: center; gap: var(--space-8); }
+    .modal-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      flex-shrink: 0;
+      background: var(--surface-disabled);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font: 500 10px/1 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .modal-footer { display: flex; gap: var(--space-8); flex-shrink: 0; }
+
+    /* Filter dropdown panel */
+    .filter-btn-wrap { position: relative; }
+    .filter-panel {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 50;
+      width: 375px;
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-top: none;
+      border-radius: 0 0 var(--radius-default) var(--radius-default);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+    }
+    .filter-panel.is-open { display: flex; flex-direction: column; }
+
+    .filter-panel-section {
+      padding: var(--space-12);
+      border-bottom: 1px solid var(--border-muted);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-8);
+    }
+    .filter-panel-section:last-child { border-bottom: none; }
+
+    .filter-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: var(--size-medium);
+    }
+    .filter-panel-heading { font: 500 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+    .filter-panel-chevron-btn {
+      width: var(--size-medium);
+      height: var(--size-medium);
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      color: var(--text-primary);
+      flex-shrink: 0;
+    }
+    .filter-panel-chevron-btn:hover { background: var(--action-neutral-hover); }
+    .filter-panel-chevron-btn svg { transition: transform 0.15s ease; }
+    .filter-panel-chevron-btn.is-collapsed svg { transform: rotate(-180deg); }
+
+    .filter-saved-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-8);
+    }
+    .filter-saved-chip {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      padding: var(--space-12) var(--space-32) var(--space-12) var(--space-8);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      background: var(--surface-background);
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+      min-width: 150px;
+      width: calc(50% - var(--space-4));
+      cursor: pointer;
+    }
+    .filter-saved-chip:hover { background: var(--action-neutral-hover); }
+    .filter-saved-chip.is-active {
+      background: var(--surface-info-rest);
+      border-color: var(--action-primary-rest);
+      color: var(--text-action);
+      font-weight: 500;
+    }
+    .filter-chip-icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--text-muted); }
+    .filter-saved-chip.is-active .filter-chip-icon { color: var(--action-primary-rest); }
+    .filter-chip-more-btn {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: var(--size-medium);
+      height: var(--size-medium);
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      color: var(--text-muted);
+    }
+    .filter-chip-more-btn:hover { background: var(--action-neutral-hover); }
+
+    .filter-panel-actions {
+      display: flex;
+      justify-content: space-between;
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-action);
+    }
+    .filter-panel-actions a { color: var(--text-action); text-decoration: none; }
+    .filter-panel-actions a:hover { text-decoration: underline; }
+
+    .filter-fields { display: flex; flex-direction: column; gap: var(--space-16); }
+    .filter-field-label { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+
+    /* Fravær per ansatt tab */
+    .td-employee { display: flex; align-items: center; gap: var(--space-8); }
+    .emp-initials { width: 22px; height: 22px; border-radius: var(--radius-full); background: var(--surface-disabled); display: inline-flex; align-items: center; justify-content: center; font: 500 10px/1 "Rubik", sans-serif; color: var(--text-primary); flex-shrink: 0; }
+    .tx-table tfoot td {
+      padding: var(--space-8) var(--space-12);
+      border-top: 1px solid var(--border-muted);
+      font-weight: 500;
+      color: var(--text-primary);
+      background: var(--surface-default);
+      vertical-align: middle;
+    }
+
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- TOPBAR -->
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <button class="topbar-icon-btn" title="Meny">
+        <svg viewBox="0 0 16 16" fill="none"><rect y="2.5" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="7" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="11.5" width="16" height="1.5" rx="0.75" fill="currentColor"/></svg>
+      </button>
+      <span class="topbar-logo">tripletex</span>
+      <span class="topbar-sep"></span>
+      <div class="topbar-company">
+        <span class="topbar-company-badge">T</span>
+        <span class="topbar-company-name">Tripletex AS</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-search">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 9.5L12.5 12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Søk
+      </div>
+      <button class="topbar-assistant">Assistent ✦</button>
+      <button class="topbar-icon-btn" title="Favoritter"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5 3.7.5-2.7 2.6.6 3.7L8 10.5l-3.1 1.8.6-3.7L3 5.5l3.7-.5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Last ned"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5v7M5.5 7l2.5 3 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Varsler"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5A4.5 4.5 0 003.5 6v3L2 11h12l-1.5-2V6A4.5 4.5 0 008 1.5z" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 11.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.3"/></svg></button>
+      <button class="topbar-icon-btn" title="Meldinger"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 13.5l1.5-2h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Hjelp"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 6.5a2 2 0 114 0c0 1.5-2 1.5-2 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Kunngjøringer"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1 3H13l-2.5 2 1 3L8 8.5 4.5 10l1-3L3 5h4L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Rapporter"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4M6 9h4M6 11.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-user-btn" title="Bruker"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a class="nav-item" href="#"><span class="nav-icon" style="color:var(--surface-warning-active);"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.6 3.6 3.9.6-2.8 2.7.7 3.9L8 10.5l-3.4 1.8.7-3.9L2.5 5.7l3.9-.6L8 1.5z"/></svg></span>Favoritter</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5l6-5 6 5V14H10.5v-4h-5v4H2V7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Hjem</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Timeliste</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8.5L2 13l1.5-4.5L2 4l11.5 4.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Reiser og utlegg</a>
+      <div class="nav-item nav-item--active"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8h6M5 5.5h4M5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Fravær og ferie</div>
+      <a class="nav-sub" href="fravaersoversikt.html"><span class="nav-bullet"></span>Fraværsoversikt</a>
+      <a class="nav-sub" href="avstemming-refusjoner.html"><span class="nav-bullet"></span>Avstemming av refusjoner</a>
+      <a class="nav-sub" href="inntektsmeldinger.html"><span class="nav-bullet"></span>Inntektsmeldinger</a>
+      <a class="nav-sub nav-sub--active" href="inntektsmeldinger.html"><span class="nav-bullet"></span>Statistikk</a>
+      <a class="nav-sub" href="ssb-rapporter.html"><span class="nav-bullet"></span>SSB-rapporter</a>
+      <a class="nav-sub" href="#"><span class="nav-bullet"></span>Innstillinger</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 2h10v13l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 7h5M5.5 9.5h5M5.5 5h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Faktura</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 2v3H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Bilag</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M4 7V5M8 7V5M12 7V5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 5h13l-6.5-3L1.5 5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Bank</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg></span>Regnskap</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12V8M7 12V5M11 12V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Rapporter</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="4.5" width="12" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.5v1M6.5 8.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Lønn</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2L2.5 5v6L8 14l5.5-3V5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 2v12M2.5 5L8 8l5.5-3" stroke="currentColor" stroke-width="1.3"/></svg></span>Prosjekt</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.3"/></svg></span>Dokument</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2.5 2.5L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Oppgave</a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="page">
+
+        <!-- Page header -->
+        <div class="page-header">
+          <h1 class="page-title">Fraværsstatistikk</h1>
+        </div>
+
+        <!-- Alert -->
+        <div class="alert alert--warning">
+          <svg class="alert-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 11v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="8.5" r="0.75" fill="currentColor"/></svg>
+          <p class="alert-message">1 fravær har ikke blitt godkjent og vises derfor ikke i statistikken. <a href="#">Åpne fravær</a></p>
+          <button class="alert-close" onclick="this.closest('.alert').remove()">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tx-tabs">
+          <button class="tx-tab tx-tab--active" onclick="byttTab(this, 'view-viz')">
+            Visualiseringer
+            <span class="tx-tab-underline"></span>
+          </button>
+          <button class="tx-tab" onclick="byttTab(this, 'view-ansatte')">
+            Fravær per ansatt
+            <span class="tx-tab-underline"></span>
+          </button>
+        </div>
+
+        <!-- Content card -->
+        <div class="table-container">
+
+          <!-- Toolbar -->
+          <div class="table-toolbar">
+            <div class="table-toolbar-filters">
+              <div class="filter-btn-wrap">
+                <button class="btn btn-secondary" id="filter-toggle-btn" onclick="toggleFilterPanel()">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                  Filter
+                </button>
+                <div class="filter-panel" id="filter-panel">
+
+                  <!-- Saved filters -->
+                  <div class="filter-panel-section">
+                    <div class="filter-panel-header">
+                      <span class="filter-panel-heading">Saved filters</span>
+                      <button class="filter-panel-chevron-btn" id="saved-filters-chevron" onclick="toggleSavedFilters()" title="Vis/skjul lagrede filtre">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                    </div>
+                    <div class="filter-saved-chips" id="saved-filters-chips">
+                      <div class="filter-saved-chip">
+                        <svg class="filter-chip-icon" viewBox="0 0 20 20" fill="none"><path d="M2 5h16M5 10h10M7.5 15h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        <span>Årsrapport</span>
+                        <button class="filter-chip-more-btn" title="Alternativer">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="4" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg>
+                        </button>
+                      </div>
+                      <div class="filter-saved-chip">
+                        <svg class="filter-chip-icon" viewBox="0 0 20 20" fill="none"><path d="M2 5h16M5 10h10M7.5 15h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        <span>SSB-rapport</span>
+                        <button class="filter-chip-more-btn" title="Alternativer">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="4" r="1" fill="currentColor"/><circle cx="8" cy="8" r="1" fill="currentColor"/><circle cx="8" cy="12" r="1" fill="currentColor"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Filter options -->
+                  <div class="filter-panel-section">
+                    <div class="filter-panel-header">
+                      <span class="filter-panel-heading">Filter options</span>
+                    </div>
+                    <div class="filter-panel-actions">
+                      <a href="#" onclick="return false;">Save filter</a>
+                      <a href="#" onclick="return false;">Reset filters</a>
+                    </div>
+                  </div>
+
+                  <!-- Filter fields -->
+                  <div class="filter-panel-section">
+                    <div class="filter-fields">
+                      <div class="form-group" style="margin:0;">
+                        <label class="input-label">Avdelinger</label>
+                        <select class="input">
+                          <option>(Alle avdelinger)</option>
+                          <option>Utvikling</option>
+                          <option>Salg</option>
+                          <option>HR</option>
+                        </select>
+                      </div>
+                      <div class="form-group" style="margin:0;">
+                        <label class="input-label">Kjønn</label>
+                        <select class="input">
+                          <option>(Alle kjønn)</option>
+                          <option>Mann</option>
+                          <option>Kvinne</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              <select class="input" style="width:auto;">
+                <option>(Alle fraværstyper)</option>
+                <option>Egenmelding</option>
+                <option>Sykemeldt</option>
+                <option>Sykt barn</option>
+                <option>Permisjon</option>
+              </select>
+              <select class="input" style="width:auto;">
+                <option>(Alle ansatte)</option>
+              </select>
+              <div class="period-nav">
+                <span class="period-nav-label">Mars 2026</span>
+                <div class="period-nav-arrows">
+                  <button class="period-nav-btn" title="Forrige periode"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 10L4 6l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button class="period-nav-btn" title="Neste periode"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+              </div>
+            </div>
+            <div class="table-toolbar-actions">
+              <button class="icon-btn" title="Last ned">
+                <svg viewBox="0 0 20 20" fill="none"><path d="M10 14V6M7 11l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- View: Visualiseringer -->
+          <div id="view-viz">
+            <div class="viz-cols">
+
+              <!-- Top left: Antall fraværsdager -->
+              <div class="viz-left-top">
+                <div class="viz-section">
+                  <p class="viz-stat-label">Antall fraværsdager</p>
+                  <div class="viz-stat-value-row">
+                    <span class="viz-stat-number">52</span>
+                    <span class="viz-badge-success">
+                      −13 % sammenlignet med i fjor
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2.5v7M3 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                  </div>
+                  <p class="viz-stat-sub">Fordelt på <a href="#" onclick="åpneModal('modal-fravaersdager');return false;">23 ansatte</a></p>
+                </div>
+              </div>
+
+              <!-- Top right: Ansatte nær fraværskvoter (moved up) -->
+              <div class="viz-right-top">
+                <div class="viz-section">
+                  <p class="viz-stat-label">Ansatte nær fraværskvoter</p>
+                  <div class="viz-quota-row">
+                    <div class="viz-quota-item">
+                      <span class="viz-quota-label">Nær kvote</span>
+                      <div class="viz-quota-value-row">
+                        <span class="viz-quota-number">11</span>
+                        <button class="viz-icon-btn-warn">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="10.5" r="0.75" fill="currentColor"/></svg>
+                        </button>
+                      </div>
+                      <a href="#" class="viz-link" onclick="åpneModal('modal-naer-kvote');return false;">Se ansatte</a>
+                    </div>
+                    <div class="viz-quota-item">
+                      <span class="viz-quota-label">Over kvote</span>
+                      <div class="viz-quota-value-row">
+                        <span class="viz-quota-number">3</span>
+                        <button class="viz-icon-btn-error">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M7.1 2.8l-5.6 9.7A1 1 0 002.4 14h11.2a1 1 0 00.9-1.5L9 2.8a1 1 0 00-1.8 0z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg>
+                        </button>
+                      </div>
+                      <a href="#" class="viz-link" onclick="åpneModal('modal-over-kvote');return false;">Se ansatte</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom left: Chart -->
+              <div class="viz-left-bottom">
+                <div class="viz-section">
+                  <p class="viz-chart-title">Utvikling sykefravær</p>
+                  <p class="viz-chart-total-label">Totalt</p>
+                  <p class="viz-chart-total-number">174 dager</p>
+                  <div class="viz-chart-svg-wrap">
+                    <svg viewBox="0 0 660 220" width="100%" height="240" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;display:block;">
+                      <!-- Grid lines -->
+                      <line x1="52" y1="10"  x2="650" y2="10"  stroke="var(--border-muted)" stroke-width="1"/>
+                      <line x1="52" y1="65"  x2="650" y2="65"  stroke="var(--border-muted)" stroke-width="1"/>
+                      <line x1="52" y1="120" x2="650" y2="120" stroke="var(--border-muted)" stroke-width="1"/>
+                      <line x1="52" y1="175" x2="650" y2="175" stroke="var(--border-muted)" stroke-width="1"/>
+                      <!-- Y labels -->
+                      <text x="44" y="14"  text-anchor="end" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">40 k</text>
+                      <text x="44" y="69"  text-anchor="end" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">20 k</text>
+                      <text x="44" y="124" text-anchor="end" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">10 k</text>
+                      <text x="44" y="179" text-anchor="end" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">5 k</text>
+                      <!-- X labels -->
+                      <text x="100" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">Januar</text>
+                      <text x="215" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">Februar</text>
+                      <text x="330" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">Mars</text>
+                      <text x="445" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">April</text>
+                      <text x="560" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">Mai</text>
+                      <!-- Korttidsfravær (blå, øverste linje) -->
+                      <path d="M100,60 C145,60 155,90 215,90 C275,90 285,130 330,120 C375,110 395,145 445,155 C495,165 510,160 560,165" fill="none" stroke="var(--action-primary-rest)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                      <!-- Langtidsfravær (rosa, nedre linje) -->
+                      <path d="M100,155 C145,148 170,140 215,145 C260,150 300,130 330,140 C360,150 400,165 445,168 C490,171 525,158 560,162" fill="none" stroke="#ffbacd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                      <!-- Tooltip dot on Mars -->
+                      <circle cx="330" cy="120" r="5" fill="var(--action-primary-rest)" stroke="var(--surface-default)" stroke-width="2"/>
+                      <line x1="330" y1="10" x2="330" y2="175" stroke="var(--border-muted)" stroke-width="1" stroke-dasharray="3,3"/>
+                      <!-- Tooltip box -->
+                      <rect x="340" y="80" width="175" height="68" rx="4" fill="var(--surface-default)" stroke="var(--border-muted)" filter="drop-shadow(0 2px 6px rgba(0,0,0,0.10))"/>
+                      <text x="352" y="99" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">26. februar 2025</text>
+                      <circle cx="352" cy="113" r="5" fill="var(--action-primary-rest)"/>
+                      <text x="362" y="117" font-size="12" fill="var(--text-primary)" font-family="Rubik,sans-serif">Korttidsfravær</text>
+                      <text x="492" y="117" font-size="12" fill="var(--text-primary)" font-family="Rubik,sans-serif" text-anchor="end">1 ansatt</text>
+                      <circle cx="352" cy="131" r="5" fill="#ffbacd"/>
+                      <text x="362" y="135" font-size="12" fill="var(--text-primary)" font-family="Rubik,sans-serif">Langtidsfravær</text>
+                      <text x="492" y="135" font-size="12" fill="var(--text-primary)" font-family="Rubik,sans-serif" text-anchor="end">0 ansatte</text>
+                    </svg>
+                  </div>
+                  <div class="viz-legend">
+                    <div class="viz-legend-item">
+                      <span class="viz-legend-item-label">Totalt</span>
+                      <span class="viz-legend-days">72 dager</span>
+                      <div class="viz-legend-item-row"><span class="viz-legend-dot" style="background:var(--action-primary-rest);"></span>Korttidsfravær</div>
+                    </div>
+                    <div class="viz-legend-item">
+                      <span class="viz-legend-item-label">Totalt</span>
+                      <span class="viz-legend-days">102 dager</span>
+                      <div class="viz-legend-item-row"><span class="viz-legend-dot" style="background:#ffbacd;"></span>Langtidsfravær</div>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- /viz-left-bottom -->
+
+              <!-- Bottom right: Fraværsprosent -->
+              <div class="viz-right-bottom">
+                <div class="viz-section">
+                  <p class="viz-chart-title">Fraværsprosent</p>
+                  <p class="viz-fp-number">12,5 %</p>
+                  <p class="viz-fp-sub">
+                    Det er <strong>5 %</strong> mer enn forrige måned.
+                    <a href="#" style="color:var(--text-action);text-decoration:none;display:inline-flex;align-items:center;gap:2px;">Mulige årsaker ✦</a>
+                  </p>
+                  <div class="viz-color-bar">
+                    <div style="flex:50;background:var(--action-primary-rest);"></div>
+                    <div style="flex:24;background:#ffbacd;"></div>
+                  </div>
+                  <div class="viz-bar-legend">
+                    <div class="viz-bar-legend-item">
+                      <span class="viz-legend-dot" style="background:var(--action-primary-rest);"></span>
+                      Korttidsfravær <span class="viz-bar-legend-pct">68 %</span>
+                    </div>
+                    <div class="viz-bar-legend-item">
+                      <span class="viz-legend-dot" style="background:#ffbacd;"></span>
+                      Langtidsfravær <span class="viz-bar-legend-pct">32 %</span>
+                    </div>
+                  </div>
+                </div>
+              </div><!-- /viz-right-bottom -->
+
+            </div><!-- /viz-cols -->
+          </div><!-- /view-viz -->
+
+          <!-- View: Fravær per ansatt -->
+          <div id="view-ansatte" style="display:none;">
+            <table class="tx-table table-standard" style="table-layout:auto;">
+              <thead>
+                <tr>
+                  <th>Ansatt</th>
+                  <th>Egenmelding</th>
+                  <th>Omsorgsdager</th>
+                  <th>Sykemeldt</th>
+                  <th>Permisjon</th>
+                  <th>Alt fravær</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials">IR</span>Ingrid Reigstad</div></td>
+                  <td>0/4 perioder og 0/12 dager</td>
+                  <td>2/10</td>
+                  <td>2 dager</td>
+                  <td>0 dager</td>
+                  <td>2 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#B3D9F5;">KL</span>Kari Laurstad</div></td>
+                  <td>3/4 perioder og 8/12 dager</td>
+                  <td>–</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#B3D9F5;">MJ</span>Martin Johnsen</div></td>
+                  <td>2/4 perioder og 4/12 dager</td>
+                  <td>–</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#F5D0B3;">JJ</span>Jeanette Johnsrud</div></td>
+                  <td>1/4 perioder og 3/12 dager</td>
+                  <td>3/10</td>
+                  <td>3 dager</td>
+                  <td>30 dager</td>
+                  <td>30 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#DCEDC8;">OP</span>Olav Pedersen</div></td>
+                  <td>0/4 perioder og 0/12 dager</td>
+                  <td>–</td>
+                  <td>5 dager</td>
+                  <td>0 dager</td>
+                  <td>5 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#FFE0B2;">KH</span>Kari Hansen</div></td>
+                  <td>1/4 perioder og 2/12 dager</td>
+                  <td>–</td>
+                  <td>10 dager</td>
+                  <td>0 dager</td>
+                  <td>11 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#B2DFDB;">TN</span>Turid Nilsen</div></td>
+                  <td>0/4 perioder og 0/12 dager</td>
+                  <td>2/10</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                  <td>2 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#F8BBD9;">SB</span>Silje Berg</div></td>
+                  <td>2/4 perioder og 3/12 dager</td>
+                  <td>–</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                  <td>3 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#CFD8DC;">EA</span>Erik Andersen</div></td>
+                  <td>0/4 perioder og 0/12 dager</td>
+                  <td>–</td>
+                  <td>15 dager</td>
+                  <td>0 dager</td>
+                  <td>15 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#E1BEE7;">LM</span>Lena Moe</div></td>
+                  <td>1/4 perioder og 2/12 dager</td>
+                  <td>4/10</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                  <td>6 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#BBDEFB;">PK</span>Petter Kristiansen</div></td>
+                  <td>0/4 perioder og 0/12 dager</td>
+                  <td>–</td>
+                  <td>0 dager</td>
+                  <td>20 dager</td>
+                  <td>20 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#DCEDC8;">HV</span>Hanne Vold</div></td>
+                  <td>3/4 perioder og 4/12 dager</td>
+                  <td>–</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                  <td>4 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#FCE4EC;">AS</span>Anders Sørensen</div></td>
+                  <td>0/4 perioder og 0/12 dager</td>
+                  <td>1/10</td>
+                  <td>7 dager</td>
+                  <td>0 dager</td>
+                  <td>8 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#E8F5E9;">MB</span>Mari Bakke</div></td>
+                  <td>1/4 perioder og 1/12 dager</td>
+                  <td>–</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                  <td>1 dag</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#FFF9C4;">TL</span>Thomas Lie</div></td>
+                  <td>2/4 perioder og 5/12 dager</td>
+                  <td>–</td>
+                  <td>3 dager</td>
+                  <td>0 dager</td>
+                  <td>8 dager</td>
+                </tr>
+                <tr>
+                  <td><div class="td-employee"><span class="emp-initials" style="background:#F3E5F5;">RH</span>Randi Holm</div></td>
+                  <td>0/4 perioder og 0/12 dager</td>
+                  <td>3/10</td>
+                  <td>0 dager</td>
+                  <td>0 dager</td>
+                  <td>3 dager</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td>Sum / 17 ansatte</td>
+                  <td>16 perioder og 32 dager</td>
+                  <td>15/80</td>
+                  <td>43 dager</td>
+                  <td>50 dager</td>
+                  <td>118 dager</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+        </div><!-- /table-container -->
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- Modal: Antall fraværsdager (23 ansatte) -->
+<div class="modal-overlay" id="modal-fravaersdager" onclick="lukkModalVedKlikk(event, this)">
+  <div class="modal">
+    <div class="modal-header">
+      <p class="modal-title">Antall fraværsdager</p>
+      <p class="modal-subtitle">52 dager fordelt på 23 ansatte</p>
+    </div>
+    <button class="modal-close-btn" onclick="lukkModal('modal-fravaersdager')" title="Lukk">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-slot">
+      <div class="modal-table-wrap">
+        <div class="modal-search-bar">
+          <div class="modal-search-input-wrap">
+            <input class="input" type="search" placeholder="Søk...">
+            <svg class="modal-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Ansatt <svg style="width:12px;height:12px;vertical-align:middle;margin-left:2px;" viewBox="0 0 12 12" fill="none"><path d="M6 9V3M3 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></th>
+              <th class="col-right">Fraværsdager <svg style="width:12px;height:12px;vertical-align:middle;margin-left:2px;" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4M8 2l-4 4 4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/></svg></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar">IR</span>Ingrid Reigstad</div></td><td class="col-right">1</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#B3D9F5;">KL</span>Kari Laurstad</div></td><td class="col-right">10</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#B3D9F5;">MJ</span>Martin Johnsen</div></td><td class="col-right">2</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#F5D0B3;">JJ</span>Jeanette Johnsrud</div></td><td class="col-right">2</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#DCEDC8;">OP</span>Olav Pedersen</div></td><td class="col-right">1</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#E1BEE7;">JP</span>Jens Pettersen</div></td><td class="col-right">3</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#FFE0B2;">KH</span>Kari Hansen</div></td><td class="col-right">11</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#B2DFDB;">TN</span>Turid Nilsen</div></td><td class="col-right">2</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#F8BBD9;">SB</span>Silje Berg</div></td><td class="col-right">3</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#CFD8DC;">EA</span>Erik Andersen</div></td><td class="col-right">15</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#BBDEFB;">PK</span>Petter Kristiansen</div></td><td class="col-right">2</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="lukkModal('modal-fravaersdager')">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ansatte nær fraværskvoter (11 ansatte) -->
+<div class="modal-overlay" id="modal-naer-kvote" onclick="lukkModalVedKlikk(event, this)">
+  <div class="modal">
+    <div class="modal-header">
+      <p class="modal-title">Ansatte nær fraværskvoter</p>
+      <div class="modal-status">
+        <span class="modal-status-dot" style="background:var(--surface-warning-active);"></span>
+        11 ansatte
+      </div>
+    </div>
+    <button class="modal-close-btn" onclick="lukkModal('modal-naer-kvote')" title="Lukk">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-slot">
+      <div class="modal-table-wrap">
+        <div class="modal-search-bar">
+          <div class="modal-search-input-wrap">
+            <input class="input" type="search" placeholder="Søk...">
+            <svg class="modal-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Ansatt <svg style="width:12px;height:12px;vertical-align:middle;margin-left:2px;" viewBox="0 0 12 12" fill="none"><path d="M6 9V3M3 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></th>
+              <th>Egenmeldingskvote</th>
+              <th>Omsorgsdager kvote</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar">IR</span>Ingrid Reigstad</div></td><td>1/4 perioder og 3/12 dager</td><td>–</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#B3D9F5;">KL</span>Kari Laurstad</div></td><td class="col-bold">3/4 perioder og 8/12 dager</td><td>–</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#B3D9F5;">MJ</span>Martin Johnsen</div></td><td class="col-bold">3/4 perioder og 8/12 dager</td><td>–</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#F5D0B3;">JJ</span>Jeanette Johnsrud</div></td><td class="col-bold">3/4 perioder og 7/12 dager</td><td>2/10</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#DCEDC8;">OP</span>Olav Pedersen</div></td><td class="col-bold">3/4 perioder og 9/12 dager</td><td>1/10</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#E1BEE7;">JP</span>Jens Pettersen</div></td><td class="col-bold">3/4 perioder og 9/12 dager</td><td>–</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#FFE0B2;">KH</span>Kari Hansen</div></td><td class="col-bold">3/4 perioder og 10/12 dager</td><td>–</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#B2DFDB;">TN</span>Turid Nilsen</div></td><td class="col-bold">2/4 perioder og 8/12 dager</td><td>3/10</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="lukkModal('modal-naer-kvote')">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ansatte over fraværskvoter (3 ansatte) -->
+<div class="modal-overlay" id="modal-over-kvote" onclick="lukkModalVedKlikk(event, this)">
+  <div class="modal">
+    <div class="modal-header">
+      <p class="modal-title">Ansatte over fraværskvoter</p>
+      <div class="modal-status">
+        <span class="modal-status-dot" style="background:var(--surface-error-active);"></span>
+        3 ansatte
+      </div>
+    </div>
+    <button class="modal-close-btn" onclick="lukkModal('modal-over-kvote')" title="Lukk">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+    <div class="modal-slot">
+      <div class="modal-table-wrap">
+        <div class="modal-search-bar">
+          <div class="modal-search-input-wrap">
+            <input class="input" type="search" placeholder="Søk...">
+            <svg class="modal-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Ansatt <svg style="width:12px;height:12px;vertical-align:middle;margin-left:2px;" viewBox="0 0 12 12" fill="none"><path d="M6 9V3M3 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></th>
+              <th>Egenmeldingskvote</th>
+              <th>Omsorgsdager kvote</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar">IR</span>Ingrid Reigstad</div></td><td>1/4 perioder og 3/12 dager</td><td class="col-bold">9/10</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#B3D9F5;">KL</span>Kari Laurstad</div></td><td class="col-bold">3/4 perioder og 8/12 dager</td><td>–</td></tr>
+            <tr><td><div class="modal-emp-cell"><span class="modal-avatar" style="background:#B3D9F5;">MJ</span>Martin Johnsen</div></td><td class="col-bold">3/4 perioder og 8/12 dager</td><td>–</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="lukkModal('modal-over-kvote')">Lukk</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function byttTab(btn, visId) {
+    document.querySelectorAll('.tx-tab').forEach(b => b.classList.remove('tx-tab--active'));
+    btn.classList.add('tx-tab--active');
+    ['view-viz', 'view-ansatte'].forEach(id => {
+      document.getElementById(id).style.display = id === visId ? '' : 'none';
+    });
+  }
+
+  function toggleFilterPanel() {
+    const panel = document.getElementById('filter-panel');
+    const btn = document.getElementById('filter-toggle-btn');
+    const isOpen = panel.classList.toggle('is-open');
+    btn.classList.toggle('btn-secondary', !isOpen);
+    btn.classList.toggle('btn-primary', isOpen);
+  }
+  function toggleSavedFilters() {
+    const chips = document.getElementById('saved-filters-chips');
+    const chevron = document.getElementById('saved-filters-chevron');
+    const hidden = chips.style.display === 'none';
+    chips.style.display = hidden ? '' : 'none';
+    chevron.classList.toggle('is-collapsed', !hidden);
+  }
+  document.addEventListener('click', e => {
+    const panel = document.getElementById('filter-panel');
+    const wrap = document.querySelector('.filter-btn-wrap');
+    if (panel && panel.classList.contains('is-open') && wrap && !wrap.contains(e.target)) {
+      panel.classList.remove('is-open');
+      document.getElementById('filter-toggle-btn').classList.replace('btn-primary', 'btn-secondary');
+    }
+  });
+
+  function åpneModal(id) {
+    document.getElementById(id).classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function lukkModal(id) {
+    document.getElementById(id).classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+  function lukkModalVedKlikk(event, overlay) {
+    if (event.target === overlay) lukkModal(overlay.id);
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.is-open').forEach(m => lukkModal(m.id));
+    }
+  });
+</script>
+</body>
+</html>

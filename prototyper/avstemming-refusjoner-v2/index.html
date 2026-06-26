@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avstemming av refusjoner (oversikt-først) – Tripletex</title>
+  <link rel="stylesheet" href="https://cdn.tripletex.no/google-fonts/rubik-400-500-800.css">
+  <link rel="stylesheet" href="../../_system/tokens.css">
+  <link rel="stylesheet" href="../../_system/components.css">
+  <link rel="stylesheet" href="../../_system/layout.css">
+  <style>
+    /* ── Prototype-velger (kun for sammenligning) ───────────────────── */
+    .proto-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-16);
+      flex-wrap: wrap;
+      padding: var(--space-12) var(--space-16);
+      margin-bottom: var(--space-16);
+      background: var(--surface-info-rest);
+      border: 1px solid var(--border-info);
+      border-radius: var(--radius-default);
+    }
+    .proto-bar-label {
+      font: 13px/1.4 "Rubik", sans-serif;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+    }
+    .proto-bar-label strong { font-weight: 500; color: var(--text-primary); }
+
+    /* ── Statusstripe (delt) ────────────────────────────────────────── */
+    .av-status {
+      display: flex;
+      gap: var(--space-32);
+      flex-wrap: wrap;
+      padding: var(--space-16) var(--space-20);
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      margin-bottom: var(--space-16);
+    }
+    .av-status-item { display: flex; flex-direction: column; gap: var(--space-4); }
+    .av-status-key { font: 12px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    .av-status-val {
+      font: 18px/1.2 "Rubik", sans-serif;
+      font-weight: 500;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+    }
+
+    /* ── Verktøylinje ───────────────────────────────────────────────── */
+    .av-toolbar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-12);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-16);
+    }
+    .av-toolbar .spacer { flex: 1; }
+
+    /* ── Tallformat ─────────────────────────────────────────────────── */
+    .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .num--neg { color: var(--surface-error-active); }
+    .num--ok  { color: var(--text-muted); }
+    .amt-strong { font-weight: 500; }
+    .sub { font: 12px/1.3 "Rubik", sans-serif; color: var(--text-muted); }
+
+    /* ── Variant-seksjoner ──────────────────────────────────────────── */
+    .av-variant { display: none; }
+    .av-variant--active { display: block; }
+    .av-section-title {
+      font: 15px/1.3 "Rubik", sans-serif;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin: 0 0 var(--space-12);
+    }
+    .av-section-hint {
+      font: 13px/1.5 "Rubik", sans-serif;
+      color: var(--text-muted);
+      margin: 0 0 var(--space-16);
+      max-width: 70ch;
+    }
+
+    /* ── VARIANT A: månedskort ──────────────────────────────────────── */
+    .month-cards { display: flex; flex-direction: column; gap: var(--space-12); }
+    .month-card {
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      background: var(--surface-default);
+      overflow: hidden;
+    }
+    .month-card--attention { border-color: var(--border-warning); }
+    .month-card--done { border-color: var(--border-success); }
+    .month-card-main {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr 1fr 0.8fr auto;
+      align-items: center;
+      gap: var(--space-16);
+      padding: var(--space-16) var(--space-20);
+    }
+    .mc-head { display: flex; flex-direction: column; gap: var(--space-4); }
+    .mc-title {
+      font: 16px/1.2 "Rubik", sans-serif;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .mc-metric { display: flex; flex-direction: column; gap: var(--space-2); }
+    .mc-metric-key { font: 12px/1.3 "Rubik", sans-serif; color: var(--text-muted); }
+    .mc-metric-val { font: 15px/1.2 "Rubik", sans-serif; color: var(--text-primary); }
+    .mc-actions { display: flex; align-items: center; gap: var(--space-8); justify-content: flex-end; }
+
+    /* drilldown-panel */
+    .mc-detail {
+      border-top: 1px solid var(--border-muted);
+      background: var(--surface-background);
+      padding: var(--space-16) var(--space-20) var(--space-20);
+      display: none;
+    }
+    .mc-detail--open { display: block; }
+    .mc-detail-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-12);
+      margin-bottom: var(--space-12);
+      flex-wrap: wrap;
+    }
+    .mc-detail-bar h4 {
+      font: 14px/1.3 "Rubik", sans-serif;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    /* delt detalj-tabell */
+    .detail-table-wrap {
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      overflow: hidden;
+      background: var(--surface-default);
+    }
+    .av-note td {
+      background: var(--surface-warning-rest);
+      padding: var(--space-8) var(--space-16);
+    }
+    .av-note-inner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      font: 13px/1.4 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .av-note-inner svg { flex-shrink: 0; color: var(--surface-warning-active); }
+
+    /* sticky avstem-footer */
+    .avstem-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-16);
+      flex-wrap: wrap;
+      padding: var(--space-16) var(--space-20);
+      margin-top: var(--space-16);
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+    }
+    .avstem-footer-sum { display: flex; flex-direction: column; gap: var(--space-2); }
+    .avstem-footer-sum .k { font: 12px/1.3 "Rubik", sans-serif; color: var(--text-muted); }
+    .avstem-footer-sum .v {
+      font: 18px/1.2 "Rubik", sans-serif; font-weight: 500; color: var(--text-primary);
+    }
+
+    /* ── VARIANT B: ekspanderbar tabell ─────────────────────────────── */
+    .exp-row { cursor: pointer; }
+    .exp-row td { vertical-align: middle; }
+    .exp-caret {
+      display: inline-flex;
+      transition: transform 0.15s;
+      color: var(--text-muted);
+      margin-right: var(--space-8);
+    }
+    .exp-row--open .exp-caret { transform: rotate(90deg); }
+    .exp-detail-row td { padding: 0; background: var(--surface-background); }
+    .exp-detail-inner { display: none; padding: var(--space-16) var(--space-20); }
+    .exp-detail-row--open .exp-detail-inner { display: block; }
+
+    /* ── VARIANT C: master-detail ───────────────────────────────────── */
+    .md-split { display: flex; gap: var(--space-16); align-items: flex-start; }
+    .md-list {
+      width: 320px;
+      flex-shrink: 0;
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      background: var(--surface-default);
+      overflow: hidden;
+    }
+    .md-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      padding: var(--space-12) var(--space-16);
+      border-bottom: 1px solid var(--border-faint);
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    .md-item:last-child { border-bottom: none; }
+    .md-item:hover { background: var(--surface-info-rest); }
+    .md-item--active {
+      background: var(--surface-info-rest);
+      border-left-color: var(--action-primary-rest);
+    }
+    .md-item-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-8); }
+    .md-item-title { font: 14px/1.2 "Rubik", sans-serif; font-weight: 500; color: var(--text-primary); }
+    .md-item-sub { display: flex; align-items: center; gap: var(--space-12); }
+    .md-detail { flex: 1; min-width: 0; }
+    .md-detail-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-16);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-16);
+    }
+    .md-detail-head h3 {
+      font: 18px/1.2 "Rubik", sans-serif; font-weight: 500; color: var(--text-primary); margin: 0 0 var(--space-4);
+    }
+
+    .pill-amt { font-variant-numeric: tabular-nums; }
+
+    /* ── VARIANT D: periode + status (Tripletex-mønster) ─────────────── */
+    .period-picker {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-12);
+      padding: var(--space-16) var(--space-20) 0;
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-bottom: none;
+      border-radius: var(--radius-default) var(--radius-default) 0 0;
+    }
+    .period-picker-top { display: flex; align-items: center; gap: var(--space-12); }
+    .period-picker-top .lbl { font: 14px/1 "Rubik", sans-serif; font-weight: 500; color: var(--text-primary); }
+    .year-select { width: 110px; }
+    .month-tabs {
+      display: flex;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border-muted);
+    }
+    .month-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-8) var(--space-12);
+      font: 14px/1 "Rubik", sans-serif;
+      color: var(--text-primary);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .month-tab:hover { color: var(--action-primary-rest); }
+    .month-tab--active { color: var(--action-primary-rest); border-bottom-color: var(--action-primary-rest); }
+    .month-tab-icon { color: var(--text-muted); display: inline-flex; }
+    .month-tab--active .month-tab-icon { color: var(--action-primary-rest); }
+
+    .av-d-toolbar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      flex-wrap: wrap;
+      padding: var(--space-12) var(--space-20);
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-top: none;
+      border-bottom: none;
+    }
+    .av-d-toolbar .spacer { flex: 1; }
+    .filterbtn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-4);
+      height: var(--size-large);
+      padding: 0 var(--space-12);
+      font: 14px/1 "Rubik", sans-serif;
+      color: var(--text-primary);
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .filterbtn:hover { border-color: var(--border-hover); }
+    .filterbtn--active { border-color: var(--action-primary-rest); color: var(--action-primary-rest); }
+    .filterbtn .cnt { color: var(--text-muted); }
+    .filterbtn--active .cnt { color: var(--action-primary-rest); }
+    .addbtn {
+      height: var(--size-large);
+      padding: 0 var(--space-12);
+      font: 14px/1 "Rubik", sans-serif;
+      color: var(--text-action);
+      background: var(--surface-info-rest);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      cursor: pointer;
+    }
+
+    .av-d-wrap { border: 1px solid var(--border-muted); border-radius: 0 0 var(--radius-default) var(--radius-default); overflow: hidden; }
+    .av-d-table { width: 100%; }
+    .grp-row td {
+      background: var(--surface-info-rest);
+      padding: var(--space-12) var(--space-16);
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .grp-caret { display: inline-flex; margin-right: var(--space-8); color: var(--text-muted); cursor: pointer; }
+
+    /* status-knapp m/ dropdown */
+    .status-select { position: relative; display: inline-block; }
+    .status-select-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-8);
+      height: var(--size-medium);
+      padding: 0 var(--space-8);
+      font: 13px/1 "Rubik", sans-serif;
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+    .status-select-btn .dot { display: inline-flex; }
+    .status-select-btn.is-avstemt .dot,
+    .status-select-btn.is-kontrollert .dot { color: var(--surface-success-active); }
+    .status-select-btn.is-avvik .dot { color: var(--surface-warning-active); }
+    .status-select-btn.is-ikke .dot { color: var(--text-muted); }
+    .status-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 230px;
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      padding: var(--space-4);
+      z-index: 20;
+      display: none;
+    }
+    .status-menu--open { display: block; }
+    .status-menu-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-8);
+      padding: var(--space-8) var(--space-8);
+      border-radius: var(--radius-default);
+      font: 13px/1.3 "Rubik", sans-serif;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .status-menu-item:hover { background: var(--surface-info-rest); }
+    .status-menu-item .mi-sub { color: var(--text-muted); font-size: 12px; }
+    .status-menu-sep { height: 1px; background: var(--border-faint); margin: var(--space-4) 0; }
+
+    /* rad-handlinger */
+    .row-actions { display: inline-flex; align-items: center; gap: var(--space-4); }
+    .iconbtn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--size-medium);
+      height: var(--size-medium);
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-default);
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .iconbtn:hover { background: var(--action-neutral-hover); color: var(--text-primary); }
+    .iconbtn .badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      min-width: 15px;
+      height: 15px;
+      padding: 0 var(--space-2);
+      border-radius: var(--radius-full);
+      background: var(--action-primary-rest);
+      color: var(--text-on-action);
+      font: 10px/15px "Rubik", sans-serif;
+      text-align: center;
+    }
+    .ignored-note {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-4);
+      font: 11px/1.3 "Rubik", sans-serif;
+      color: var(--text-muted);
+      margin-top: var(--space-2);
+    }
+
+    /* inline kommentar-editor */
+    .comment-row td { background: var(--surface-background); padding: 0; }
+    .comment-row.is-open .comment-inner { display: block; }
+    .comment-inner { display: none; padding: var(--space-12) var(--space-16) var(--space-16); }
+    .comment-inner .lbl { font: 12px/1.4 "Rubik", sans-serif; color: var(--text-muted); margin-bottom: var(--space-4); display: block; }
+    .comment-actions { display: flex; gap: var(--space-8); margin-top: var(--space-8); }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- TOPBAR -->
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <button class="topbar-icon-btn" title="Meny">
+        <svg viewBox="0 0 16 16" fill="none"><rect y="2.5" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="7" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="11.5" width="16" height="1.5" rx="0.75" fill="currentColor"/></svg>
+      </button>
+      <span class="topbar-logo">tripletex</span>
+      <span class="topbar-sep"></span>
+      <div class="topbar-company">
+        <span class="topbar-company-badge">T</span>
+        <span class="topbar-company-name">Tripletex AS</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-search">
+        <svg viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 9.5L12.5 12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Søk
+      </div>
+      <button class="topbar-assistant">Assistent ✦</button>
+      <button class="topbar-icon-btn" title="Favoritter"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5 3.7.5-2.7 2.6.6 3.7L8 10.5l-3.1 1.8.6-3.7L3 5.5l3.7-.5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Last ned"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5v7M5.5 7l2.5 3 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Varsler"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5A4.5 4.5 0 003.5 6v3L2 11h12l-1.5-2V6A4.5 4.5 0 008 1.5z" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 11.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.3"/></svg></button>
+      <button class="topbar-icon-btn" title="Meldinger"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 13.5l1.5-2h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Hjelp"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 6.5a2 2 0 114 0c0 1.5-2 1.5-2 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Kunngjøringer"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8V5a5 5 0 0110 0v3" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 8h13v1a2 2 0 01-2 2h-9a2 2 0 01-2-2V8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+      <button class="topbar-icon-btn" title="Rapporter"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4M6 9h4M6 11.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+      <button class="topbar-user-btn" title="Bruker"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a class="nav-item" href="#"><span class="nav-icon" style="color:var(--surface-warning-active);"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.6 3.6 3.9.6-2.8 2.7.7 3.9L8 10.5l-3.4 1.8.7-3.9L2.5 5.7l3.9-.6L8 1.5z"/></svg></span>Favoritter</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5l6-5 6 5V14H10.5v-4h-5v4H2V7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Hjem</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Timeliste</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8.5L2 13l1.5-4.5L2 4l11.5 4.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Reiser og utlegg</a>
+      <div class="nav-item nav-item--active"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8h6M5 5.5h4M5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Fravær og ferie</div>
+      <a class="nav-sub" href="../absence-v1/fravaersoversikt.html"><span class="nav-bullet"></span>Fraværsoversikt</a>
+      <a class="nav-sub nav-sub--active" href="#"><span class="nav-bullet"></span>Avstemming av refusjoner</a>
+      <a class="nav-sub" href="../absence-v1/inntektsmeldinger.html"><span class="nav-bullet"></span>Inntektsmeldinger</a>
+      <a class="nav-sub" href="../absence-v1/statistikk.html"><span class="nav-bullet"></span>Statistikk</a>
+      <a class="nav-sub" href="../absence-v1/ssb-rapporter.html"><span class="nav-bullet"></span>SSB-rapporter</a>
+      <a class="nav-sub" href="../absence-v1/innstillinger.html"><span class="nav-bullet"></span>Innstillinger</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 2h10v13l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 7h5M5.5 9.5h5M5.5 5h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Faktura</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 2v3H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Bilag</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M4 7V5M8 7V5M12 7V5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 5h13l-6.5-3L1.5 5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Bank</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg></span>Regnskap</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12V8M7 12V5M11 12V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Rapporter</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="4.5" width="12" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.5v1M6.5 8.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Lønn</a>
+      <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2L2.5 5v6L8 14l5.5-3V5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 2v12M2.5 5L8 8l5.5-3" stroke="currentColor" stroke-width="1.3"/></svg></span>Prosjekt</a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="page">
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+          <h1 class="page-title" style="font-weight:400;">Avstemming av refusjoner</h1>
+        </div>
+        <p class="av-section-hint">Refusjoner vises fortløpende ettersom du mottar oppgjørsrapporter fra NAV. Avstemmingen er gruppert på oppgjørsmåneden refusjonen kom inn — du gjennomgår detaljene og avstemmer hele månedssummen samlet.</p>
+
+        <!-- PROTOTYPE-VELGER -->
+        <div class="proto-bar">
+          <span class="proto-bar-label">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="4.75" r="0.75" fill="currentColor"/></svg>
+            <strong>Prototype:</strong> tre oppsett for oversikt-først. Velg for å sammenligne →
+          </span>
+          <div class="switcher" id="variantSwitcher">
+            <button class="switcher-btn switcher-btn--active" data-variant="a">A · Månedskort</button>
+            <button class="switcher-btn" data-variant="b">B · Ekspanderbar tabell</button>
+            <button class="switcher-btn" data-variant="c">C · Master-detalj</button>
+            <button class="switcher-btn" data-variant="d">D · Periode + status</button>
+          </div>
+        </div>
+
+        <!-- DELT STATUSSTRIPE -->
+        <div class="av-status">
+          <div class="av-status-item">
+            <span class="av-status-key">Oppgjørsmåneder å avstemme</span>
+            <span class="av-status-val">3 <span class="sub">av 12 i 2026</span></span>
+          </div>
+          <div class="av-status-item">
+            <span class="av-status-key">Refusjoner mottatt</span>
+            <span class="av-status-val">40<span class="sub">/56</span></span>
+          </div>
+          <div class="av-status-item">
+            <span class="av-status-key">Avvik</span>
+            <span class="av-status-val"><span class="status-dot status-dot--warning">3 avvik</span></span>
+          </div>
+          <div class="av-status-item">
+            <span class="av-status-key">Avstemt</span>
+            <span class="av-status-val">1<span class="sub">/3 måneder</span></span>
+          </div>
+        </div>
+
+        <!-- ════════════ VARIANT A: MÅNEDSKORT ════════════ -->
+        <section class="av-variant av-variant--active" data-variant="a">
+          <h2 class="av-section-title">Variant A — Månedskort med drilldown</h2>
+          <p class="av-section-hint">Hver oppgjørsmåned er et kort med nøkkeltall. Måneder med avvik flyter til toppen. «Se detaljer» åpner linjene inline, og du avstemmer hele måneden når summen stemmer.</p>
+
+          <div class="av-toolbar">
+            <button class="btn btn-secondary">Filter
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+            <div class="input-search-wrap">
+              <input class="input" type="search" placeholder="Søk ansatt eller måned...">
+              <svg class="input-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div class="switcher">
+              <button class="switcher-btn switcher-btn--active">Alle</button>
+              <button class="switcher-btn">Med avvik</button>
+            </div>
+            <div class="spacer"></div>
+            <span class="toggle-wrap sub">Vis ferdig avstemte</span>
+          </div>
+
+          <div class="month-cards">
+
+            <!-- Juni — avvik, ikke avstemt -->
+            <div class="month-card month-card--attention">
+              <div class="month-card-main">
+                <div class="mc-head">
+                  <span class="mc-title">Juni 2026</span>
+                  <span class="status-dot status-dot--warning">2 avvik · ikke avstemt</span>
+                  <span class="sub">Oppgjør mottatt 1.6.26 · inkl. feriepenger</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Forventet refusjon</span>
+                  <span class="mc-metric-val num">156 000,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Mottatt fra NAV</span>
+                  <span class="mc-metric-val num">154 980,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Differanse</span>
+                  <span class="mc-metric-val num num--neg amt-strong">−1 020,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Ansatte</span>
+                  <span class="mc-metric-val">8</span>
+                </div>
+                <div class="mc-actions">
+                  <button class="btn btn-ghost" onclick="toggleDetail('juni')">Se detaljer</button>
+                  <button class="btn btn-secondary" disabled title="Avklar avvik først">Avstem måneden</button>
+                </div>
+              </div>
+
+              <!-- Drilldown -->
+              <div class="mc-detail mc-detail--open" id="detail-juni">
+                <div class="mc-detail-bar">
+                  <h4>Refusjonslinjer · Juni 2026</h4>
+                  <span class="sub">2 av 8 linjer har avvik mot forventet</span>
+                </div>
+                <div class="detail-table-wrap">
+                  <table class="tx-table table-standard">
+                    <thead>
+                      <tr>
+                        <th>Ansatt</th>
+                        <th>Ytelse</th>
+                        <th>Periode</th>
+                        <th class="col-num">Forventet</th>
+                        <th class="col-num">Mottatt fra NAV</th>
+                        <th class="col-num">Differanse</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><span class="td-name">Ingrid Reigstad</span></td>
+                        <td>Foreldrepenger fødsel</td>
+                        <td class="col-muted">01.05–31.05</td>
+                        <td class="col-num">22 000,00</td>
+                        <td class="col-num">22 000,00</td>
+                        <td class="col-num num--ok">0,00</td>
+                        <td><span class="status-dot status-dot--success">Stemmer</span></td>
+                      </tr>
+                      <tr>
+                        <td><span class="td-name">Anders Vik</span></td>
+                        <td>Sykepenger</td>
+                        <td class="col-muted">01.05–31.05</td>
+                        <td class="col-num">31 500,00</td>
+                        <td class="col-num">31 480,00</td>
+                        <td class="col-num num--neg">−20,00</td>
+                        <td><span class="status-dot status-dot--warning">Avvik</span></td>
+                      </tr>
+                      <tr class="av-note">
+                        <td colspan="7">
+                          <span class="av-note-inner">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="15.5" r="0.75" fill="currentColor"/></svg>
+                            Differanse på −20,00 mellom forventet refusjon og mottatt fra NAV. <a href="#">Se utregning</a>
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="td-name">Mari Olsen</span></td>
+                        <td>Sykepenger</td>
+                        <td class="col-muted">01.05–31.05</td>
+                        <td class="col-num">28 000,00</td>
+                        <td class="col-num">28 000,00</td>
+                        <td class="col-num num--ok">0,00</td>
+                        <td><span class="status-dot status-dot--success">Stemmer</span></td>
+                      </tr>
+                      <tr>
+                        <td><span class="td-name">Kjell Berg</span></td>
+                        <td>Foreldrepenger fødsel</td>
+                        <td class="col-muted">01.05–31.05</td>
+                        <td class="col-num">25 000,00</td>
+                        <td class="col-num">25 000,00</td>
+                        <td class="col-num num--ok">0,00</td>
+                        <td><span class="status-dot status-dot--success">Stemmer</span></td>
+                      </tr>
+                      <tr>
+                        <td><span class="td-name">Lise Hansen</span></td>
+                        <td>Svangerskapspenger</td>
+                        <td class="col-muted">01.05–31.05</td>
+                        <td class="col-num">12 000,00</td>
+                        <td class="col-num">12 000,00</td>
+                        <td class="col-num num--ok">0,00</td>
+                        <td><span class="status-dot status-dot--success">Stemmer</span></td>
+                      </tr>
+                      <tr>
+                        <td><span class="td-name">Per Strand</span></td>
+                        <td>Sykepenger</td>
+                        <td class="col-muted">01.05–31.05</td>
+                        <td class="col-num">19 000,00</td>
+                        <td class="col-num">18 000,00</td>
+                        <td class="col-num num--neg">−1 000,00</td>
+                        <td><span class="status-dot status-dot--warning">Avvik</span></td>
+                      </tr>
+                      <tr class="av-note">
+                        <td colspan="7">
+                          <span class="av-note-inner">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="15.5" r="0.75" fill="currentColor"/></svg>
+                            NAV har redusert refusjonen med 1 000,00. Sjekk om virksomheten har mottatt brev fra NAV. <a href="#">Se utregning</a>
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><span class="td-name">Nina Dal</span></td>
+                        <td>Pleiepenger</td>
+                        <td class="col-muted">01.05–31.05</td>
+                        <td class="col-num">9 500,00</td>
+                        <td class="col-num">9 500,00</td>
+                        <td class="col-num num--ok">0,00</td>
+                        <td><span class="status-dot status-dot--success">Stemmer</span></td>
+                      </tr>
+                      <tr>
+                        <td><span class="td-name">Tom Ek</span></td>
+                        <td>Sykepenger · feriepenger</td>
+                        <td class="col-muted">01.05–31.05</td>
+                        <td class="col-num">9 000,00</td>
+                        <td class="col-num">9 000,00</td>
+                        <td class="col-num num--ok">0,00</td>
+                        <td><span class="status-dot status-dot--success">Stemmer</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="avstem-footer">
+                  <div class="avstem-footer-sum">
+                    <span class="k">Sum forventet 156 000,00 · mottatt 154 980,00</span>
+                    <span class="v num num--neg">Differanse −1 020,00</span>
+                  </div>
+                  <div class="mc-actions">
+                    <button class="btn btn-ghost">Marker avvik som forklart</button>
+                    <button class="btn btn-primary" disabled title="Avklar de 2 avvikene først">Avstem hele måneden</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- April — delvis avstemt -->
+            <div class="month-card">
+              <div class="month-card-main">
+                <div class="mc-head">
+                  <span class="mc-title">April 2026</span>
+                  <span class="status-dot status-dot--info">Delvis avstemt</span>
+                  <span class="sub">Oppgjør mottatt 1.4.26</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Forventet refusjon</span>
+                  <span class="mc-metric-val num">138 500,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Mottatt fra NAV</span>
+                  <span class="mc-metric-val num">138 480,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Differanse</span>
+                  <span class="mc-metric-val num num--neg amt-strong">−20,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Ansatte</span>
+                  <span class="mc-metric-val">7</span>
+                </div>
+                <div class="mc-actions">
+                  <button class="btn btn-ghost" onclick="toggleDetail('april')">Se detaljer</button>
+                  <button class="btn btn-primary">Avstem måneden</button>
+                </div>
+              </div>
+              <div class="mc-detail" id="detail-april">
+                <p class="sub">Detaljer for April 2026 vises her — samme tabell som Juni.</p>
+              </div>
+            </div>
+
+            <!-- Mai — ferdig avstemt -->
+            <div class="month-card month-card--done">
+              <div class="month-card-main">
+                <div class="mc-head">
+                  <span class="mc-title">Mai 2026</span>
+                  <span class="status-dot status-dot--success">Ferdig avstemt</span>
+                  <span class="sub">Oppgjør mottatt 1.5.26 · avstemt 4.5.26</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Forventet refusjon</span>
+                  <span class="mc-metric-val num">142 000,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Mottatt fra NAV</span>
+                  <span class="mc-metric-val num">142 000,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Differanse</span>
+                  <span class="mc-metric-val num num--ok">0,00</span>
+                </div>
+                <div class="mc-metric">
+                  <span class="mc-metric-key">Ansatte</span>
+                  <span class="mc-metric-val">7</span>
+                </div>
+                <div class="mc-actions">
+                  <button class="btn btn-ghost" onclick="toggleDetail('mai')">Se detaljer</button>
+                  <span class="status-dot status-dot--success">Avstemt</span>
+                </div>
+              </div>
+              <div class="mc-detail" id="detail-mai">
+                <p class="sub">Detaljer for Mai 2026 vises her — alle linjer stemmer.</p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ════════════ VARIANT B: EKSPANDERBAR TABELL ════════════ -->
+        <section class="av-variant" data-variant="b">
+          <h2 class="av-section-title">Variant B — Ekspanderbar tabell</h2>
+          <p class="av-section-hint">Kompakt liste der hver rad er en oppgjørsmåned. Klikk en rad for å folde ut linjene inline. Tett oversikt når du har mange måneder å holde styr på.</p>
+
+          <div class="av-toolbar">
+            <button class="btn btn-secondary">Filter
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M9 15h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+            <div class="input-search-wrap">
+              <input class="input" type="search" placeholder="Søk...">
+              <svg class="input-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div class="switcher">
+              <button class="switcher-btn switcher-btn--active">Alle</button>
+              <button class="switcher-btn">Med avvik</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="tx-table table-standard">
+              <thead>
+                <tr>
+                  <th>Oppgjørsmåned</th>
+                  <th>Mottatt</th>
+                  <th class="col-num">Forventet</th>
+                  <th class="col-num">Mottatt fra NAV</th>
+                  <th class="col-num">Differanse</th>
+                  <th class="col-num">Ansatte</th>
+                  <th>Avvik</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Juni -->
+                <tr class="exp-row exp-row--open" onclick="toggleExp(this)">
+                  <td>
+                    <span class="exp-caret"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="td-name">Juni 2026</span>
+                  </td>
+                  <td class="col-muted">1.6.26</td>
+                  <td class="col-num">156 000,00</td>
+                  <td class="col-num">154 980,00</td>
+                  <td class="col-num num--neg">−1 020,00</td>
+                  <td class="col-num">8</td>
+                  <td><span class="status-dot status-dot--warning">2</span></td>
+                  <td><span class="status-dot status-dot--warning">Ikke avstemt</span></td>
+                  <td><button class="btn btn-secondary" onclick="event.stopPropagation()" disabled>Avstem</button></td>
+                </tr>
+                <tr class="exp-detail-row exp-detail-row--open">
+                  <td colspan="9">
+                    <div class="exp-detail-inner">
+                      <div class="detail-table-wrap">
+                        <table class="tx-table table-compact">
+                          <thead>
+                            <tr>
+                              <th>Ansatt</th><th>Ytelse</th><th>Periode</th>
+                              <th class="col-num">Forventet</th><th class="col-num">Mottatt</th><th class="col-num">Differanse</th><th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr><td><span class="td-name">Ingrid Reigstad</span></td><td>Foreldrepenger fødsel</td><td class="col-muted">01.05–31.05</td><td class="col-num">22 000,00</td><td class="col-num">22 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                            <tr><td><span class="td-name">Anders Vik</span></td><td>Sykepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">31 500,00</td><td class="col-num">31 480,00</td><td class="col-num num--neg">−20,00</td><td><span class="status-dot status-dot--warning">Avvik</span></td></tr>
+                            <tr><td><span class="td-name">Mari Olsen</span></td><td>Sykepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">28 000,00</td><td class="col-num">28 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                            <tr><td><span class="td-name">Kjell Berg</span></td><td>Foreldrepenger fødsel</td><td class="col-muted">01.05–31.05</td><td class="col-num">25 000,00</td><td class="col-num">25 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                            <tr><td><span class="td-name">Lise Hansen</span></td><td>Svangerskapspenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">12 000,00</td><td class="col-num">12 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                            <tr><td><span class="td-name">Per Strand</span></td><td>Sykepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">19 000,00</td><td class="col-num">18 000,00</td><td class="col-num num--neg">−1 000,00</td><td><span class="status-dot status-dot--warning">Avvik</span></td></tr>
+                            <tr><td><span class="td-name">Nina Dal</span></td><td>Pleiepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">9 500,00</td><td class="col-num">9 500,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                            <tr><td><span class="td-name">Tom Ek</span></td><td>Sykepenger · feriepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">9 000,00</td><td class="col-num">9 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="avstem-footer">
+                        <div class="avstem-footer-sum">
+                          <span class="k">Sum forventet 156 000,00 · mottatt 154 980,00</span>
+                          <span class="v num num--neg">Differanse −1 020,00</span>
+                        </div>
+                        <button class="btn btn-primary" disabled title="Avklar de 2 avvikene først">Avstem hele måneden</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- April -->
+                <tr class="exp-row" onclick="toggleExp(this)">
+                  <td>
+                    <span class="exp-caret"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="td-name">April 2026</span>
+                  </td>
+                  <td class="col-muted">1.4.26</td>
+                  <td class="col-num">138 500,00</td>
+                  <td class="col-num">138 480,00</td>
+                  <td class="col-num num--neg">−20,00</td>
+                  <td class="col-num">7</td>
+                  <td><span class="status-dot status-dot--warning">1</span></td>
+                  <td><span class="status-dot status-dot--info">Delvis avstemt</span></td>
+                  <td><button class="btn btn-secondary" onclick="event.stopPropagation()">Avstem</button></td>
+                </tr>
+                <tr class="exp-detail-row">
+                  <td colspan="9"><div class="exp-detail-inner"><p class="sub">Detaljer for April 2026 …</p></div></td>
+                </tr>
+
+                <!-- Mai -->
+                <tr class="exp-row" onclick="toggleExp(this)">
+                  <td>
+                    <span class="exp-caret"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="td-name">Mai 2026</span>
+                  </td>
+                  <td class="col-muted">1.5.26</td>
+                  <td class="col-num">142 000,00</td>
+                  <td class="col-num">142 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td class="col-num">7</td>
+                  <td><span class="status-dot status-dot--success">0</span></td>
+                  <td><span class="status-dot status-dot--success">Ferdig avstemt</span></td>
+                  <td></td>
+                </tr>
+                <tr class="exp-detail-row">
+                  <td colspan="9"><div class="exp-detail-inner"><p class="sub">Detaljer for Mai 2026 — alle linjer stemmer.</p></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ════════════ VARIANT C: MASTER-DETALJ ════════════ -->
+        <section class="av-variant" data-variant="c">
+          <h2 class="av-section-title">Variant C — Master-detalj</h2>
+          <p class="av-section-hint">Månedene i venstre liste, valgt måned i detalj til høyre. Egner seg når man jobber seg systematisk gjennom én måned av gangen og vil ha detaljene godt synlige.</p>
+
+          <div class="md-split">
+            <!-- venstre liste -->
+            <div class="md-list" id="mdList">
+              <div class="md-item md-item--active" onclick="selectMonth(this)">
+                <div class="md-item-top">
+                  <span class="md-item-title">Juni 2026</span>
+                  <span class="num num--neg pill-amt">−1 020,00</span>
+                </div>
+                <div class="md-item-sub">
+                  <span class="status-dot status-dot--warning">2 avvik</span>
+                  <span class="sub">8 ansatte · mottatt 1.6.26</span>
+                </div>
+              </div>
+              <div class="md-item" onclick="selectMonth(this)">
+                <div class="md-item-top">
+                  <span class="md-item-title">April 2026</span>
+                  <span class="num num--neg pill-amt">−20,00</span>
+                </div>
+                <div class="md-item-sub">
+                  <span class="status-dot status-dot--info">Delvis avstemt</span>
+                  <span class="sub">7 ansatte</span>
+                </div>
+              </div>
+              <div class="md-item" onclick="selectMonth(this)">
+                <div class="md-item-top">
+                  <span class="md-item-title">Mai 2026</span>
+                  <span class="num num--ok pill-amt">0,00</span>
+                </div>
+                <div class="md-item-sub">
+                  <span class="status-dot status-dot--success">Ferdig avstemt</span>
+                  <span class="sub">7 ansatte</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- høyre detalj -->
+            <div class="md-detail">
+              <div class="md-detail-head">
+                <div>
+                  <h3>Juni 2026</h3>
+                  <span class="sub">Oppgjør mottatt fra NAV 1.6.26 · inkluderer feriepenger for fjoråret · 8 ansatte</span>
+                </div>
+                <a href="#" class="sub" style="color:var(--text-link);">Åpne oppgjørsrapport (PDF) →</a>
+              </div>
+
+              <div class="av-status" style="margin-bottom:var(--space-16);">
+                <div class="av-status-item"><span class="av-status-key">Forventet</span><span class="av-status-val num">156 000,00</span></div>
+                <div class="av-status-item"><span class="av-status-key">Mottatt fra NAV</span><span class="av-status-val num">154 980,00</span></div>
+                <div class="av-status-item"><span class="av-status-key">Differanse</span><span class="av-status-val num num--neg">−1 020,00</span></div>
+                <div class="av-status-item"><span class="av-status-key">Avvik</span><span class="av-status-val"><span class="status-dot status-dot--warning">2</span></span></div>
+              </div>
+
+              <div class="detail-table-wrap">
+                <table class="tx-table table-standard">
+                  <thead>
+                    <tr>
+                      <th>Ansatt</th><th>Ytelse</th><th>Periode</th>
+                      <th class="col-num">Forventet</th><th class="col-num">Mottatt fra NAV</th><th class="col-num">Differanse</th><th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><span class="td-name">Ingrid Reigstad</span></td><td>Foreldrepenger fødsel</td><td class="col-muted">01.05–31.05</td><td class="col-num">22 000,00</td><td class="col-num">22 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                    <tr><td><span class="td-name">Anders Vik</span></td><td>Sykepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">31 500,00</td><td class="col-num">31 480,00</td><td class="col-num num--neg">−20,00</td><td><span class="status-dot status-dot--warning">Avvik</span></td></tr>
+                    <tr class="av-note"><td colspan="7"><span class="av-note-inner"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="15.5" r="0.75" fill="currentColor"/></svg>Differanse på −20,00 mot forventet. <a href="#">Se utregning</a></span></td></tr>
+                    <tr><td><span class="td-name">Mari Olsen</span></td><td>Sykepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">28 000,00</td><td class="col-num">28 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                    <tr><td><span class="td-name">Kjell Berg</span></td><td>Foreldrepenger fødsel</td><td class="col-muted">01.05–31.05</td><td class="col-num">25 000,00</td><td class="col-num">25 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                    <tr><td><span class="td-name">Lise Hansen</span></td><td>Svangerskapspenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">12 000,00</td><td class="col-num">12 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                    <tr><td><span class="td-name">Per Strand</span></td><td>Sykepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">19 000,00</td><td class="col-num">18 000,00</td><td class="col-num num--neg">−1 000,00</td><td><span class="status-dot status-dot--warning">Avvik</span></td></tr>
+                    <tr class="av-note"><td colspan="7"><span class="av-note-inner"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="15.5" r="0.75" fill="currentColor"/></svg>NAV har redusert refusjonen med 1 000,00. Sjekk om dere har mottatt brev fra NAV. <a href="#">Se utregning</a></span></td></tr>
+                    <tr><td><span class="td-name">Nina Dal</span></td><td>Pleiepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">9 500,00</td><td class="col-num">9 500,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                    <tr><td><span class="td-name">Tom Ek</span></td><td>Sykepenger · feriepenger</td><td class="col-muted">01.05–31.05</td><td class="col-num">9 000,00</td><td class="col-num">9 000,00</td><td class="col-num num--ok">0,00</td><td><span class="status-dot status-dot--success">Stemmer</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="avstem-footer">
+                <div class="avstem-footer-sum">
+                  <span class="k">6 av 8 linjer stemmer · 2 avvik gjenstår</span>
+                  <span class="v num num--neg">Differanse −1 020,00</span>
+                </div>
+                <div class="mc-actions">
+                  <button class="btn btn-ghost">Marker avvik som forklart</button>
+                  <button class="btn btn-primary" disabled title="Avklar avvikene først">Avstem hele måneden</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════ VARIANT D: PERIODE + STATUS ════════════ -->
+        <section class="av-variant" data-variant="d">
+          <h2 class="av-section-title">Variant D — Periode øverst + status per rad</h2>
+          <p class="av-section-hint">Følger Tripletex' eksisterende avstemmings­mønster: velg år og måned øverst, filtrer på status, og sett status per rad. Du kan avstemme selv om det er avvik — enten ved å ignorere differansen eller etter å ha lagt inn en kommentar som forklarer den.</p>
+
+          <!-- Periodevelger -->
+          <div class="period-picker">
+            <div class="period-picker-top">
+              <span class="lbl">Periode</span>
+              <select class="input year-select">
+                <option>2026</option>
+                <option>2025</option>
+                <option>2024</option>
+              </select>
+            </div>
+            <div class="month-tabs">
+              <button class="month-tab"><span class="month-tab-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5V8l1.8 1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Januar</button>
+              <button class="month-tab"><span class="month-tab-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5V8l1.8 1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Februar</button>
+              <button class="month-tab"><span class="month-tab-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5V8l1.8 1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Mars</button>
+              <button class="month-tab"><span class="month-tab-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5V8l1.8 1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>April</button>
+              <button class="month-tab"><span class="month-tab-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5V8l1.8 1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Mai</button>
+              <button class="month-tab month-tab--active">Juni</button>
+              <button class="month-tab">Juli</button>
+              <button class="month-tab">August</button>
+              <button class="month-tab">September</button>
+              <button class="month-tab">Oktober</button>
+              <button class="month-tab">November</button>
+              <button class="month-tab">Desember</button>
+              <button class="month-tab">Hele året</button>
+            </div>
+          </div>
+
+          <!-- Verktøylinje med statusfiltre -->
+          <div class="av-d-toolbar">
+            <div class="input-search-wrap">
+              <input class="input" type="search" placeholder="Søk ansatt...">
+              <svg class="input-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <button class="filterbtn filterbtn--active">Alle <span class="cnt">(8)</span></button>
+            <button class="filterbtn">Avstemt <span class="cnt">(5)</span></button>
+            <button class="filterbtn">Ikke avstemt <span class="cnt">(1)</span></button>
+            <button class="filterbtn">Avvik <span class="cnt">(2)</span></button>
+            <button class="filterbtn">Kontrollert <span class="cnt">(0)</span></button>
+            <button class="filterbtn">Skal ikke avstemmes <span class="cnt">(0)</span></button>
+            <div class="spacer"></div>
+            <button class="iconbtn" title="Last ned"><svg viewBox="0 0 16 16" fill="none" width="16" height="16"><path d="M8 2.5v7M5.5 7l2.5 3 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+          </div>
+
+          <!-- Tabell -->
+          <div class="av-d-wrap">
+            <table class="tx-table table-standard av-d-table">
+              <thead>
+                <tr>
+                  <th>Ansatt</th>
+                  <th class="col-num">Forventet</th>
+                  <th class="col-num">Mottatt fra NAV</th>
+                  <th class="col-num">Differanse</th>
+                  <th>Avvik</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <!-- Gruppe: Sykepenger -->
+                <tr class="grp-row">
+                  <td><span class="grp-caret"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Sykepenger</td>
+                  <td class="col-num">78 500,00</td>
+                  <td class="col-num">77 480,00</td>
+                  <td class="col-num num--neg">−1 020,00</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td><span class="td-name">Anders Vik</span><div class="sub">01.05–31.05</div></td>
+                  <td class="col-num">31 500,00</td>
+                  <td class="col-num">31 480,00</td>
+                  <td class="col-num num--neg">−20,00</td>
+                  <td><span class="status-dot status-dot--warning"></span></td>
+                  <td>
+                    <div class="status-select">
+                      <button class="status-select-btn is-avvik" onclick="toggleStatusMenu(this)">
+                        <span class="dot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.8l1.4 3 3.3.4-2.4 2.3.6 3.3L8 9.5 5.1 11l.6-3.3L3.3 5.4l3.3-.4L8 1.8z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></span>
+                        Avvik
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <div class="status-menu">
+                        <div class="status-menu-item" onclick="setStatus(this,'avstemt','Avstemt')"><span>Marker som avstemt</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'kontrollert','Kontrollert')"><span>Marker som kontrollert</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'ikke','Ikke avstemt')"><span>Sett til ikke avstemt</span></div>
+                        <div class="status-menu-sep"></div>
+                        <div class="status-menu-item" onclick="ignoreDiff(this)"><div><div>Ignorer differanse</div><div class="mi-sub">Avstem og marker differansen som akseptert</div></div></div>
+                        <div class="status-menu-item" onclick="openCommentFromMenu(this)"><div><div>Legg til kommentar</div><div class="mi-sub">Forklar avviket før avstemming</div></div></div>
+                        <div class="status-menu-sep"></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'skal-ikke','Skal ikke avstemmes')"><span>Skal ikke avstemmes</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="iconbtn" title="Kommentar" onclick="toggleComment(this)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+                      <button class="iconbtn" title="Vedlegg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 5.5l-4 4a1.5 1.5 0 002 2l4.5-4.5a3 3 0 00-4-4L4 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="comment-row">
+                  <td colspan="7">
+                    <div class="comment-inner">
+                      <label class="lbl">Kommentar til Anders Vik · Sykepenger</label>
+                      <textarea class="input" placeholder="F.eks. «NAV har avkortet 20 kr pga. avrunding – akseptert»."></textarea>
+                      <div class="comment-actions">
+                        <button class="btn btn-primary">Lagre kommentar</button>
+                        <button class="btn btn-ghost" onclick="toggleCommentClose(this)">Avbryt</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="td-name">Mari Olsen</span><div class="sub">01.05–31.05</div></td>
+                  <td class="col-num">28 000,00</td>
+                  <td class="col-num">28 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td>
+                  <td>
+                    <div class="status-select">
+                      <button class="status-select-btn is-avstemt" onclick="toggleStatusMenu(this)">
+                        <span class="dot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M5.3 8l1.8 1.8L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        Avstemt
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <div class="status-menu">
+                        <div class="status-menu-item" onclick="setStatus(this,'kontrollert','Kontrollert')"><span>Marker som kontrollert</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'ikke','Ikke avstemt')"><span>Sett til ikke avstemt</span></div>
+                        <div class="status-menu-sep"></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'skal-ikke','Skal ikke avstemmes')"><span>Skal ikke avstemmes</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="iconbtn" title="Kommentar" onclick="toggleComment(this)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+                      <button class="iconbtn" title="Vedlegg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 5.5l-4 4a1.5 1.5 0 002 2l4.5-4.5a3 3 0 00-4-4L4 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="comment-row"><td colspan="7"><div class="comment-inner"><label class="lbl">Kommentar</label><textarea class="input" placeholder="Skriv en kommentar..."></textarea><div class="comment-actions"><button class="btn btn-primary">Lagre kommentar</button><button class="btn btn-ghost" onclick="toggleCommentClose(this)">Avbryt</button></div></div></td></tr>
+                <tr>
+                  <td><span class="td-name">Per Strand</span><div class="sub">01.05–31.05</div></td>
+                  <td class="col-num">19 000,00</td>
+                  <td class="col-num">18 000,00</td>
+                  <td class="col-num num--neg">−1 000,00</td>
+                  <td><span class="status-dot status-dot--warning"></span></td>
+                  <td>
+                    <div class="status-select">
+                      <button class="status-select-btn is-avstemt" onclick="toggleStatusMenu(this)">
+                        <span class="dot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M5.3 8l1.8 1.8L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        Avstemt
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <div class="status-menu">
+                        <div class="status-menu-item" onclick="setStatus(this,'avvik','Avvik')"><span>Sett tilbake til avvik</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'ikke','Ikke avstemt')"><span>Sett til ikke avstemt</span></div>
+                        <div class="status-menu-sep"></div>
+                        <div class="status-menu-item" onclick="openCommentFromMenu(this)"><span>Rediger kommentar</span></div>
+                      </div>
+                    </div>
+                    <div class="ignored-note"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Avstemt med kommentar</div>
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <button class="iconbtn" title="Kommentar" onclick="toggleComment(this)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg><span class="badge">1</span></button>
+                      <button class="iconbtn" title="Vedlegg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 5.5l-4 4a1.5 1.5 0 002 2l4.5-4.5a3 3 0 00-4-4L4 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr class="comment-row is-open">
+                  <td colspan="7">
+                    <div class="comment-inner">
+                      <label class="lbl">Kommentar til Per Strand · Sykepenger</label>
+                      <textarea class="input">NAV har redusert refusjonen med 1 000 etter brev av 28.05 (gradert sykmelding). Differansen er forklart og akseptert.</textarea>
+                      <div class="comment-actions">
+                        <button class="btn btn-primary">Lagre kommentar</button>
+                        <button class="btn btn-ghost" onclick="toggleCommentClose(this)">Lukk</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Gruppe: Foreldrepenger fødsel -->
+                <tr class="grp-row">
+                  <td><span class="grp-caret"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Foreldrepenger fødsel</td>
+                  <td class="col-num">47 000,00</td>
+                  <td class="col-num">47 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td><td></td><td></td>
+                </tr>
+                <tr>
+                  <td><span class="td-name">Ingrid Reigstad</span><div class="sub">01.05–31.05</div></td>
+                  <td class="col-num">22 000,00</td>
+                  <td class="col-num">22 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td>
+                  <td>
+                    <div class="status-select">
+                      <button class="status-select-btn is-avstemt" onclick="toggleStatusMenu(this)">
+                        <span class="dot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M5.3 8l1.8 1.8L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        Avstemt
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <div class="status-menu">
+                        <div class="status-menu-item" onclick="setStatus(this,'kontrollert','Kontrollert')"><span>Marker som kontrollert</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'ikke','Ikke avstemt')"><span>Sett til ikke avstemt</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><div class="row-actions"><button class="iconbtn" title="Kommentar" onclick="toggleComment(this)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button><button class="iconbtn" title="Vedlegg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 5.5l-4 4a1.5 1.5 0 002 2l4.5-4.5a3 3 0 00-4-4L4 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td>
+                </tr>
+                <tr class="comment-row"><td colspan="7"><div class="comment-inner"><label class="lbl">Kommentar</label><textarea class="input" placeholder="Skriv en kommentar..."></textarea><div class="comment-actions"><button class="btn btn-primary">Lagre kommentar</button><button class="btn btn-ghost" onclick="toggleCommentClose(this)">Avbryt</button></div></div></td></tr>
+                <tr>
+                  <td><span class="td-name">Kjell Berg</span><div class="sub">01.05–31.05</div></td>
+                  <td class="col-num">25 000,00</td>
+                  <td class="col-num">25 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td>
+                  <td>
+                    <div class="status-select">
+                      <button class="status-select-btn is-ikke" onclick="toggleStatusMenu(this)">
+                        <span class="dot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/></svg></span>
+                        Ikke avstemt
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <div class="status-menu">
+                        <div class="status-menu-item" onclick="setStatus(this,'avstemt','Avstemt')"><span>Marker som avstemt</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'kontrollert','Kontrollert')"><span>Marker som kontrollert</span></div>
+                        <div class="status-menu-sep"></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'skal-ikke','Skal ikke avstemmes')"><span>Skal ikke avstemmes</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><div class="row-actions"><button class="iconbtn" title="Kommentar" onclick="toggleComment(this)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button><button class="iconbtn" title="Vedlegg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 5.5l-4 4a1.5 1.5 0 002 2l4.5-4.5a3 3 0 00-4-4L4 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td>
+                </tr>
+                <tr class="comment-row"><td colspan="7"><div class="comment-inner"><label class="lbl">Kommentar</label><textarea class="input" placeholder="Skriv en kommentar..."></textarea><div class="comment-actions"><button class="btn btn-primary">Lagre kommentar</button><button class="btn btn-ghost" onclick="toggleCommentClose(this)">Avbryt</button></div></div></td></tr>
+
+                <!-- Gruppe: Svangerskapspenger -->
+                <tr class="grp-row">
+                  <td><span class="grp-caret"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Svangerskapspenger</td>
+                  <td class="col-num">12 000,00</td>
+                  <td class="col-num">12 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td><td></td><td></td>
+                </tr>
+                <tr>
+                  <td><span class="td-name">Lise Hansen</span><div class="sub">01.05–31.05</div></td>
+                  <td class="col-num">12 000,00</td>
+                  <td class="col-num">12 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td>
+                  <td>
+                    <div class="status-select">
+                      <button class="status-select-btn is-avstemt" onclick="toggleStatusMenu(this)">
+                        <span class="dot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M5.3 8l1.8 1.8L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        Avstemt
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <div class="status-menu">
+                        <div class="status-menu-item" onclick="setStatus(this,'kontrollert','Kontrollert')"><span>Marker som kontrollert</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'ikke','Ikke avstemt')"><span>Sett til ikke avstemt</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><div class="row-actions"><button class="iconbtn" title="Kommentar" onclick="toggleComment(this)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button><button class="iconbtn" title="Vedlegg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 5.5l-4 4a1.5 1.5 0 002 2l4.5-4.5a3 3 0 00-4-4L4 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td>
+                </tr>
+                <tr class="comment-row"><td colspan="7"><div class="comment-inner"><label class="lbl">Kommentar</label><textarea class="input" placeholder="Skriv en kommentar..."></textarea><div class="comment-actions"><button class="btn btn-primary">Lagre kommentar</button><button class="btn btn-ghost" onclick="toggleCommentClose(this)">Avbryt</button></div></div></td></tr>
+
+                <!-- Gruppe: Pleiepenger -->
+                <tr class="grp-row">
+                  <td><span class="grp-caret"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Pleiepenger</td>
+                  <td class="col-num">9 500,00</td>
+                  <td class="col-num">9 500,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td><td></td><td></td>
+                </tr>
+                <tr>
+                  <td><span class="td-name">Nina Dal</span><div class="sub">01.05–31.05</div></td>
+                  <td class="col-num">9 500,00</td>
+                  <td class="col-num">9 500,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td>
+                  <td>
+                    <div class="status-select">
+                      <button class="status-select-btn is-avstemt" onclick="toggleStatusMenu(this)">
+                        <span class="dot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M5.3 8l1.8 1.8L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        Avstemt
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <div class="status-menu">
+                        <div class="status-menu-item" onclick="setStatus(this,'kontrollert','Kontrollert')"><span>Marker som kontrollert</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'ikke','Ikke avstemt')"><span>Sett til ikke avstemt</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><div class="row-actions"><button class="iconbtn" title="Kommentar" onclick="toggleComment(this)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button><button class="iconbtn" title="Vedlegg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 5.5l-4 4a1.5 1.5 0 002 2l4.5-4.5a3 3 0 00-4-4L4 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td>
+                </tr>
+                <tr class="comment-row"><td colspan="7"><div class="comment-inner"><label class="lbl">Kommentar</label><textarea class="input" placeholder="Skriv en kommentar..."></textarea><div class="comment-actions"><button class="btn btn-primary">Lagre kommentar</button><button class="btn btn-ghost" onclick="toggleCommentClose(this)">Avbryt</button></div></div></td></tr>
+
+                <!-- Gruppe: Feriepenger -->
+                <tr class="grp-row">
+                  <td><span class="grp-caret"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Feriepenger</td>
+                  <td class="col-num">9 000,00</td>
+                  <td class="col-num">9 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td><td></td><td></td>
+                </tr>
+                <tr>
+                  <td><span class="td-name">Tom Ek</span><div class="sub">Sykepenger · feriepenger · 01.05–31.05</div></td>
+                  <td class="col-num">9 000,00</td>
+                  <td class="col-num">9 000,00</td>
+                  <td class="col-num num--ok">0,00</td>
+                  <td></td>
+                  <td>
+                    <div class="status-select">
+                      <button class="status-select-btn is-kontrollert" onclick="toggleStatusMenu(this)">
+                        <span class="dot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.6l1.7 1.2 2-.2.9 1.8 1.8.9-.2 2 1.2 1.7-1.2 1.7.2 2-1.8.9-.9 1.8-2-.2L8 14.4l-1.7-1.2-2 .2-.9-1.8-1.8-.9.2-2L.8 7l1.2-1.7-.2-2 1.8-.9.9-1.8 2 .2L8 1.6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5.5 8l1.7 1.7L11 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        Kontrollert
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <div class="status-menu">
+                        <div class="status-menu-item" onclick="setStatus(this,'avstemt','Avstemt')"><span>Sett til avstemt</span></div>
+                        <div class="status-menu-item" onclick="setStatus(this,'ikke','Ikke avstemt')"><span>Sett til ikke avstemt</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><div class="row-actions"><button class="iconbtn" title="Kommentar" onclick="toggleComment(this)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2v-7z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button><button class="iconbtn" title="Vedlegg"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10.5 5.5l-4 4a1.5 1.5 0 002 2l4.5-4.5a3 3 0 00-4-4L4 8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td>
+                </tr>
+                <tr class="comment-row"><td colspan="7"><div class="comment-inner"><label class="lbl">Kommentar</label><textarea class="input" placeholder="Skriv en kommentar..."></textarea><div class="comment-actions"><button class="btn btn-primary">Lagre kommentar</button><button class="btn btn-ghost" onclick="toggleCommentClose(this)">Avbryt</button></div></div></td></tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="avstem-footer">
+            <div class="avstem-footer-sum">
+              <span class="k">Juni 2026 · 7 av 8 rader behandlet · 1 differanse ignorert, 1 forklart med kommentar</span>
+              <span class="v num num--neg">Differanse −1 020,00</span>
+            </div>
+            <button class="btn btn-primary">Avstem hele måneden</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<script>
+  // Variant-velger
+  document.getElementById('variantSwitcher').addEventListener('click', function (e) {
+    var btn = e.target.closest('.switcher-btn');
+    if (!btn) return;
+    var v = btn.dataset.variant;
+    this.querySelectorAll('.switcher-btn').forEach(function (b) { b.classList.toggle('switcher-btn--active', b === btn); });
+    document.querySelectorAll('.av-variant').forEach(function (s) {
+      s.classList.toggle('av-variant--active', s.dataset.variant === v);
+    });
+  });
+
+  // Variant A — drilldown
+  function toggleDetail(id) {
+    var el = document.getElementById('detail-' + id);
+    if (el) el.classList.toggle('mc-detail--open');
+  }
+
+  // Variant B — ekspanderbar rad
+  function toggleExp(row) {
+    row.classList.toggle('exp-row--open');
+    var detail = row.nextElementSibling;
+    if (detail && detail.classList.contains('exp-detail-row')) {
+      detail.classList.toggle('exp-detail-row--open');
+    }
+  }
+
+  // Variant C — velg måned
+  function selectMonth(item) {
+    document.querySelectorAll('#mdList .md-item').forEach(function (i) {
+      i.classList.toggle('md-item--active', i === item);
+    });
+  }
+
+  // Variant D — statusmeny
+  function closeAllStatusMenus() {
+    document.querySelectorAll('.status-menu--open').forEach(function (m) { m.classList.remove('status-menu--open'); });
+  }
+  function toggleStatusMenu(btn) {
+    var menu = btn.nextElementSibling;
+    var wasOpen = menu.classList.contains('status-menu--open');
+    closeAllStatusMenus();
+    if (!wasOpen) menu.classList.add('status-menu--open');
+  }
+  function setStatus(item, key, label) {
+    var wrap = item.closest('.status-select');
+    var btn = wrap.querySelector('.status-select-btn');
+    btn.className = 'status-select-btn is-' + (key === 'skal-ikke' ? 'ikke' : key);
+    // bytt ikon basert på status
+    var icon;
+    if (key === 'avstemt') {
+      icon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M5.3 8l1.8 1.8L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    } else if (key === 'avvik') {
+      icon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.8l1.4 3 3.3.4-2.4 2.3.6 3.3L8 9.5 5.1 11l.6-3.3L3.3 5.4l3.3-.4L8 1.8z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+    } else if (key === 'kontrollert') {
+      icon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.6l1.7 1.2 2-.2.9 1.8 1.8.9-.2 2 1.2 1.7-1.2 1.7.2 2-1.8.9-.9 1.8-2-.2L8 14.4l-1.7-1.2-2 .2-.9-1.8-1.8-.9.2-2L.8 7l1.2-1.7-.2-2 1.8-.9.9-1.8 2 .2L8 1.6z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5.5 8l1.7 1.7L11 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    } else {
+      icon = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/></svg>';
+    }
+    btn.innerHTML = '<span class="dot">' + icon + '</span> ' + label +
+      ' <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    btn.setAttribute('onclick', 'toggleStatusMenu(this)');
+    closeAllStatusMenus();
+  }
+  function ignoreDiff(item) {
+    var wrap = item.closest('.status-select');
+    var td = wrap.parentElement;
+    setStatus(item, 'avstemt', 'Avstemt');
+    if (!td.querySelector('.ignored-note')) {
+      var note = document.createElement('div');
+      note.className = 'ignored-note';
+      note.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 8h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Differanse ignorert';
+      td.appendChild(note);
+    }
+  }
+
+  // Variant D — kommentar
+  function commentRowFor(el) {
+    var tr = el.closest('tr');
+    var next = tr.nextElementSibling;
+    return (next && next.classList.contains('comment-row')) ? next : null;
+  }
+  function toggleComment(btn) {
+    var row = commentRowFor(btn);
+    if (row) row.classList.toggle('is-open');
+  }
+  function toggleCommentClose(btn) {
+    var row = btn.closest('.comment-row');
+    if (row) row.classList.remove('is-open');
+  }
+  function openCommentFromMenu(item) {
+    closeAllStatusMenus();
+    var statusTr = item.closest('tr');
+    var next = statusTr.nextElementSibling;
+    if (next && next.classList.contains('comment-row')) next.classList.add('is-open');
+  }
+
+  // Lukk statusmeny ved klikk utenfor
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.status-select')) closeAllStatusMenus();
+  });
+</script>
+
+</body>
+</html>

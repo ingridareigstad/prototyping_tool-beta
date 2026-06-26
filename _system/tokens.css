@@ -1,0 +1,355 @@
+/*
+ * ============================================================
+ * TRIPLETEX DESIGN TOKENS — for HTML/CSS prototyping
+ * ============================================================
+ *
+ * REGLER FOR CLAUDE:
+ * - Bruk ALDRI hex-farger direkte. Bruk alltid tokens fra denne filen.
+ * - Bruk ALDRI globale tokens (--global-*) direkte i komponenter.
+ *   De globale tokenene finnes kun som referanse for de semantiske.
+ * - Bruk semantiske tokens (action-*, surface-*, text-*, border-*)
+ *   fordi de beskriver HENSIKT, ikke bare farge.
+ * - Bruk spacing-verdier fra --space-* og --size-* for padding/gap/margin.
+ * - Ikke finn på egne farger, størrelser eller border-radius-verdier.
+ *
+ * ============================================================
+ */
+
+:root {
+
+  /* ----------------------------------------------------------
+   * GLOBALE FARGER
+   * Ikke bruk disse direkte i komponenter.
+   * De semantiske tokenene nedenfor peker på disse.
+   * ---------------------------------------------------------- */
+
+  /* Grå */
+  --global-grey-05:  #f4f5f6;
+  --global-grey-10:  #e9eaed;
+  --global-grey-20:  #d5d7db;
+  --global-grey-40:  #abafb7;
+  --global-grey-60:  #818794;
+  --global-grey-71:  #6b7280;
+  --global-grey-80:  #51596a;
+  --global-grey-100: #2e384d;
+  --global-grey-120: #0f131a;
+
+  /* Blå */
+  --global-blue-05:  #f2f5ff;
+  --global-blue-10:  #e6ebff;
+  --global-blue-20:  #ced9fe;
+  --global-blue-40:  #9db3fd;
+  --global-blue-60:  #6c8dfc;
+  --global-blue-80:  #3b67fb;
+  --global-blue-100: #0a41fa;
+  --global-blue-120: #0834c7;
+  --global-blue-130: #002992;
+
+  /* Grønn */
+  --global-green-05:  #f4fbf4;
+  --global-green-10:  #eaf7e9;
+  --global-green-20:  #d6eed5;
+  --global-green-40:  #addeab;
+  --global-green-60:  #84cd81;
+  --global-green-80:  #5bbc57;
+  --global-green-100: #33ac2e;
+  --global-green-120: #247820;
+
+  /* Rød */
+  --global-red-05:  #fef4f5;
+  --global-red-10:  #fdeaec;
+  --global-red-20:  #fbd6da;
+  --global-red-40:  #f6aeb4;
+  --global-red-60:  #f1868f;
+  --global-red-80:  #ec5e6a;
+  --global-red-100: #e83645;
+  --global-red-120: #b52a36;
+
+  /* Gul */
+  --global-yellow-05:  #fffcf5;
+  --global-yellow-10:  #fff9ea;
+  --global-yellow-20:  #fef3d7;
+  --global-yellow-40:  #fce6af;
+  --global-yellow-60:  #fada87;
+  --global-yellow-80:  #f8cd5f;
+  --global-yellow-100: #f7c137;
+  --global-yellow-120: #c4992c;
+
+  /* Lilla */
+  --global-purple-05:  #f9f6ff;
+  --global-purple-10:  #f3eeff;
+  --global-purple-20:  #e8ddff;
+  --global-purple-40:  #d1bbff;
+  --global-purple-60:  #ba98ff;
+  --global-purple-80:  #a376ff;
+  --global-purple-100: #8c54ff;
+  --global-purple-120: #7043cc;
+
+  /* Turkis */
+  --global-turquoise-05:  #f4fafa;
+  --global-turquoise-10:  #e8f5f5;
+  --global-turquoise-20:  #d4ebeb;
+  --global-turquoise-40:  #abd6d6;
+  --global-turquoise-60:  #80c1c2;
+  --global-turquoise-80:  #57adae;
+  --global-turquoise-100: #30999b;
+  --global-turquoise-120: #206768;
+
+  /* Misc */
+  --global-misc-white:      #ffffff;
+  --global-misc-background: #f7f8fc;
+  --global-misc-contrast:   #010a59;
+  --global-misc-avatar:     #d8d2e9;
+
+
+  /* ----------------------------------------------------------
+   * SEMANTISKE FARGER — BRUK DISSE I KOMPONENTER
+   * ---------------------------------------------------------- */
+
+  /* Knapper og handlinger
+   * primary  = blå fyllt knapp (hovedhandling)
+   * secondary = lys blå knapp (sekundær handling)
+   * tertiary  = gjennomsiktig knapp (ghost/tekst-knapp)
+   * neutral   = grå bakgrunn, hover blir blå (tabellrader, listelement)
+   */
+  --action-primary-rest:    var(--global-blue-100);
+  --action-primary-hover:   var(--global-blue-120);
+  --action-primary-active:  var(--global-blue-130);
+
+  --action-secondary-rest:   var(--global-blue-10);
+  --action-secondary-hover:  var(--global-blue-20);
+  --action-secondary-active: var(--global-blue-40);
+
+  --action-tertiary-rest:    transparent;
+  --action-tertiary-hover:   var(--global-blue-20);
+  --action-tertiary-active:  var(--global-blue-10);
+
+  --action-neutral-rest:    var(--global-misc-background);
+  --action-neutral-hover:   var(--global-blue-20);
+  --action-neutral-active:  var(--global-blue-40);
+
+  /* Bakgrunner (surfaces)
+   * background = ytterbakgrunn på siden (#f7f8fc, lys blågrå)
+   * default    = hvit bakgrunn, f.eks. kort, panel, modal
+   * nav        = sidemenyens bakgrunn (turkis-20)
+   * disabled   = grå bakgrunn for deaktivert element
+   */
+  --surface-background: var(--global-misc-background);
+  --surface-default:    var(--global-misc-white);
+  --surface-nav:        var(--global-turquoise-20);
+  --surface-assistant:  var(--global-turquoise-10); /* #e8f5f5 — Assistent-knapp i topbar */
+  --surface-avatar:     var(--global-misc-avatar);  /* #d8d2e9 — Bakgrunn for avatar/initialer */
+  --surface-disabled:   var(--global-grey-10);
+  --surface-footer:     var(--global-misc-contrast);
+  --surface-tooltip:    var(--global-grey-100);
+  --surface-modal:      rgba(46, 56, 77, 0.5); /* overlay bak modal */
+
+  /* Status-bakgrunner
+   * Bruk -rest som bakgrunn, -highlight som sterkere bakgrunn,
+   * -active som fyllt badge/ikon-bakgrunn
+   */
+  --surface-info-rest:       var(--global-blue-05);
+  --surface-info-hover:      var(--global-blue-10);
+  --surface-info-highlight:  var(--global-blue-20);
+  --surface-info-active:     var(--global-blue-100);
+
+  --surface-success-rest:      var(--global-green-05);
+  --surface-success-hover:     var(--global-green-10);
+  --surface-success-highlight: var(--global-green-20);
+  --surface-success-active:    var(--global-green-100);
+
+  --surface-warning-rest:      var(--global-yellow-05);
+  --surface-warning-hover:     var(--global-yellow-10);
+  --surface-warning-highlight: var(--global-yellow-20);
+  --surface-warning-active:    var(--global-yellow-100);
+
+  --surface-error-rest:      var(--global-red-05);
+  --surface-error-hover:     var(--global-red-10);
+  --surface-error-highlight: var(--global-red-20);
+  --surface-error-active:    var(--global-red-100);
+
+  --surface-automation-rest:      var(--global-purple-05);
+  --surface-automation-hover:     var(--global-purple-10);
+  --surface-automation-highlight: var(--global-purple-20);
+  --surface-automation-active:    var(--global-purple-120);
+
+  /* Tekst
+   * primary     = standard brødtekst og overskrifter
+   * muted       = sekundær tekst, hjelpetekst, metadata
+   * placeholder = plassholdertekst i inputs
+   * disabled    = tekst på deaktivert element
+   * on-action   = tekst OPPÅ farget knapp (alltid hvit)
+   * link        = klikkbare lenker
+   * action      = blå tekst som indikerer handling (ikke understreket lenke)
+   * active      = blå tekst i aktiv/valgt tilstand
+   * footer-*    = tekst i mørk footer
+   */
+  --text-primary:      var(--global-grey-100);
+  --text-muted:        var(--global-grey-71);
+  --text-placeholder:  var(--global-grey-40);
+  --text-disabled:     var(--global-grey-80);
+  --text-on-action:    var(--global-misc-white);
+  --text-link:         var(--global-blue-100);
+  --text-action:       var(--global-blue-100);
+  --text-active:       var(--global-blue-100);
+  --text-footer-primary:   var(--global-blue-05);
+  --text-footer-link:      var(--global-blue-40);
+
+  /* Kanter (borders)
+   * faint    = nesten usynlig skillelinje (f.eks. mellom tabellrader)
+   * muted    = lett synlig kant (f.eks. rundt kort)
+   * primary  = tydelig kant (f.eks. rundt input i hvile)
+   * secondary = alternativ tydelig kant
+   * disabled = kant på deaktivert element
+   * focus    = blå kant når input er i fokus
+   * hover    = kant ved hover
+   * active   = kant på valgt/aktivt element
+   * highlight = blå uthevingskant
+   * underline = svak blå understrek (f.eks. lenker)
+   * error/warning/success/info/automation = statuskanter
+   */
+  --border-faint:     var(--global-grey-10);
+  --border-muted:     var(--global-grey-20);
+  --border-primary:   var(--global-grey-60);
+  --border-secondary: var(--global-grey-40);
+  --border-disabled:  var(--global-grey-40);
+  --border-focus:     var(--global-blue-60);
+  --border-hover:     var(--global-blue-40);
+  --border-active:    var(--global-blue-100);
+  --border-highlight: var(--global-blue-40);
+  --border-underline: var(--global-blue-10);
+
+  --border-info:            var(--global-blue-60);
+  --border-info-hover:      var(--global-blue-40);
+  --border-info-focus:      var(--global-blue-120);
+
+  --border-success:         var(--global-green-80);
+  --border-success-hover:   var(--global-green-40);
+  --border-success-focus:   var(--global-green-120);
+
+  --border-warning:         var(--global-yellow-100);
+  --border-warning-hover:   var(--global-yellow-40);
+  --border-warning-focus:   var(--global-yellow-120);
+
+  --border-error:           var(--global-red-80);
+  --border-error-hover:     var(--global-red-40);
+  --border-error-focus:     var(--global-red-120);
+
+  --border-automation:       var(--global-purple-80);
+  --border-automation-hover: var(--global-purple-40);
+  --border-automation-focus: var(--global-purple-120);
+
+  /* Nøytral aktiv-tilstand (f.eks. valgt rad uten blå farge) */
+  --surface-neutral-active: var(--global-grey-40);
+
+
+  /* ----------------------------------------------------------
+   * BORDER RADIUS
+   * ---------------------------------------------------------- */
+
+  --radius-default: 4px;       /* Bruk på nesten alt: knapper, inputs, kort */
+  --radius-full:    9999px;    /* Pille-form: tags, badges, toggle */
+  --radius-none:    0px;       /* Ingen avrunding */
+  --radius-mobile:  16px;      /* Bunn-sheet og kort på mobil */
+
+
+  /* ----------------------------------------------------------
+   * SPACING OG STØRRELSER
+   * Bruk disse for padding, gap og margin — ikke skriv px-verdier direkte.
+   * ---------------------------------------------------------- */
+
+  /* Basis spacing-skala (Atlas: 0,1,2,4,8,12,16,20,24,28,32,36,40,44,48...) */
+  --space-0:  0px;
+  --space-1:  1px;
+  --space-2:  2px;
+  --space-4:  4px;
+  --space-8:  8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-32: 32px;
+  --space-36: 36px;
+  --space-40: 40px;
+  --space-44: 44px;
+  --space-48: 48px;
+  --space-64: 64px;
+
+  /* Container-padding
+   * default = standard innvendig padding i sider og paneler
+   * table   = tettere padding i tabellcontainere
+   * modal   = romsligere padding i modaler
+   */
+  --container-padding-default: var(--space-24);
+  --container-padding-table:   var(--space-12);
+  --container-padding-modal:   var(--space-32);
+
+  /* Element-høyder (bruk på inputs, knapper, select etc.)
+   * tiny   = 20px  — svært kompakt, sjelden brukt
+   * small  = 24px  — kompakt, f.eks. tags
+   * medium = 32px  — standard liten knapp / input
+   * large  = 40px  — standard stor knapp / input
+   * xl     = 48px  — fremtredende knapp eller søkefelt
+   * xxl    = 64px  — hero-knapp eller stor header-komponent
+   */
+  --size-tiny:   20px;
+  --size-small:  24px;
+  --size-medium: 32px;
+  --size-large:  40px;
+  --size-xl:     48px;
+  --size-xxl:    64px;
+
+  /* Element-høyder — Atlas-navn (aliaser for --size-* nedenfor) */
+  --element-height-tiny:   20px;
+  --element-height-small:  24px;
+  --element-height-medium: 32px;
+  --element-height-large:  40px;
+
+  /* Ikonstørrelser */
+  --icon-small:      20px;
+  --icon-medium:     24px;
+  --icon-large:      48px;
+  /* Atlas-navn aliaser */
+  --icon-size-small:  20px;
+  --icon-size-medium: 24px;
+  --icon-size-large:  48px;
+
+
+  /* ----------------------------------------------------------
+   * TABELLSTØRRELSER
+   * Tre varianter: compact, standard, detailed
+   *
+   * compact  = tett tabell, mye data på liten plass
+   * standard = standard tabell (bruk denne som default)
+   * detailed = romslig tabell med god lesbarhet
+   *
+   * Bruk ved å sette klassen .table-compact, .table-standard
+   * eller .table-detailed på <table>-elementet.
+   * ---------------------------------------------------------- */
+
+  --table-row-padding:    8px;   /* standard */
+  --table-inner-padding-x: 24px;
+  --table-inner-padding-y: 16px;
+}
+
+/* Kompakt tabell */
+.table-compact {
+  --table-row-padding:     0px;
+  --table-inner-padding-x: 16px;
+  --table-inner-padding-y: 16px;
+}
+
+/* Standard tabell (default) */
+.table-standard {
+  --table-row-padding:     8px;
+  --table-inner-padding-x: 24px;
+  --table-inner-padding-y: 16px;
+}
+
+/* Detaljert / romslig tabell */
+.table-detailed {
+  --table-row-padding:     12px;
+  --table-inner-padding-x: 24px;
+  --table-inner-padding-y: 20px;
+}

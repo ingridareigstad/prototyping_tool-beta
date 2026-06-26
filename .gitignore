@@ -1,0 +1,6 @@
+.DS_Store
+
+# Claude – ignorer personlige filer, men inkluder delte kommandoer
+.claude/memory/
+.claude/plans/
+.claude/sessions/

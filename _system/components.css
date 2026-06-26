@@ -1,0 +1,1720 @@
+/*
+ * ============================================================
+ * TRIPLETEX KOMPONENT-BIBLIOTEK
+ * Bygget fra Figma Atlas-Library og tokens.css
+ *
+ * Bruk aldri hex-farger eller px-verdier direkte her.
+ * Alle verdier skal referere tokens fra tokens.css.
+ * ============================================================
+ */
+
+/* ----------------------------------------
+ * RESET
+ * ---------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font: 14px/1.5 "Rubik", sans-serif;
+  color: var(--text-primary);
+  background: var(--surface-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ----------------------------------------
+ * KNAPPER
+ * Bruk: <button class="btn btn-primary">Lagre</button>
+ * ---------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: var(--size-large);
+  padding: 0 var(--space-12);
+  border-radius: var(--radius-default);
+  border: 1px solid transparent;
+  font: 14px/1.4 "Rubik", sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--action-primary-rest);
+  color: var(--text-on-action);
+  border-color: var(--action-primary-rest);
+}
+.btn-primary:hover {
+  background: var(--action-primary-hover);
+  border-color: var(--action-primary-hover);
+}
+.btn-primary:active {
+  background: var(--action-primary-active);
+  border-color: var(--action-primary-active);
+}
+
+.btn-secondary {
+  background: var(--action-secondary-rest);
+  color: var(--text-action);
+  border-color: var(--action-secondary-rest);
+}
+.btn-secondary:hover {
+  background: var(--action-secondary-hover);
+  border-color: var(--action-secondary-hover);
+}
+.btn-secondary:active {
+  background: var(--action-secondary-active);
+  border-color: var(--action-secondary-active);
+}
+
+.btn-tertiary {
+  background: var(--action-tertiary-rest);
+  color: var(--text-action);
+  border-color: var(--action-tertiary-rest);
+}
+.btn-tertiary:hover {
+  background: var(--action-tertiary-hover);
+  border-color: var(--action-tertiary-hover);
+}
+.btn-tertiary:active {
+  background: var(--action-tertiary-active);
+  border-color: var(--action-tertiary-active);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+  border-color: var(--border-disabled);
+  cursor: not-allowed;
+}
+
+/* Ikonstørrelse inne i knapp
+ * primary/secondary medium (40px) → 24px
+ * tertiary medium (40px) → 20px (Figma 2354-50172)
+ * small (32px) → 20px
+ */
+.btn svg {
+  width: var(--icon-size-medium);
+  height: var(--icon-size-medium);
+  flex-shrink: 0;
+}
+
+.btn-tertiary svg {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+.btn-small svg {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+.btn-small {
+  height: var(--size-medium); /* 32px — Atlas small */
+  padding: 0 var(--space-8);
+}
+
+
+/* ----------------------------------------
+ * SKJEMA – LABEL, INPUT, TEXTAREA, SELECT
+ * Bruk: <label class="input-label">...</label>
+ *        <input class="input" type="text">
+ * ---------------------------------------- */
+
+.input-label {
+  display: block;
+  font: 14px/1.5 "Rubik", sans-serif;
+  color: var(--text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.input-label .required {
+  color: var(--surface-error-active);
+  margin-left: var(--space-2);
+}
+
+.input {
+  width: 100%;
+  height: var(--size-large);
+  padding: 0 var(--space-16);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-default);
+  background: var(--surface-background);
+  color: var(--text-primary);
+  font: 14px/1.5 "Rubik", sans-serif;
+  appearance: none;
+  transition: border-color 0.1s;
+}
+
+.input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.input:focus {
+  border-color: var(--border-focus);
+  outline: none;
+}
+
+.input:disabled {
+  background: var(--surface-disabled);
+  border-color: var(--border-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+textarea.input {
+  height: auto;
+  min-height: calc(var(--size-large) * 2);
+  padding: var(--space-12) var(--space-16);
+  resize: vertical;
+  line-height: 1.5;
+}
+
+select.input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5l5 5 5-5' stroke='%23818794' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-8) center;
+  padding-right: var(--space-32);
+  cursor: pointer;
+}
+
+.input-hint {
+  display: block;
+  font: 13px/1.4 "Rubik", sans-serif;
+  color: var(--text-muted);
+  margin-top: var(--space-4);
+}
+
+.input-error {
+  border-color: var(--border-error) !important;
+  background: var(--surface-error-rest);
+}
+
+.input-error:focus {
+  border-color: var(--border-error-focus) !important;
+}
+
+.input-warning {
+  border-color: var(--border-warning) !important;
+  background: var(--surface-warning-rest);
+}
+
+.input-error-msg {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font: 13px/1.4 "Rubik", sans-serif;
+  color: var(--surface-error-active);
+  margin-top: var(--space-4);
+}
+
+.input-warning-msg {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font: 13px/1.4 "Rubik", sans-serif;
+  color: var(--text-primary);
+  margin-top: var(--space-4);
+}
+
+/* Skjemagruppe: samler label + input + hint/feil */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ----------------------------------------
+ * CHIP
+ * Fra Figma: Small Static Default (6529:6035)
+ * Bruk: <span class="chip">Etikett</span>
+ * ---------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--size-small);
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-faint);
+  background: var(--surface-background);
+  color: var(--text-primary);
+  font: 14px/1.4 "Rubik", sans-serif;
+  white-space: nowrap;
+}
+
+
+/* ----------------------------------------
+ * STATUS — farget prikk + tekst
+ * Bruk: <span class="status-dot status-dot--success">Aktiv</span>
+ *
+ * Status skal ALDRI ligge inne i chip/badge-bokser.
+ * ---------------------------------------- */
+
+.status-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 14px/1.5 "Rubik", sans-serif;
+  color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-dot::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.status-dot--success::before  { background: var(--surface-success-active); }
+.status-dot--warning::before  { background: var(--surface-warning-active); }
+.status-dot--error::before    { background: var(--surface-error-active); }
+.status-dot--info::before     { background: var(--surface-info-active); }
+.status-dot--neutral::before  { background: var(--border-secondary); }
+
+
+/* ----------------------------------------
+ * TABELL
+ * Bruk: <table class="tx-table table-standard">
+ *
+ * Kombiner med .table-compact / .table-standard / .table-detailed
+ * (definert i tokens.css) for ulike tettheter.
+ * ---------------------------------------- */
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 14px/1.5 "Rubik", sans-serif;
+}
+
+.tx-table thead th {
+  background: var(--surface-info-rest);
+  padding: var(--table-inner-padding-y, var(--space-8)) var(--table-inner-padding-x, var(--space-12));
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-muted);
+  white-space: nowrap;
+}
+
+.tx-table tbody td {
+  padding: var(--table-row-padding, var(--space-8)) var(--table-inner-padding-x, var(--space-12));
+  border-bottom: 1px solid var(--border-muted);
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+
+.tx-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tx-table tbody tr:hover td {
+  background: var(--surface-info-rest);
+}
+
+.tx-table .col-num {
+  text-align: right;
+  font-feature-settings: 'lnum' 1, 'tnum' 1;
+}
+
+.tx-table .col-muted {
+  color: var(--text-muted);
+}
+
+/* Tabell-container (kortet rundt tabellen) */
+.table-container {
+  background: var(--surface-default);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-default);
+  overflow: hidden;
+}
+
+/* Filterlinje over tabellen */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--container-padding-table);
+  border-bottom: 1px solid var(--border-muted);
+  background: var(--surface-default);
+}
+
+.table-toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex: 1;
+  min-width: 0;
+}
+
+.table-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-shrink: 0;
+}
+
+/* Søkeinput med ikon inni */
+.input-search-wrap {
+  position: relative;
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.input-search-wrap .input {
+  padding-right: var(--space-32);
+  height: var(--size-large);
+}
+
+.input-search-icon {
+  position: absolute;
+  right: var(--space-8);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--icon-small);
+  height: var(--icon-small);
+  color: var(--text-placeholder);
+  pointer-events: none;
+}
+
+/* Periodenavigator — tekst + pil-knapper */
+.period-nav {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-default);
+  background: var(--surface-background);
+  height: var(--size-large);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.period-nav-label {
+  padding: 0 var(--space-16);
+  font: 14px/1.4 "Rubik", sans-serif;
+  color: var(--text-primary);
+  white-space: nowrap;
+  border-right: 1px solid var(--surface-background);
+}
+
+.period-nav-arrows {
+  display: flex;
+}
+
+.period-nav-btn {
+  width: var(--size-medium);
+  height: var(--size-large);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.period-nav-btn:hover {
+  background: var(--surface-disabled);
+  color: var(--text-primary);
+}
+
+.period-nav-btn + .period-nav-btn {
+  border-left: 1px solid var(--surface-background);
+}
+
+/* ----------------------------------------
+ * CONTENT SWITCHER (Atlas: ContentSwitcher)
+ * Grå beholder med hvit pille for valgt element.
+ * Brukes til å bytte mellom visninger/filtre.
+ *
+ * <div class="content-switcher" role="group">
+ *   <button class="content-switch content-switch--active">Alle</button>
+ *   <button class="content-switch">Aktive</button>
+ *   <button class="content-switch">Avvik</button>
+ * </div>
+ *
+ * Liten variant: legg til .content-switcher--small på wrapperen
+ * ---------------------------------------- */
+
+.content-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface-disabled);
+  border-radius: var(--radius-default);
+  padding: 2px;
+  height: var(--size-medium); /* 32px — Atlas medium */
+  flex-shrink: 0;
+}
+
+.content-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-12);
+  height: 100%;
+  border: none;
+  border-radius: 3px; /* --radius-default minus beholderens padding */
+  background: transparent;
+  font: 14px/1 "Rubik", sans-serif;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+
+.content-switch:hover:not(.content-switch--active) {
+  color: var(--text-primary);
+}
+
+.content-switch--active {
+  background: var(--surface-default);
+  color: var(--text-primary);
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(46, 56, 77, 0.1);
+}
+
+/* Liten variant — 24px høyde */
+.content-switcher--small {
+  height: var(--size-small); /* 24px */
+}
+
+.content-switcher--small .content-switch {
+  font: 12px/1 "Rubik", sans-serif;
+  padding: 0 var(--space-8);
+}
+
+
+/* ----------------------------------------
+ * ATL-CONTENT-SWITCHER — Atlas-komponent (radio-input, animert border)
+ *
+ * <div class="atl-content-switcher">
+ *   <div class="atl-content-switch atl-content-switch--single">
+ *     <input class="atl-content-switch__input" type="radio" name="group" id="opt1" checked>
+ *     <div class="atl-content-switch__label-background"></div>
+ *     <label class="atl-content-switch__label atl-content-switch__label--selected" for="opt1">Label</label>
+ *     <div class="atl-content-switch__label atl-content-switch__label--deselected">Label</div>
+ *   </div>
+ *   ...
+ *   <div class="atl-content-switcher__border"></div>
+ * </div>
+ * ---------------------------------------- */
+
+.atl-content-switcher {
+  --default-transition-duration: 0.15s;
+  --background: var(--surface-background);
+  --background--hover: var(--surface-info-hover);
+  --background--disabled: var(--surface-disabled);
+  --border-color: var(--border-muted);
+  --border-left: 0;
+  --border-width: 0;
+  --border-top-left-radius: 0;
+  --border-top-right-radius: 0;
+  --border-bottom-left-radius: 0;
+  --border-bottom-right-radius: 0;
+  --color: var(--text-primary);
+  --color--selected: transparent;
+  --color--disabled: var(--text-muted);
+  --color--focus-visible: var(--action-primary-rest);
+  --padding-x: 12px;
+  --transition-duration: 0;
+  --transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: var(--radius-default);
+  box-sizing: border-box;
+  color: var(--color);
+  font: 14px/1 "Rubik", sans-serif;
+  min-height: 40px;
+  position: relative;
+  user-select: none;
+  z-index: 0;
+}
+
+.atl-content-switcher__border {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 1px solid var(--color--selected);
+  box-sizing: content-box;
+  transition-duration: var(--transition-duration);
+  transition-property: all, border-radius;
+  transition-delay: 0s, 0.05s;
+  transition-timing-function: var(--transition-timing-function);
+  left: var(--border-left);
+  width: var(--border-width);
+  border-top-left-radius: var(--border-top-left-radius);
+  border-top-right-radius: var(--border-top-right-radius);
+  border-bottom-left-radius: var(--border-bottom-left-radius);
+  border-bottom-right-radius: var(--border-bottom-right-radius);
+  pointer-events: none;
+}
+
+.atl-content-switch {
+  position: relative;
+  text-align: center;
+  display: flex;
+  align-items: stretch;
+  border-color: var(--border-color);
+  border-style: solid;
+  border-width: 1px 1px 1px 0;
+  overflow: hidden;
+  background-color: var(--background);
+}
+
+.atl-content-switch:first-child {
+  border-left-width: 1px;
+  border-radius: var(--radius-default) 0 0 var(--radius-default);
+}
+
+.atl-content-switch:nth-last-child(2) {
+  border-radius: 0 var(--radius-default) var(--radius-default) 0;
+}
+
+.atl-content-switch__input {
+  appearance: none;
+  -webkit-appearance: none;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.atl-content-switch__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: opacity var(--transition-duration) ease-out;
+  transition-delay: 0.07s;
+  padding: 0 var(--padding-x);
+  cursor: pointer;
+}
+
+.atl-content-switch__label--deselected {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.atl-content-switch__label--selected {
+  opacity: 0;
+  font-weight: 500;
+  color: var(--color--selected);
+}
+
+.atl-content-switch__input:checked ~ .atl-content-switch__label--selected {
+  opacity: 1;
+}
+
+.atl-content-switch__input:checked ~ .atl-content-switch__label--deselected {
+  opacity: 0;
+}
+
+.atl-content-switch__label-background {
+  background-color: transparent;
+  pointer-events: none;
+  transition: background-color var(--transition-duration) ease-out;
+  inset: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.atl-content-switch__input:hover ~ .atl-content-switch__label-background {
+  background-color: var(--background--hover);
+}
+
+.atl-content-switch__input:disabled ~ .atl-content-switch__label {
+  color: var(--color--disabled);
+  background-color: var(--background--disabled);
+  cursor: default;
+}
+
+
+/* ----------------------------------------
+ * SWITCHER — segmentert knapperad med kanter
+ * Eldre komponent. Bruk content-switcher for nye flater.
+ * ---------------------------------------- */
+.switcher {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.switcher-btn {
+  height: var(--size-large);
+  padding: 0 var(--space-12);
+  background: var(--surface-background);
+  border: 1px solid var(--border-muted);
+  font: 14px/1.4 "Rubik", sans-serif;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: -1px;
+}
+
+.switcher-btn:first-child {
+  border-radius: var(--radius-default) 0 0 var(--radius-default);
+  margin-left: 0;
+}
+
+.switcher-btn:last-child {
+  border-radius: 0 var(--radius-default) var(--radius-default) 0;
+}
+
+.switcher-btn--active {
+  border-color: var(--border-active) !important;
+  background: var(--surface-background);
+  color: var(--text-active);
+  font-weight: 500;
+  z-index: 1;
+  position: relative;
+}
+
+/* ----------------------------------------
+ * DRAWER
+ * Dropdown-overflate forankret til trigger.
+ * Atlas-regler (drawer.md):
+ *   - 1px --border-primary kant, ingen skygge, ingen animasjon
+ *   - border-radius: --radius-default (4px)
+ *   - 4px gap til trigger (top: calc(100% + 4px))
+ *   - min-width: 100px, max-width: 500px
+ *   - Forsvinner ved klikk utenfor eller Esc
+ * ---------------------------------------- */
+
+.drawer-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.drawer {
+  position: absolute;
+  top: calc(100% + var(--space-4));
+  right: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--surface-default);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-default);
+  min-width: 100px;
+  max-width: 400px;
+  max-height: calc(var(--size-large) * 9.65); /* ~386px: 8 rader + halvparten av rad 9 */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 var(--space-4);
+}
+
+.drawer[hidden] {
+  display: none;
+}
+
+.drawer-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--size-large);        /* 40px — fra atl-dropdown__option */
+  padding: 0 var(--space-12);
+  margin: var(--space-4) 0;
+  border: 1px solid transparent;    /* reserve for focus-ring */
+  border-radius: var(--radius-default);
+  background: transparent;
+  font: 14px/1 "Rubik", sans-serif;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+}
+
+.drawer-option:hover {
+  background: var(--action-secondary-rest); /* blue-10 — fra atl-dropdown__option:hover */
+}
+
+.drawer-option--selected {
+  background: var(--action-secondary-rest);
+  font-weight: 500;
+}
+
+.drawer-option:focus-visible {
+  outline: none;
+  border-color: var(--border-active);
+}
+
+/* Ikon-knapp (kvadratisk, 40×40) */
+.icon-btn {
+  width: var(--size-large);
+  height: var(--size-large);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-default);
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.icon-btn:hover {
+  background: var(--action-neutral-hover);
+}
+
+.icon-btn svg {
+  width: var(--icon-small);
+  height: var(--icon-small);
+}
+
+/* Select i toolbar — fast bredde */
+.toolbar-select {
+  width: 160px;
+  height: var(--size-large);
+  flex-shrink: 0;
+}
+
+
+/* ----------------------------------------
+ * KORT (CARD)
+ * Bruk: <div class="card"><div class="card-header">...</div><div class="card-body">...</div></div>
+ * ---------------------------------------- */
+
+.card {
+  background: var(--surface-default);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-default);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding: var(--space-16) var(--space-24);
+  border-bottom: 1px solid var(--border-faint);
+}
+
+.card-title {
+  font: 500 20px/1.3 "Rubik", sans-serif;
+  color: var(--text-primary);
+}
+
+.card-subtitle {
+  font: 14px/1.5 "Rubik", sans-serif;
+  color: var(--text-muted);
+  margin-top: var(--space-4);
+}
+
+.card-body {
+  padding: var(--container-padding-default);
+}
+
+/* Skjema-variant av card-body */
+.card-body--form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-16) var(--container-padding-default);
+  border-top: 1px solid var(--border-faint);
+  background: var(--surface-default);
+}
+
+
+/* ----------------------------------------
+ * ALERT
+ * Fra Figma: Atlas-Library / Alert (10421:3774)
+ *
+ * Bruk:
+ * <div class="alert alert--warning">
+ *   <svg class="alert-icon">…</svg>
+ *   <p class="alert-message">Melding. <a href="#">Les mer</a></p>
+ *   <button class="alert-close" onclick="this.closest('.alert').remove()">
+ *     <svg>…</svg>
+ *   </button>
+ * </div>
+ *
+ * Varianter: alert--info | alert--success | alert--warning | alert--error
+ * ---------------------------------------- */
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-24) var(--space-12) var(--space-12);
+  border: 1px solid;
+  border-radius: var(--radius-default);
+  font: 14px/1.4 "Rubik", sans-serif;
+  color: var(--text-primary);
+  position: relative;
+}
+
+.alert-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.alert-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-message a,
+.alert a {
+  color: var(--text-action);
+  text-decoration: none;
+}
+
+.alert-message a:hover,
+.alert a:hover {
+  text-decoration: underline;
+}
+
+.alert-close {
+  position: absolute;
+  top: var(--space-8);
+  right: var(--space-8);
+  width: var(--size-medium);
+  height: var(--size-medium);
+  background: none;
+  border: none;
+  border-radius: var(--radius-default);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.alert-close:hover {
+  background: var(--action-tertiary-hover);
+  color: var(--text-primary);
+}
+
+.alert-close svg {
+  width: var(--icon-small);
+  height: var(--icon-small);
+}
+
+.alert--info       { background: var(--surface-info-rest);       border-color: var(--border-info); }
+.alert--success    { background: var(--surface-success-rest);    border-color: var(--border-success); }
+.alert--warning    { background: var(--surface-warning-rest);    border-color: var(--border-warning); }
+.alert--error      { background: var(--surface-error-rest);      border-color: var(--border-error); }
+.alert--automation { background: var(--surface-automation-rest); border-color: var(--border-automation); }
+
+
+/* ----------------------------------------
+ * DIVIDER
+ * Bruk: <hr class="divider">
+ * ---------------------------------------- */
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-faint);
+}
+
+
+/* ----------------------------------------
+ * TEKST-HJELPE-KLASSER
+ * ---------------------------------------- */
+
+.text-muted    { color: var(--text-muted); }
+.text-primary  { color: var(--text-primary); }
+.text-action   { color: var(--text-action); }
+.text-link     { color: var(--text-link); text-decoration: none; cursor: pointer; }
+.text-sm       { font-size: 13px; }
+.text-xs       { font-size: 12px; }
+.text-medium   { font-weight: 500; }
+
+
+/* ----------------------------------------
+ * MODAL
+ * Sentrert over siden med backdrop.
+ * Atlas-regler (modal.md):
+ *   - Tittel øverst til venstre, lukke-knapp øverst til høyre
+ *   - Min-bredde 400px, maks-bredde etter innhold
+ *   - Tre lukke-veier: lukke-knapp, klikk på backdrop, Esc
+ *   - Innhold-scrolling ved overflow, aldri sticky header/footer
+ *   - Feil rendres inline, aldri som banner
+ *
+ * <div class="modal-backdrop" id="myModal" hidden>
+ *   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="myTitle">
+ *     <div class="modal-header">
+ *       <p class="modal-title" id="myTitle">Tittel</p>
+ *       <p class="modal-subtitle">Valgfri undertittel</p>
+ *     </div>
+ *     <button class="modal-close" aria-label="Lukk">…</button>
+ *     <div class="modal-body">…innhold…</div>
+ *     <div class="modal-footer">
+ *       <button class="btn btn-primary">Lagre</button>
+ *       <button class="btn btn-tertiary">Avbryt</button>
+ *     </div>
+ *   </div>
+ * </div>
+ * ---------------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--surface-modal);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-backdrop[hidden] { display: none; }
+
+.modal {
+  background: var(--surface-default);
+  border-radius: var(--radius-default);
+  padding: var(--space-32);
+  width: 480px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+  position: relative;
+  box-shadow: 0 8px 32px rgba(46, 56, 77, 0.16);
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-right: var(--space-32);
+}
+
+.modal-title {
+  font: 500 20px/1.3 "Rubik", sans-serif;
+  color: var(--text-primary);
+}
+
+.modal-subtitle {
+  font: 14px/1.4 "Rubik", sans-serif;
+  color: var(--text-muted);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-8);
+  right: var(--space-8);
+  width: var(--size-medium);
+  height: var(--size-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: var(--radius-default);
+  cursor: pointer;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.modal-close:hover { background: var(--action-neutral-hover); }
+.modal-close svg { width: 20px; height: 20px; }
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-24);
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+
+/* ----------------------------------------
+ * BANNER
+ * Side-nivå komponent under page header.
+ * Atlas-regler (banner.md):
+ *   - Alltid med Label øverst (bestemmer type og farge)
+ *   - Overskrift og brødtekst påkrevd
+ *   - Knapper valgfrie: primary → secondary → tertiary
+ *   - Aldri inne i modal, form eller seksjon
+ *
+ * <div class="banner banner--info">
+ *   <div class="banner-label label label--info">
+ *     <svg class="label-icon">…</svg> Info
+ *   </div>
+ *   <p class="banner-heading">Overskrift</p>
+ *   <p class="banner-body">Brødtekst. <a href="#">Les mer</a></p>
+ *   <div class="banner-actions">
+ *     <button class="btn btn-secondary">Handling</button>
+ *   </div>
+ *   <button class="banner-close" aria-label="Lukk">…</button>
+ * </div>
+ * ---------------------------------------- */
+
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-16) var(--space-24) var(--space-16) var(--space-16);
+  border-radius: var(--radius-default);
+  font: 14px/1.5 "Rubik", sans-serif;
+  color: var(--text-primary);
+  position: relative;
+}
+
+.banner--info        { background: var(--surface-info-rest); }
+.banner--success     { background: var(--surface-success-rest); }
+.banner--warning     { background: var(--surface-warning-rest); }
+.banner--error       { background: var(--surface-error-rest); }
+.banner--automation  { background: var(--surface-automation-rest); }
+
+.banner-heading {
+  font: 500 16px/1.3 "Rubik", sans-serif;
+  color: var(--text-primary);
+}
+
+.banner-body {
+  color: var(--text-primary);
+  max-width: 640px;
+}
+
+.banner-body a {
+  color: var(--text-action);
+  text-decoration: none;
+}
+
+.banner-body a:hover { text-decoration: underline; }
+
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-4);
+}
+
+.banner-close {
+  position: absolute;
+  top: var(--space-8);
+  right: var(--space-8);
+  width: var(--size-medium);
+  height: var(--size-medium);
+  background: none;
+  border: none;
+  border-radius: var(--radius-default);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.banner-close:hover { background: var(--action-tertiary-hover); }
+.banner-close svg { width: var(--icon-small); height: var(--icon-small); }
+
+
+/* ----------------------------------------
+ * LABEL (Banner Label / type-indikator)
+ * Atlas-regler (labels.md):
+ *   - 9 kanoniske typer, 24px høyde, pill-form, ingen border
+ *   - Ikon 20px (--icon-size-small) til venstre, --text-primary farge
+ *   - Bakgrunn: --surface-{state}-rest
+ *
+ * <span class="label label--info">
+ *   <svg class="label-icon">…</svg> Info
+ * </span>
+ *
+ * Typer: label--info | label--help | label--tips | label--news |
+ *        label--get-started | label--automated | label--done |
+ *        label--attention | label--error
+ * ---------------------------------------- */
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 24px;
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-full);
+  font: 500 12px/1 "Rubik", sans-serif;
+  color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.label-icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  flex-shrink: 0;
+}
+
+.label--info        { background: var(--surface-info-rest); }
+.label--help        { background: var(--surface-info-rest); }
+.label--tips        { background: var(--surface-info-rest); }
+.label--news        { background: var(--surface-info-rest); }
+.label--get-started { background: var(--surface-info-rest); }
+.label--automated   { background: var(--surface-automation-rest); }
+.label--done        { background: var(--surface-success-rest); }
+.label--attention   { background: var(--surface-warning-rest); }
+.label--error       { background: var(--surface-error-rest); }
+
+
+/* ----------------------------------------
+ * CHECKBOX
+ * Bruk: <label class="checkbox-label">
+ *         <input type="checkbox" class="checkbox-input">
+ *         <span class="checkbox-box"></span>
+ *         Etikettekst
+ *       </label>
+ * ---------------------------------------- */
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  cursor: pointer;
+  font: 14px/1.5 "Rubik", sans-serif;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.checkbox-label:has(.checkbox-input:disabled) { cursor: not-allowed; color: var(--text-disabled); }
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox-box {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border-primary);
+  border-radius: 2px; /* spec-mandated exception: checkbox.md says 2px, not --radius-default (4px) */
+  background: var(--surface-default);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.checkbox-label:hover .checkbox-box { border-color: var(--border-active); }
+
+.checkbox-input:checked + .checkbox-box {
+  background: var(--action-primary-rest);
+  border-color: var(--action-primary-rest);
+}
+
+.checkbox-input:checked + .checkbox-box::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid var(--text-on-action);
+  border-bottom: 2px solid var(--text-on-action);
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.checkbox-input:focus-visible + .checkbox-box {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.checkbox-input:disabled + .checkbox-box {
+  background: var(--surface-disabled);
+  border-color: var(--border-disabled);
+}
+
+
+/* ----------------------------------------
+ * RADIO BUTTON
+ * Bruk: <label class="radio-label">
+ *         <input type="radio" class="radio-input" name="group">
+ *         <span class="radio-circle"></span>
+ *         Etikettekst
+ *       </label>
+ * ---------------------------------------- */
+
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  cursor: pointer;
+  font: 14px/1.5 "Rubik", sans-serif;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.radio-label:has(.radio-input:disabled) { cursor: not-allowed; color: var(--text-disabled); }
+
+.radio-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.radio-circle {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border-primary);
+  border-radius: var(--radius-full);
+  background: var(--surface-default);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.radio-label:hover .radio-circle { border-color: var(--border-active); }
+
+.radio-input:checked + .radio-circle {
+  border-color: var(--action-primary-rest);
+}
+
+.radio-input:checked + .radio-circle::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--action-primary-rest);
+}
+
+.radio-input:focus-visible + .radio-circle {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.radio-input:disabled + .radio-circle {
+  background: var(--surface-disabled);
+  border-color: var(--border-disabled);
+}
+
+
+/* ----------------------------------------
+ * TOGGLE SWITCH
+ * Bruk: <label class="toggle-label">
+ *         <input type="checkbox" class="toggle-input">
+ *         <span class="toggle-track"><span class="toggle-thumb"></span></span>
+ *         Etikettekst
+ *       </label>
+ * ---------------------------------------- */
+
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  cursor: pointer;
+  font: 14px/1.5 "Rubik", sans-serif;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.toggle-label:has(.toggle-input:disabled) { cursor: not-allowed; color: var(--text-disabled); }
+
+.toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.toggle-track {
+  width: 36px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--border-secondary);
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--surface-default);
+  box-shadow: 0 1px 3px rgba(46, 56, 77, 0.2);
+  transition: left 0.15s;
+}
+
+.toggle-input:checked + .toggle-track {
+  background: var(--action-primary-rest);
+}
+
+.toggle-input:checked + .toggle-track .toggle-thumb {
+  left: 18px;
+}
+
+.toggle-input:focus-visible + .toggle-track {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.toggle-input:disabled + .toggle-track {
+  background: var(--surface-disabled);
+}
+
+.toggle-input:disabled + .toggle-track .toggle-thumb {
+  background: var(--border-disabled);
+  box-shadow: none;
+}
+
+
+/* ----------------------------------------
+ * TOOLTIP — prototype-only (Atlas spec pending)
+ * Bruk: <div class="tooltip-anchor">
+ *         <button>...</button>
+ *         <span class="tooltip" role="tooltip">Tekst</span>
+ *       </div>
+ * ---------------------------------------- */
+
+.tooltip-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + var(--space-4));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background: var(--surface-tooltip);
+  color: var(--text-on-action);
+  font: 12px/1.4 "Rubik", sans-serif;
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-default);
+  white-space: nowrap;
+  pointer-events: none;
+  display: none;
+}
+
+.tooltip-anchor:hover .tooltip,
+.tooltip-anchor:focus-within .tooltip {
+  display: block;
+}
+
+
+/* ----------------------------------------
+ * TABS — prototype-only (Atlas spec pending)
+ * Bruk: <div class="tabs" role="tablist">
+ *         <button class="tab tab--active" role="tab">Fane 1</button>
+ *         <button class="tab" role="tab">Fane 2</button>
+ *       </div>
+ * ---------------------------------------- */
+
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-12);
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: var(--size-large);
+  padding: 0 var(--space-2);
+  border: none;
+  background: transparent;
+  font: 14px/1 "Rubik", sans-serif;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Avrundet understrek nær teksten (ikke en full border-bottom i bunnen) */
+.tab::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--space-8);
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  transition: background 0.1s;
+}
+
+.tab:hover:not(.tab--active)::after {
+  background: var(--border-muted);
+}
+
+.tab--active::after {
+  background: var(--border-active);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.tab:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+
+/* ----------------------------------------
+ * SPINNER — prototype-only (Atlas spec pending)
+ * Bruk: <span class="spinner" aria-label="Laster…" role="status"></span>
+ *       <span class="spinner spinner--small"></span>
+ *       <span class="spinner spinner--large"></span>
+ * ---------------------------------------- */
+
+@keyframes tx-spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: var(--size-medium);
+  height: var(--size-medium);
+  border: 2px solid var(--border-muted);
+  border-top-color: var(--action-primary-rest);
+  border-radius: var(--radius-full);
+  animation: tx-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinner--small {
+  width: var(--size-small);
+  height: var(--size-small);
+}
+
+.spinner--large {
+  width: var(--size-large);
+  height: var(--size-large);
+  border-width: 3px;
+}
+
+
+/* ----------------------------------------
+ * NOTIFICATION (TOAST) — prototype-only (Atlas spec pending redesign)
+ * Flytende melding øverst til høyre. Auto-avvisbar.
+ * Bruk: <div class="notification-stack">
+ *         <div class="notification notification--success" role="alert">
+ *           <svg class="notification-icon">…</svg>
+ *           <p class="notification-message">Lagret.</p>
+ *           <button class="notification-close">…</button>
+ *         </div>
+ *       </div>
+ * ---------------------------------------- */
+
+.notification-stack {
+  position: fixed;
+  top: var(--space-16);
+  right: var(--space-16);
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  pointer-events: none;
+}
+
+.notification {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-12) var(--space-16);
+  background: var(--surface-default);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-default);
+  font: 14px/1.4 "Rubik", sans-serif;
+  color: var(--text-primary);
+  min-width: 280px;
+  max-width: 400px;
+  pointer-events: all;
+}
+
+.notification-icon {
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+  flex-shrink: 0;
+}
+
+.notification-message { flex: 1; min-width: 0; }
+
+.notification-close {
+  width: var(--size-medium);
+  height: var(--size-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: var(--radius-default);
+  cursor: pointer;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.notification-close:hover { background: var(--action-tertiary-hover); }
+.notification-close svg { width: 16px; height: 16px; }
+
+.notification--info    { border-left: 3px solid var(--border-info); }
+.notification--success { border-left: 3px solid var(--border-success); }
+.notification--warning { border-left: 3px solid var(--border-warning); }
+.notification--error   { border-left: 3px solid var(--border-error); }
+
+
+/* ----------------------------------------
+ * PAGINATION — prototype-only (Atlas spec pending)
+ * Bruk: <nav class="pagination" aria-label="Sidetall">
+ *         <button class="page-btn" aria-label="Forrige">‹</button>
+ *         <button class="page-btn page-btn--active">1</button>
+ *         <button class="page-btn">2</button>
+ *         <button class="page-btn" aria-label="Neste">›</button>
+ *       </nav>
+ * ---------------------------------------- */
+
+.pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--size-medium);
+  height: var(--size-medium);
+  padding: 0 var(--space-8);
+  border: 1px solid transparent;
+  border-radius: var(--radius-default);
+  background: transparent;
+  font: 14px/1 "Rubik", sans-serif;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.page-btn:hover:not(.page-btn--active):not(:disabled) {
+  background: var(--action-secondary-rest);
+}
+
+.page-btn--active {
+  background: var(--action-primary-rest);
+  color: var(--text-on-action);
+  cursor: default;
+}
+
+.page-btn:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.page-btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+
+/* ----------------------------------------
+ * STATUS CHIP — prototype-only (Atlas spec pending)
+ * Pill-beholder med statusfarge. Skiller seg fra:
+ *   - status-dot: ingen boks, bare prikk + tekst
+ *   - chip: nøytral, ingen fargevariant
+ * Bruk: <span class="status-chip status-chip--success">Aktiv</span>
+ * ---------------------------------------- */
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--size-small);
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-full);
+  font: 500 12px/1 "Rubik", sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-chip--success { background: var(--surface-success-rest); color: var(--text-primary); }
+.status-chip--warning { background: var(--surface-warning-rest); color: var(--text-primary); }
+.status-chip--error   { background: var(--surface-error-rest);   color: var(--text-primary); }
+.status-chip--info    { background: var(--surface-info-rest);    color: var(--text-primary); }
+.status-chip--neutral { background: var(--surface-disabled);     color: var(--text-muted); }
+
+
+/* ----------------------------------------
+ * SKELETON — prototype-only (Atlas spec pending)
+ * Lasteplasseholder med shimmer-animasjon.
+ * Bruk: <div class="skeleton" style="width:200px;height:16px;"></div>
+ *       <div class="skeleton skeleton--text"></div>
+ *       <div class="skeleton skeleton--circle" style="width:40px;height:40px;"></div>
+ * ---------------------------------------- */
+
+@keyframes tx-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-disabled) 25%,
+    var(--border-faint)     50%,
+    var(--surface-disabled) 75%
+  );
+  background-size: 800px 100%;
+  animation: tx-shimmer 1.4s infinite linear;
+  border-radius: var(--radius-default);
+}
+
+.skeleton--text   { height: 14px; width: 100%; border-radius: var(--radius-full); }
+.skeleton--title  { height: 20px; width: 60%;  border-radius: var(--radius-full); }
+.skeleton--circle { border-radius: var(--radius-full); }

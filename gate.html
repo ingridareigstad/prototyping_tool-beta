@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logg inn – Tripletex brukertest</title>
+  <link rel="stylesheet" href="https://cdn.tripletex.no/google-fonts/rubik-400-500-800.css">
+  <link rel="stylesheet" href="_system/tokens.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font: 14px/1.5 "Rubik", sans-serif;
+      color: var(--text-primary);
+      background: var(--surface-background);
+    }
+
+    .gate-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-24);
+      background: var(--surface-background);
+    }
+
+    /* Back button */
+    .back-btn {
+      position: fixed;
+      top: var(--space-20);
+      left: var(--space-20);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-8);
+      height: 40px;
+      padding: 0 var(--space-16) 0 var(--space-12);
+      background: var(--surface-info-hover);
+      border: none;
+      border-radius: var(--radius-default);
+      font: 14px/1.4 "Rubik", sans-serif;
+      color: var(--text-action);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .back-btn:hover { background: var(--surface-info-highlight); }
+    .back-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+    /* Card */
+    .gate-card {
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+    }
+
+    .gate-title {
+      font: 500 28px/1.2 "Rubik", sans-serif;
+      color: var(--text-primary);
+      margin-bottom: var(--space-16);
+    }
+
+    .gate-desc {
+      font: 14px/1.6 "Rubik", sans-serif;
+      color: var(--text-muted);
+      margin-bottom: var(--space-24);
+    }
+
+    /* Input row */
+    .gate-form {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-8);
+      margin-bottom: var(--space-8);
+    }
+
+    .gate-input {
+      width: 180px;
+      height: 40px;
+      padding: 0 var(--space-12);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      font: 14px/1 "Rubik", sans-serif;
+      color: var(--text-primary);
+      background: var(--surface-default);
+      outline: none;
+      text-align: center;
+      letter-spacing: 0.08em;
+    }
+    .gate-input:focus { border-color: var(--action-primary-rest); }
+    .gate-input.is-error { border-color: var(--surface-error-active); }
+
+    .gate-submit {
+      height: 40px;
+      padding: 0 var(--space-20);
+      background: var(--action-primary-rest);
+      border: none;
+      border-radius: var(--radius-default);
+      font: 14px/1 "Rubik", sans-serif;
+      color: var(--text-on-action);
+      cursor: pointer;
+    }
+    .gate-submit:hover { background: var(--action-primary-hover); }
+
+    .gate-error {
+      font: 13px/1 "Rubik", sans-serif;
+      color: var(--surface-error-active);
+      min-height: 16px;
+      margin-bottom: var(--space-32);
+    }
+
+    /* Logo */
+    .gate-logo {
+      display: flex;
+      justify-content: center;
+      margin-top: var(--space-40);
+    }
+  </style>
+</head>
+<body>
+
+<a class="back-btn" href="index.html">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+  Alle prototyper
+</a>
+
+<div class="gate-wrap">
+  <div class="gate-card">
+    <h1 class="gate-title">Velkommen til brukertest!</h1>
+    <p class="gate-desc">Noen i produkt og utvikling hos Tripletex har invitert deg til å være med på en brukertest.<br>Skriv inn innloggingskoden under, så er du i gang!</p>
+
+    <div class="gate-form">
+      <input class="gate-input" id="codeInput" type="text" placeholder="Innloggingskode" autocomplete="off" spellcheck="false">
+      <button class="gate-submit" id="submitBtn">Logg inn</button>
+    </div>
+    <p class="gate-error" id="errorMsg"></p>
+
+    <div class="gate-logo">
+      <svg width="119" height="40" viewBox="0 0 119 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g clip-path="url(#clip0_gate)">
+          <path d="M61.0765 27.3655C60.6713 25.0034 59.4972 23.1027 57.4288 21.9008C56.6033 21.4429 55.6944 21.1551 54.7558 21.0543C53.8172 20.9535 52.868 21.0418 51.9641 21.314C47.9949 22.46 46.039 26.5831 47.1143 30.3007C47.3721 31.2117 47.8082 32.0624 48.3975 32.8034C48.9867 33.5444 49.7173 34.161 50.5467 34.6174C51.3762 35.0737 52.2881 35.3608 53.2294 35.4619C54.1707 35.5631 55.1227 35.4762 56.0302 35.2064C57.3604 34.8319 58.5453 34.0617 59.4276 32.998C60.3781 31.8363 60.9706 30.4233 61.1328 28.931L57.9043 29.8674C57.5969 31.0979 56.7861 32.1036 55.2628 32.5509C53.4737 33.0681 51.2796 32.4531 50.5389 30.3986L61.0765 27.3655ZM49.8816 27.9943C49.63 26.6946 50.4266 24.654 52.7468 23.9831C55.011 23.2982 56.8419 24.654 57.3031 25.8558L49.8816 27.9943Z" fill="#2E384D"/>
+          <path d="M84.6127 27.3655C84.2074 25.0034 83.0334 23.1027 80.9649 21.9008C80.1394 21.4429 79.2306 21.1551 78.292 21.0543C77.3534 20.9535 76.4041 21.0418 75.5002 21.314C71.531 22.46 69.5752 26.5831 70.6504 30.3007C70.9091 31.2127 71.3464 32.0642 71.9369 32.8058C72.5274 33.5474 73.2593 34.1643 74.0902 34.6207C74.9211 35.0771 75.8344 35.3639 76.777 35.4645C77.7197 35.565 78.6729 35.4773 79.5813 35.2064C80.9111 34.8317 82.0955 34.0616 82.9775 32.9982C83.9281 31.8365 84.5205 30.4235 84.6827 28.9312L81.4542 29.8676C81.1468 31.0981 80.3361 32.1038 78.8128 32.5511C77.0237 33.0683 74.8295 32.4532 74.0888 30.3988L84.6127 27.3655ZM73.4178 27.9943C73.1662 26.6946 73.9627 24.654 76.2828 23.9831C78.547 23.2982 80.3779 24.654 80.839 25.8558L73.4178 27.9943Z" fill="#2E384D"/>
+          <path d="M84.5283 35.2345H88.4696L91.5584 30.5524L94.6192 35.2345H98.6024L93.515 28.0506L98.0853 21.6076H94.2139L91.5584 25.8006L88.9028 21.6076H84.9756L89.5598 28.0508L84.5283 35.2345Z" fill="#2E384D"/>
+          <path d="M38.9646 28.3016C38.9646 31.8236 36.4069 35.5138 31.669 35.5138C30.2538 35.5372 28.8616 35.1539 27.6577 34.4096V40.0002H24.3874V28.9166C24.3734 28.707 24.3594 28.4973 24.3594 28.2877V28.2597C24.3594 24.7657 26.917 21.0618 31.655 21.0618C36.4064 21.0759 38.9646 24.7935 38.9646 28.3016ZM35.694 28.2735C35.694 25.8695 33.8912 24.0946 31.655 24.0946C29.4746 24.0946 27.7136 25.7858 27.6297 28.0918H27.6437V28.7767C27.7339 29.7779 28.1957 30.709 28.9381 31.3868C29.6805 32.0645 30.6497 32.4398 31.655 32.4387C33.8912 32.4527 35.694 30.6776 35.694 28.2735Z" fill="#2E384D"/>
+          <path d="M41.1885 16.7161V35.0949H44.4591V16.7161H41.1885Z" fill="#2E384D"/>
+          <path d="M18.0852 21.4681H21.3412V35.0949H18.0852V21.4681ZM19.6505 19.4975C20.0071 19.4975 20.3557 19.3917 20.6522 19.1936C20.9486 18.9955 21.1797 18.714 21.3162 18.3845C21.4526 18.0551 21.4883 17.6926 21.4188 17.3429C21.3492 16.9932 21.1775 16.6719 20.9254 16.4198C20.6732 16.1676 20.352 15.9959 20.0023 15.9264C19.6525 15.8568 19.29 15.8925 18.9606 16.029C18.6312 16.1654 18.3496 16.3965 18.1515 16.693C17.9534 16.9895 17.8476 17.338 17.8476 17.6946C17.8488 18.1724 18.0392 18.6303 18.377 18.9681C18.7149 19.3059 19.1727 19.4963 19.6505 19.4975Z" fill="#2E384D"/>
+          <path d="M10.7208 28.1905C10.8047 25.8432 12.5935 24.1375 14.8019 24.1375C15.0643 24.1393 15.3261 24.1626 15.5846 24.2073V21.1185C15.3247 21.0903 15.0634 21.0763 14.8019 21.0767C9.9937 21.0767 7.40807 24.8363 7.40807 28.3582V28.3863C7.40807 28.5958 7.42208 28.8056 7.43609 29.0151V35.1366H10.7344L10.7208 28.1905Z" fill="#2E384D"/>
+          <path d="M6.63871 20.9366H3.25594V16.7298H0V35.0806H3.25594V24.2071H6.63871V20.9366Z" fill="#2E384D"/>
+          <path d="M69.8539 20.9366H66.4712V16.7298H63.2152V35.0806H66.4712V24.2071H69.8539V20.9366Z" fill="#2E384D"/>
+          <path d="M114.297 13.2917V12.5508H118.658C118.569 11.4605 118.099 10.4364 117.33 9.65773C116.588 8.91099 115.613 8.44032 114.566 8.32369C113.52 8.20706 112.465 8.45147 111.576 9.01644C110.688 9.5814 110.019 10.433 109.681 11.4301C109.342 12.4272 109.355 13.51 109.716 14.499C110.077 15.488 110.766 16.3239 111.667 16.8682C112.569 17.4124 113.629 17.6323 114.672 17.4915C115.716 17.3507 116.68 16.8576 117.405 16.0938C118.13 15.3301 118.572 14.3417 118.658 13.2923L114.297 13.2917Z" fill="#58B3CD"/>
+          <path d="M105.466 21.3836H106.207V25.7443C107.298 25.6549 108.322 25.1849 109.1 24.4165C109.847 23.6742 110.318 22.699 110.434 21.6525C110.551 20.606 110.307 19.5511 109.742 18.6626C109.177 17.774 108.325 17.1052 107.328 16.7669C106.331 16.4286 105.248 16.4411 104.259 16.8024C103.27 17.1637 102.434 17.8521 101.89 18.7535C101.346 19.6549 101.126 20.7152 101.266 21.7586C101.407 22.8021 101.9 23.7662 102.664 24.491C103.428 25.2159 104.416 25.6581 105.466 25.7443L105.466 21.3836Z" fill="#1AB96D"/>
+          <path d="M106.165 4.69607L105.648 4.1789L108.722 1.10413C107.815 0.330029 106.643 -0.0627243 105.452 0.00816651C104.261 0.0790574 103.144 0.608091 102.334 1.48441C101.525 2.36074 101.086 3.51634 101.109 4.70907C101.133 5.90181 101.617 7.03911 102.461 7.88266C103.305 8.72622 104.442 9.21056 105.635 9.23421C106.827 9.25785 107.983 8.81896 108.859 8.00949C109.736 7.20003 110.265 6.08281 110.335 4.89195C110.406 3.70109 110.014 2.52901 109.24 1.62129L106.165 4.69607Z" fill="#010A59"/>
+        </g>
+        <defs>
+          <clipPath id="clip0_gate">
+            <rect width="118.658" height="40.0002" fill="white"/>
+          </clipPath>
+        </defs>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+  // code → which destination groups it unlocks
+  var ACCESS = {
+    'antony': ['konsern', 'patterns', 'avvik'],
+    'test':   ['components']
+  };
+
+  // destination group → regex that matches the target URL
+  var GROUPS = {
+    konsern:    /konsern/i,
+    patterns:   /patterns/i,
+    avvik:      /avvikshandtering/i,
+    components: /Components/i
+  };
+
+  var params = new URLSearchParams(location.search);
+  var dest   = params.get('to') || 'index.html';
+
+  function groupFor(url) {
+    for (var g in GROUPS) {
+      if (GROUPS[g].test(url)) return g;
+    }
+    return null;
+  }
+
+  function tryLogin() {
+    var code  = document.getElementById('codeInput').value.trim().toLowerCase();
+    var input = document.getElementById('codeInput');
+    var err   = document.getElementById('errorMsg');
+    var group = groupFor(dest);
+    var allowed = ACCESS[code] || [];
+
+    if (allowed.indexOf(group) !== -1) {
+      sessionStorage.setItem('tx-auth-' + group, code);
+      location.href = dest;
+    } else {
+      input.classList.add('is-error');
+      err.textContent = 'Feil kode. Prøv igjen.';
+    }
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', tryLogin);
+  document.getElementById('codeInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') tryLogin();
+    document.getElementById('codeInput').classList.remove('is-error');
+    document.getElementById('errorMsg').textContent = '';
+  });
+</script>
+</body>
+</html>
