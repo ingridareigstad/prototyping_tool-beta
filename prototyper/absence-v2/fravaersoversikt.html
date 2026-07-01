@@ -810,11 +810,15 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      padding: 0;            /* unngå at systemets modal-padding lekker inn (dobbel padding) */
+      gap: 0;
     }
     .modal-header {
       display: flex;
+      flex-direction: row;   /* systemets .modal-header er column – overstyr så tittel/lukk ligger på rad */
       align-items: center;
       justify-content: space-between;
+      gap: 0;
       padding: var(--space-24) var(--space-24) var(--space-20);
     }
     .modal-title {
@@ -822,6 +826,7 @@
       color: var(--text-primary);
     }
     .modal-close {
+      position: static;      /* systemets .modal-close er absolutt – hold den i header-raden */
       width: var(--size-large);
       height: var(--size-large);
       display: inline-flex;
@@ -901,30 +906,6 @@
       color: var(--text-muted);
     }
 
-    /* ====== VISNINGSBYTTE-DRAWER (tannhjul) ====== */
-    .view-drawer { width: 320px; max-width: 320px; padding: 0 var(--space-4) var(--space-4); }
-    .view-drawer-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: var(--space-4) var(--space-8) var(--space-4) var(--space-12);
-      border-bottom: 1px solid var(--border-muted);
-    }
-    .view-drawer-title { font: 500 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
-    .view-drawer-reset {
-      border: none; background: transparent; cursor: pointer;
-      font: 14px/1.4 "Rubik", sans-serif; color: var(--text-link);
-      padding: var(--space-8) var(--space-12); border-radius: var(--radius-default);
-    }
-    .view-drawer-reset:hover { background: var(--action-neutral-hover); }
-    .view-drawer-section-label {
-      padding: var(--space-8) var(--space-8) var(--space-4);
-      font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted);
-    }
-    .view-option { gap: var(--space-8); cursor: pointer; }
-    .view-option-icon { display: inline-flex; flex-shrink: 0; color: var(--text-primary); }
-    .view-option-icon svg { width: var(--icon-medium, 24px); height: var(--icon-medium, 24px); }
-    .view-option-label { flex: 1; font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
-    .view-option .radio { display: inline-flex; align-items: center; }
-
     /* ====== KALENDER-VERKTØYLINJE (rad 2) ====== */
     .cal-toolbar {
       display: flex; align-items: center; justify-content: space-between;
@@ -933,9 +914,10 @@
       border-bottom: 1px solid var(--border-muted);
     }
     .cal-toolbar-left { display: flex; align-items: center; gap: var(--space-16); }
-    .cal-granularity { width: 130px; }
     .cal-period-label { font: 500 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
     .cal-toolbar-right { display: flex; align-items: center; gap: var(--space-8); }
+    /* Ikoner i liste/kalender-switcher */
+    .view-switcher .atl-content-switch__label svg { width: var(--icon-small); height: var(--icon-small); display: block; }
     .cal-today-link { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); text-decoration: none; }
     .cal-nav-btn { width: 32px; height: 32px; }
     .cal-nav-btn svg { width: var(--icon-small); height: var(--icon-small); }
@@ -969,8 +951,15 @@
     .cal-day-cell--weekend { background: var(--surface-error-rest); }
     .cal-head-row .cal-day-cell {
       height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2);
+      container-type: inline-size;
     }
-    .cal-day-weekday { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    /* Måneds-navn i år-visning: full når kolonnen er bred nok, ellers forkortelse */
+    .cal-day-num .m-short { display: none; }
+    @container (max-width: 92px) {
+      .cal-day-num .m-full { display: none; }
+      .cal-day-num .m-short { display: inline; }
+    }
+    .cal-day-weekday { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
     .cal-day-num { font: 500 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
     .cal-day-num--today {
       background: var(--surface-info-active); color: var(--text-on-action);
@@ -985,17 +974,38 @@
       height: 24px; box-sizing: border-box;
       display: flex; align-items: center; gap: var(--space-8);
       padding: 0 var(--space-8);
-      border: 1px solid var(--border-disabled);
+      border: none;
       border-radius: var(--radius-full);
       background: var(--surface-default);
       overflow: hidden; cursor: pointer;
     }
-    .cal-bar-label { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cal-bar .status-dot { font-size: 14px; }
-    .cal-bar--ny { border-color: var(--border-active); background: var(--surface-info-rest); }
-    .cal-bar--krever { border-color: var(--border-warning); background: var(--surface-warning-rest); }
-    .cal-bar--aktiv { border-color: var(--border-success); background: var(--surface-success-rest); }
-    .cal-bar--avsluttet { border-color: var(--border-disabled); background: var(--surface-background); }
+    /* Innhold venstrestilt; fraværstype prioriteres og kan krympe med ellipsis */
+    .cal-bar-label { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+    .cal-bar .status-dot { font-size: 14px; flex: 0 0 auto; }
+    .cal-bar .t-short { display: none; }
+    /* md: full type uten status. sm: forkortet type uten status. mini: ingen tekst (kun liten pille + tooltip). */
+    .cal-bar--md .status-dot,
+    .cal-bar--sm .status-dot,
+    .cal-bar--mini .status-dot { display: none; }
+    .cal-bar--sm .t-full { display: none; }
+    .cal-bar--sm .t-short { display: inline; }
+    .cal-bar--mini .cal-bar-label { display: none; }
+    /* Tooltip for bjelker uten synlig tekst (særlig år-visning) */
+    .cal-tooltip {
+      position: fixed; z-index: 300; pointer-events: none;
+      background: var(--surface-tooltip); color: var(--text-on-action);
+      font: 14px/1.4 "Rubik", sans-serif;
+      padding: var(--space-4) var(--space-8);
+      border-radius: var(--radius-default);
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(46, 56, 77, 0.18);
+    }
+    .cal-tooltip[hidden] { display: none; }
+    /* Nytt tag-design (uten stroke): sterkere bakgrunnstint per status */
+    .cal-bar--ny { background: var(--surface-info-hover); }
+    .cal-bar--krever { background: var(--surface-warning-highlight); }
+    .cal-bar--aktiv { background: var(--surface-success-hover); }
+    .cal-bar--avsluttet { background: var(--surface-disabled); }
     .cal-bar--ny .cal-bar-label, .cal-bar--krever .cal-bar-label { font-weight: 500; }
     .cal-bar--cont-left { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; }
     .cal-bar--cont-right { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; }
@@ -1064,10 +1074,10 @@
     .cal-popover .detail-section-body { padding: 0 0 var(--space-24); }
     /* Hover på bjelke: bakgrunnsfargens hover-versjon */
     .cal-bar { transition: background-color 0.1s; }
-    .cal-bar--ny:hover { background: var(--surface-info-hover); }
-    .cal-bar--krever:hover { background: var(--surface-warning-hover); }
-    .cal-bar--aktiv:hover { background: var(--surface-success-hover); }
-    .cal-bar--avsluttet:hover { background: var(--surface-disabled); }
+    .cal-bar--ny:hover { background: var(--surface-info-highlight); }
+    .cal-bar--krever:hover { background: var(--surface-warning-highlight); }
+    .cal-bar--aktiv:hover { background: var(--surface-success-highlight); }
+    .cal-bar--avsluttet:hover { background: var(--border-muted); }
     /* Markert bjelke (valgt fravær): bakgrunn et nivå opp til highlight-versjonen */
     .cal-bar--ny.cal-bar--selected { background: var(--surface-info-highlight); }
     .cal-bar--krever.cal-bar--selected { background: var(--surface-warning-highlight); }
@@ -1118,7 +1128,8 @@
       <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Timeliste</a>
       <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8.5L2 13l1.5-4.5L2 4l11.5 4.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Reiser og utlegg</a>
       <div class="nav-item nav-item--active"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8h6M5 5.5h4M5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Fravær og ferie</div>
-      <a class="nav-sub nav-sub--active" href="inntektsmeldinger.html"><span class="nav-bullet"></span>Fraværsoversikt</a>
+      <a class="nav-sub" href="dashbord.html"><span class="nav-bullet"></span>Dashbord</a>
+      <a class="nav-sub nav-sub--active" href="fravaersoversikt.html"><span class="nav-bullet"></span>Fraværsoversikt</a>
       <a class="nav-sub" href="avstemming-refusjoner.html"><span class="nav-bullet"></span>Avstemming av refusjoner</a>
       <a class="nav-sub" href="inntektsmeldinger.html"><span class="nav-bullet"></span>Inntektsmeldinger</a>
       <a class="nav-sub" href="statistikk.html"><span class="nav-bullet"></span>Statistikk</a>
@@ -1253,6 +1264,23 @@
                 <svg class="input-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
               </div>
 
+              <!-- Visningsbytte: liste / kalender -->
+              <div class="atl-content-switcher view-switcher" id="view-switcher">
+                <div class="atl-content-switch atl-content-switch--single">
+                  <input class="atl-content-switch__input" type="radio" name="cal-view" id="view-list" checked onchange="setView('oversikt')">
+                  <div class="atl-content-switch__label-background"></div>
+                  <label class="atl-content-switch__label atl-content-switch__label--selected" for="view-list" title="Liste" aria-label="Liste"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 19V17H21V19H9ZM9 13V11H21V13H9ZM9 7V5H21V7H9ZM5 20C4.45 20 3.97917 19.8042 3.5875 19.4125C3.19583 19.0208 3 18.55 3 18C3 17.45 3.19583 16.9792 3.5875 16.5875C3.97917 16.1958 4.45 16 5 16C5.55 16 6.02083 16.1958 6.4125 16.5875C6.80417 16.9792 7 17.45 7 18C7 18.55 6.80417 19.0208 6.4125 19.4125C6.02083 19.8042 5.55 20 5 20ZM5 14C4.45 14 3.97917 13.8042 3.5875 13.4125C3.19583 13.0208 3 12.55 3 12C3 11.45 3.19583 10.9792 3.5875 10.5875C3.97917 10.1958 4.45 10 5 10C5.55 10 6.02083 10.1958 6.4125 10.5875C6.80417 10.9792 7 11.45 7 12C7 12.55 6.80417 13.0208 6.4125 13.4125C6.02083 13.8042 5.55 14 5 14ZM5 8C4.45 8 3.97917 7.80417 3.5875 7.4125C3.19583 7.02083 3 6.55 3 6C3 5.45 3.19583 4.97917 3.5875 4.5875C3.97917 4.19583 4.45 4 5 4C5.55 4 6.02083 4.19583 6.4125 4.5875C6.80417 4.97917 7 5.45 7 6C7 6.55 6.80417 7.02083 6.4125 7.4125C6.02083 7.80417 5.55 8 5 8Z"/></svg></label>
+                  <div class="atl-content-switch__label atl-content-switch__label--deselected"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 19V17H21V19H9ZM9 13V11H21V13H9ZM9 7V5H21V7H9ZM5 20C4.45 20 3.97917 19.8042 3.5875 19.4125C3.19583 19.0208 3 18.55 3 18C3 17.45 3.19583 16.9792 3.5875 16.5875C3.97917 16.1958 4.45 16 5 16C5.55 16 6.02083 16.1958 6.4125 16.5875C6.80417 16.9792 7 17.45 7 18C7 18.55 6.80417 19.0208 6.4125 19.4125C6.02083 19.8042 5.55 20 5 20ZM5 14C4.45 14 3.97917 13.8042 3.5875 13.4125C3.19583 13.0208 3 12.55 3 12C3 11.45 3.19583 10.9792 3.5875 10.5875C3.97917 10.1958 4.45 10 5 10C5.55 10 6.02083 10.1958 6.4125 10.5875C6.80417 10.9792 7 11.45 7 12C7 12.55 6.80417 13.0208 6.4125 13.4125C6.02083 13.8042 5.55 14 5 14ZM5 8C4.45 8 3.97917 7.80417 3.5875 7.4125C3.19583 7.02083 3 6.55 3 6C3 5.45 3.19583 4.97917 3.5875 4.5875C3.97917 4.19583 4.45 4 5 4C5.55 4 6.02083 4.19583 6.4125 4.5875C6.80417 4.97917 7 5.45 7 6C7 6.55 6.80417 7.02083 6.4125 7.4125C6.02083 7.80417 5.55 8 5 8Z"/></svg></div>
+                </div>
+                <div class="atl-content-switch atl-content-switch--single">
+                  <input class="atl-content-switch__input" type="radio" name="cal-view" id="view-cal" onchange="setView('kalender')">
+                  <div class="atl-content-switch__label-background"></div>
+                  <label class="atl-content-switch__label atl-content-switch__label--selected" for="view-cal" title="Kalender" aria-label="Kalender"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 22c-.55 0-1.02-.196-1.413-.587A1.926 1.926 0 0 1 3 20V6c0-.55.196-1.02.587-1.412A1.926 1.926 0 0 1 5 4h1V2h2v2h8V2h2v2h1c.55 0 1.02.196 1.413.588.391.391.587.862.587 1.412v14c0 .55-.196 1.02-.587 1.413A1.926 1.926 0 0 1 19 22H5Zm0-2h14V10H5v10ZM5 8h14V6H5v2Z"/></svg></label>
+                  <div class="atl-content-switch__label atl-content-switch__label--deselected"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 22c-.55 0-1.02-.196-1.413-.587A1.926 1.926 0 0 1 3 20V6c0-.55.196-1.02.587-1.412A1.926 1.926 0 0 1 5 4h1V2h2v2h8V2h2v2h1c.55 0 1.02.196 1.413.588.391.391.587.862.587 1.412v14c0 .55-.196 1.02-.587 1.413A1.926 1.926 0 0 1 19 22H5Zm0-2h14V10H5v10ZM5 8h14V6H5v2Z"/></svg></div>
+                </div>
+                <div class="atl-content-switcher__border"></div>
+              </div>
+
               <select class="input toolbar-select">
                 <option>Alle ansatte</option>
                 <option>Jakob Pettersen</option>
@@ -1273,38 +1301,6 @@
                 <span class="toggle-label">Samle fravær med samme arbeidsgiverperiode</span>
               </div>
 
-            </div>
-
-            <!-- HØYRE: visningsbytte (tannhjul) -->
-            <div class="table-toolbar-actions">
-              <div class="drawer-anchor">
-                <button class="icon-btn" id="view-gear-btn" onclick="toggleViewDrawer(event)" title="Visning" aria-label="Endre visning">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.64 12.98c.042-.32.073-.64.073-.98 0-.34-.031-.66-.072-.98l2.169-1.65a.495.495 0 0 0 .123-.64l-2.056-3.46a.517.517 0 0 0-.452-.25.492.492 0 0 0-.175.03l-2.56 1c-.534-.4-1.11-.73-1.737-.98l-.39-2.65a.497.497 0 0 0-.505-.42H9.946a.497.497 0 0 0-.504.42l-.39 2.65a7.97 7.97 0 0 0-1.738.98l-2.56-1a.597.597 0 0 0-.185-.03c-.174 0-.35.09-.442.25L2.071 8.73a.484.484 0 0 0 .124.64l2.169 1.65a7.74 7.74 0 0 0-.072.98c0 .33.03.66.072.98l-2.17 1.65a.495.495 0 0 0-.123.64l2.056 3.46c.093.16.268.25.453.25.061 0 .123-.01.175-.03l2.56-1c.534.4 1.11.73 1.737.98l.39 2.65c.031.24.247.42.504.42h4.112c.257 0 .473-.18.504-.42l.39-2.65a7.955 7.955 0 0 0 1.738-.98l2.56 1c.062.02.123.03.185.03a.51.51 0 0 0 .442-.25l2.056-3.46a.495.495 0 0 0-.123-.64l-2.17-1.65Zm-2.035-1.71c.041.31.052.52.052.73 0 .21-.021.43-.052.73l-.144 1.13.915.7 1.11.84-.72 1.21-1.305-.51-1.069-.42-.925.68c-.442.32-.864.56-1.285.73l-1.09.43-.165 1.13-.205 1.35h-1.44l-.195-1.35-.164-1.13-1.09-.43a5.876 5.876 0 0 1-1.264-.71l-.936-.7-1.09.43-1.305.51-.72-1.21 1.11-.84.915-.7-.144-1.13a8.1 8.1 0 0 1-.051-.74c0-.2.02-.43.051-.73l.144-1.13-.915-.7-1.11-.84.72-1.21 1.305.51 1.07.42.925-.68a6.05 6.05 0 0 1 1.285-.73l1.09-.43.164-1.13.206-1.35h1.429l.195 1.35.164 1.13 1.09.43c.442.18.854.41 1.265.71l.935.7 1.09-.43 1.306-.51.72 1.21-1.1.85-.916.7.144 1.13ZM12.002 8C9.73 8 7.89 9.79 7.89 12s1.84 4 4.112 4c2.272 0 4.112-1.79 4.112-4s-1.84-4-4.112-4Zm0 6c-1.13 0-2.056-.9-2.056-2s.925-2 2.056-2 2.056.9 2.056 2-.925 2-2.056 2Z"/></svg>
-                </button>
-                <div class="drawer view-drawer" id="view-drawer" hidden>
-                  <div class="view-drawer-header">
-                    <span class="view-drawer-title">Visning</span>
-                    <button class="view-drawer-reset" onclick="resetView()">Tilbakestill alle</button>
-                  </div>
-                  <div class="view-drawer-section-label">Visningsinnstillinger</div>
-                  <label class="drawer-option view-option">
-                    <span class="view-option-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 15V13H5V15H19ZM19 11V9H5V11H19ZM19 7V5H5V7H19ZM5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H19C19.55 3 20.0208 3.19583 20.4125 3.5875C20.8042 3.97917 21 4.45 21 5V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5ZM19 19V17H5V19H19Z"/></svg></span>
-                    <span class="view-option-label">Oversikt</span>
-                    <span class="radio">
-                      <input type="radio" name="view-mode" class="radio-input" value="oversikt" checked onchange="setView('oversikt')">
-                      <span class="radio-circle"></span>
-                    </span>
-                  </label>
-                  <label class="drawer-option view-option">
-                    <span class="view-option-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 22c-.55 0-1.02-.196-1.413-.587A1.926 1.926 0 0 1 3 20V6c0-.55.196-1.02.587-1.412A1.926 1.926 0 0 1 5 4h1V2h2v2h8V2h2v2h1c.55 0 1.02.196 1.413.588.391.391.587.862.587 1.412v14c0 .55-.196 1.02-.587 1.413A1.926 1.926 0 0 1 19 22H5Zm0-2h14V10H5v10ZM5 8h14V6H5v2Z"/></svg></span>
-                    <span class="view-option-label">Kalender</span>
-                    <span class="radio">
-                      <input type="radio" name="view-mode" class="radio-input" value="kalender" onchange="setView('kalender')">
-                      <span class="radio-circle"></span>
-                    </span>
-                  </label>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -2358,11 +2354,6 @@
             <!-- Kalender-verktøylinje (rad 2) -->
             <div class="cal-toolbar">
               <div class="cal-toolbar-left">
-                <select class="input toolbar-select cal-granularity" title="Tidsoppløsning" onchange="setCalGran(this.value)">
-                  <option value="week">Uker</option>
-                  <option value="month">Måneder</option>
-                  <option value="year">År</option>
-                </select>
                 <span class="cal-period-label" id="cal-period-label">Uke 47 2026</span>
               </div>
               <div class="cal-toolbar-right">
@@ -2373,6 +2364,28 @@
                 <button class="icon-btn cal-nav-btn" onclick="calNav(1)" aria-label="Neste">
                   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.6 12L8 7.4L9.4 6L15.4 12L9.4 18L8 16.6L12.6 12Z"/></svg>
                 </button>
+                <!-- Tidsoppløsning -->
+                <div class="atl-content-switcher cal-gran-switcher" id="cal-gran-switcher">
+                  <div class="atl-content-switch atl-content-switch--single">
+                    <input class="atl-content-switch__input" type="radio" name="cal-gran" id="gran-week" checked onchange="setCalGran('week')">
+                    <div class="atl-content-switch__label-background"></div>
+                    <label class="atl-content-switch__label atl-content-switch__label--selected" for="gran-week">Uke</label>
+                    <div class="atl-content-switch__label atl-content-switch__label--deselected">Uke</div>
+                  </div>
+                  <div class="atl-content-switch atl-content-switch--single">
+                    <input class="atl-content-switch__input" type="radio" name="cal-gran" id="gran-month" onchange="setCalGran('month')">
+                    <div class="atl-content-switch__label-background"></div>
+                    <label class="atl-content-switch__label atl-content-switch__label--selected" for="gran-month">Måned</label>
+                    <div class="atl-content-switch__label atl-content-switch__label--deselected">Måned</div>
+                  </div>
+                  <div class="atl-content-switch atl-content-switch--single">
+                    <input class="atl-content-switch__input" type="radio" name="cal-gran" id="gran-year" onchange="setCalGran('year')">
+                    <div class="atl-content-switch__label-background"></div>
+                    <label class="atl-content-switch__label atl-content-switch__label--selected" for="gran-year">År</label>
+                    <div class="atl-content-switch__label atl-content-switch__label--deselected">År</div>
+                  </div>
+                  <div class="atl-content-switcher__border"></div>
+                </div>
               </div>
             </div>
 
@@ -2389,6 +2402,9 @@
 
           <!-- KEBAB-MENY (Slett/Endre/Endringslogg) — bygges av JS -->
           <div class="kebab-menu" id="kebab-menu" hidden></div>
+
+          <!-- TOOLTIP for fraværsbjelker (vises når teksten ikke får plass) -->
+          <div class="cal-tooltip" id="cal-tooltip" hidden></div>
 
         </div>
         <!-- /content-card -->
@@ -3620,43 +3636,49 @@
     if (dropdown && dropdown.style.display !== 'none' && wrap && !wrap.contains(e.target)) {
       dropdown.style.display = 'none';
     }
-    // Lukk visningsdrawer ved klikk utenfor
-    var vAnchor = document.getElementById('view-gear-btn');
-    var vDrawer = document.getElementById('view-drawer');
-    if (vDrawer && !vDrawer.hidden) {
-      var anchor = vAnchor ? vAnchor.closest('.drawer-anchor') : null;
-      if (anchor && !anchor.contains(e.target)) vDrawer.hidden = true;
-    }
   });
 
   /* ============================================================
-   * VISNINGSBYTTE (Oversikt / Kalender) via tannhjul
+   * VISNINGSBYTTE (Liste / Kalender) via content switcher
    * ============================================================ */
-  function toggleViewDrawer(e) {
-    e.stopPropagation();
-    var d = document.getElementById('view-drawer');
-    d.hidden = !d.hidden;
+  // Atlas content-switcher: flytt animert border til valgt segment
+  function atlUpdateBorder(container, animate) {
+    if (!container) return;
+    var border = container.querySelector('.atl-content-switcher__border');
+    var checkedInput = container.querySelector('input:checked');
+    if (!border) return;
+    if (!checkedInput) { container.style.setProperty('--border-width', '0px'); container.style.setProperty('--color--selected', 'transparent'); return; }
+    container.style.setProperty('--transition-duration', animate ? 'var(--default-transition-duration)' : '0');
+    var item = checkedInput.parentElement;
+    var rect = item.getBoundingClientRect();
+    var isFirst = container.firstElementChild === item;
+    var isLast = container.lastElementChild.previousElementSibling === item;
+    container.style.setProperty('--color--selected', 'var(--text-active)');
+    container.style.setProperty('--border-left', (item.offsetLeft - (isFirst ? 0 : 1)) + 'px');
+    container.style.setProperty('--border-width', (rect.width - (isFirst || isLast ? 2 : 1)) + 'px');
+    container.style.setProperty('--border-top-left-radius', isFirst ? 'var(--radius-default)' : '0px');
+    container.style.setProperty('--border-bottom-left-radius', isFirst ? 'var(--radius-default)' : '0px');
+    container.style.setProperty('--border-top-right-radius', isLast ? 'var(--radius-default)' : '0px');
+    container.style.setProperty('--border-bottom-right-radius', isLast ? 'var(--radius-default)' : '0px');
   }
 
   function setView(mode) {
-    document.getElementById('view-oversikt').style.display = (mode === 'kalender') ? 'none' : '';
-    document.getElementById('view-kalender').style.display = (mode === 'kalender') ? '' : 'none';
     var isCal = (mode === 'kalender');
+    document.getElementById('view-oversikt').style.display = isCal ? 'none' : '';
+    document.getElementById('view-kalender').style.display = isCal ? '' : 'none';
     var calCard = document.getElementById('view-kalender').closest('.content-card');
     if (calCard) calCard.classList.toggle('content-card--cal', isCal);
     var mainEl = document.querySelector('.main-content');
     if (mainEl) mainEl.classList.toggle('main-content--cal', isCal);
     var pageEl = document.querySelector('.page');
     if (pageEl) pageEl.classList.toggle('page--cal', isCal);
-    document.querySelectorAll('input[name="view-mode"]').forEach(function(r) {
-      r.checked = (r.value === mode);
-    });
-    if (mode === 'kalender') renderCalendar();
-    document.getElementById('view-drawer').hidden = true;
-  }
-
-  function resetView() {
-    setView('oversikt');
+    var radio = document.getElementById(isCal ? 'view-cal' : 'view-list');
+    if (radio) radio.checked = true;
+    atlUpdateBorder(document.getElementById('view-switcher'), false);
+    if (isCal) {
+      renderCalendar();
+      requestAnimationFrame(function() { atlUpdateBorder(document.getElementById('cal-gran-switcher'), false); });
+    }
   }
 
   /* ============================================================
@@ -3716,6 +3738,8 @@
 
   var MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];
   var MONTHS_LONG = ['Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'];
+  var MONTHS_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des'];
+  var TYPE_ABBR = { 'Fraværsperiode': 'Fravær', 'Egenmelding': 'Egenm.', 'Sykemelding': 'Sykem.', 'Foreldrepermisjon': 'F.perm.', 'Ferie': 'Ferie', 'Omsorgsdager': 'Omsorg' };
   var WEEKDAYS_SHORT = ['Man', 'Tirs', 'Ons', 'Tors', 'Fre', 'Lør', 'Søn'];
 
   var CAL_TODAY = new Date(2026, 10, 18);          // onsdag 18.11.2026
@@ -3725,6 +3749,7 @@
   var calRowOrder = null;                           // fast radrekkefølge, satt fra default-uka
 
   function parseDate(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function fmtDate(d) { var p = function(x){ return (x < 10 ? '0' : '') + x; }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2); }
   function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
   function mondayOf(d) {
     var x = startOfDay(d);
@@ -3754,7 +3779,13 @@
     calAnchor = startOfDay(CAL_TODAY);
     renderCalendar();
   }
-  function setCalGran(g) { calGran = g; renderCalendar(); }
+  function setCalGran(g) {
+    calGran = g;
+    var radio = document.getElementById('gran-' + g);
+    if (radio) radio.checked = true;
+    atlUpdateBorder(document.getElementById('cal-gran-switcher'), true);
+    renderCalendar();
+  }
 
   // Bygg kolonnene for gjeldende visning (uke = dager, måned = dager, år = måneder)
   function buildColumns() {
@@ -3762,7 +3793,7 @@
     if (calGran === 'year') {
       var y = calAnchor.getFullYear();
       for (var m = 0; m < 12; m++) {
-        cols.push({ start: new Date(y, m, 1), top: '', bottom: MONTHS_LONG[m], weekend: false,
+        cols.push({ start: new Date(y, m, 1), top: '', bottom: MONTHS_LONG[m], bottomShort: MONTHS_ABBR[m], weekend: false,
                     today: (y === CAL_TODAY.getFullYear() && m === CAL_TODAY.getMonth()), current: false });
       }
       endExcl = new Date(y + 1, 0, 1);
@@ -3831,8 +3862,6 @@
     var cols = built.cols, endExcl = built.endExcl, n = cols.length;
     var rangeStart = cols[0].start, rangeEndIncl = addDays(endExcl, -1);
     document.getElementById('cal-period-label').textContent = built.label;
-    var gsel = document.querySelector('.cal-granularity');
-    if (gsel) gsel.value = calGran;
 
     function cellCls(c) {
       return 'cal-day-cell' + (c.weekend ? ' cal-day-cell--weekend' : '') + (c.current ? ' cal-day-cell--current' : '');
@@ -3846,9 +3875,13 @@
     html += '<div class="cal-days-area">';
     cols.forEach(function(c) {
       var numCls = c.today ? ' cal-day-num--today' : '';
+      // Måneds-navn (år): vis full versjon når det er plass, ellers forkortelse (container-query)
+      var bottom = c.bottomShort
+        ? '<span class="m-full">' + c.bottom + '</span><span class="m-short">' + c.bottomShort + '</span>'
+        : c.bottom;
       html += '<div class="' + cellCls(c) + '">' +
                 (c.top ? '<span class="cal-day-weekday">' + c.top + '</span>' : '') +
-                '<span class="cal-day-num' + numCls + '">' + c.bottom + '</span>' +
+                '<span class="cal-day-num' + numCls + '">' + bottom + '</span>' +
               '</div>';
     });
     html += '</div></div>';
@@ -3894,9 +3927,13 @@
         var styleWidth = (insets === 0) ? (width + '%')
                        : (insets === 1) ? ('calc(' + width + '% - var(--space-4))')
                        : ('calc(' + width + '% - var(--space-8))');
+        var shortType = TYPE_ABBR[a.type] || a.type;
+        var period = sameDay(s, e) ? fmtDate(s) : fmtDate(s) + '–' + fmtDate(e);
+        var barTip = a.type + ' · ' + meta.text + ' · ' + period;
         html += '<div class="' + cls + '" style="left:' + styleLeft + '; width:' + styleWidth + ';" ' +
+                'data-tip="' + barTip + '" ' +
                 'onclick="openCalDetail(\'' + a.cardId + '\', \'' + a.detailKind + '\', event)">' +
-                  '<span class="cal-bar-label">' + a.type + '</span>' +
+                  '<span class="cal-bar-label"><span class="t-full">' + a.type + '</span><span class="t-short">' + shortType + '</span></span>' +
                   '<span class="status-dot ' + meta.dot + '">' + meta.text + '</span>' +
                 '</div>';
       }
@@ -3911,6 +3948,14 @@
     }
 
     grid.innerHTML = html;
+
+    // Tilpass innhold til bjelkens faktiske bredde:
+    // full = type + status, md = full type, sm = forkortet type, mini = kun farge.
+    grid.querySelectorAll('.cal-bar').forEach(function(b) {
+      var w = b.getBoundingClientRect().width;
+      var tier = (w < 56) ? 'mini' : (w < 110) ? 'sm' : (w < 200) ? 'md' : 'full';
+      if (tier !== 'full') b.classList.add('cal-bar--' + tier);
+    });
   }
 
   /* ============================================================
@@ -4070,6 +4115,8 @@
     });
   }
   setupSplitKebabs();
+  // Plasser content-switcher-borderen på valgt segment ved oppstart (kalender-switcheren settes når kalender vises)
+  requestAnimationFrame(function() { atlUpdateBorder(document.getElementById('view-switcher'), false); });
 
   // Lukk popover / kebab-meny ved klikk utenfor
   document.addEventListener('click', function(e) {
@@ -4084,9 +4131,39 @@
     if (e.key === 'Escape') {
       closeKebabMenu();
       closeCalDetail();
-      var vd = document.getElementById('view-drawer');
-      if (vd) vd.hidden = true;
     }
+  });
+
+  // Tooltip på fraværsbjelker (vises når full tekst ikke er synlig)
+  (function() {
+    var grid = document.getElementById('cal-grid');
+    var tip = document.getElementById('cal-tooltip');
+    if (!grid || !tip) return;
+    grid.addEventListener('mouseover', function(e) {
+      var bar = e.target.closest('.cal-bar');
+      if (!bar || !bar.classList.contains('cal-bar--mini')) return;   // kun når ingen tekst er synlig
+      tip.textContent = bar.getAttribute('data-tip') || '';
+      tip.hidden = false;
+      var r = bar.getBoundingClientRect(), tr = tip.getBoundingClientRect();
+      var left = Math.max(8, Math.min(window.innerWidth - tr.width - 8, r.left + r.width / 2 - tr.width / 2));
+      var top = r.top - tr.height - 6;
+      if (top < 8) top = r.bottom + 6;
+      tip.style.left = Math.round(left) + 'px';
+      tip.style.top = Math.round(top) + 'px';
+    });
+    grid.addEventListener('mouseout', function(e) {
+      var bar = e.target.closest('.cal-bar');
+      if (bar && (!e.relatedTarget || !e.relatedTarget.closest('.cal-bar'))) tip.hidden = true;
+    });
+  })();
+
+  // Re-render ved resize så bjelke-nivåene (full/md/sm/mini) holder seg riktige
+  var calResizeTimer;
+  window.addEventListener('resize', function() {
+    var vk = document.getElementById('view-kalender');
+    if (!vk || vk.style.display === 'none') return;
+    clearTimeout(calResizeTimer);
+    calResizeTimer = setTimeout(renderCalendar, 150);
   });
 </script>
 

@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashbord – Tripletex</title>
+  <link rel="stylesheet" href="https://cdn.tripletex.no/google-fonts/rubik-400-500-800.css">
+  <link rel="stylesheet" href="../../_system/tokens.css">
+  <link rel="stylesheet" href="../../_system/components.css">
+  <link rel="stylesheet" href="../../_system/layout.css">
+  <style>
+    /* ---- Dashbord-grid (6 kolonner, bredde-utilities) ---- */
+    .dash-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-24); }
+    .dash-w-1of3 { grid-column: span 2; }
+    .dash-w-1of2 { grid-column: span 3; }
+    .dash-w-2of3 { grid-column: span 4; }
+    .dash-w-full { grid-column: span 6; }
+
+    /* Parkerte alternativer – egen seksjon nederst (ikke del av selve dashbordet) */
+    .dash-alt-section { margin-top: var(--space-24); }
+    .dash-alt-heading { font: 500 20px/1.3 "Rubik", sans-serif; color: var(--text-primary); margin-bottom: var(--space-4); }
+    .dash-alt-note { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); margin-bottom: var(--space-24); }
+
+    /* Kort-tittel med info-ikon ved siden av */
+    .dash-card-heading { display: flex; align-items: center; gap: var(--space-8); }
+    .dash-info-btn { width: var(--size-small); height: var(--size-small); }
+    .dash-info-btn svg { width: 16px; height: 16px; color: var(--text-muted); }
+    .card { display: flex; flex-direction: column; }
+    .card-body { display: flex; flex-direction: column; flex: 1; }
+
+    /* ---- Listewidget (Oppdateringer / Kommende frister) ---- */
+    .dash-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-8); }
+    .dash-list-item { display: flex; align-items: center; gap: var(--space-12); padding: var(--space-12); border: 1px solid var(--border-muted); border-radius: var(--radius-default); }
+    .dash-row-icon { width: 20px; height: 20px; flex-shrink: 0; color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; }
+    .dash-row-icon svg { width: 20px; height: 20px; }
+    .dash-list-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; flex: 1; }
+    .dash-list-name { font: 500 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+    .dash-list-sub { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); display: inline-flex; align-items: center; gap: var(--space-8); }
+    .dash-marker { width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0; }
+    .dash-marker--warning { background: var(--surface-warning-active); }
+    .dash-marker--info { background: var(--surface-info-active); }
+    .dash-card-footer { display: flex; justify-content: flex-end; gap: var(--space-16); padding-top: var(--space-16); margin-top: auto; }
+
+    /* ---- Gjenbrukt viz-CSS fra statistikk.html ---- */
+    .viz-quota-row { display: flex; gap: var(--space-40); }
+    .viz-quota-item { display: flex; flex-direction: column; gap: var(--space-8); }
+    .viz-quota-label { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    .viz-quota-value-row { display: flex; align-items: center; gap: var(--space-8); }
+    .viz-quota-number { font: 500 30px/1.3 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-icon-btn-warn { width: 32px; height: 32px; background: var(--surface-warning-rest); border: 1px solid var(--border-warning); border-radius: var(--radius-default); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: var(--text-primary); }
+    .viz-icon-btn-error { width: 32px; height: 32px; background: var(--surface-error-rest); border: 1px solid var(--border-error); border-radius: var(--radius-default); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: var(--text-primary); }
+    .viz-link { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-action); text-decoration: none; }
+    .viz-link:hover { text-decoration: underline; }
+
+    .viz-chart-total-label { font: 14px/1.3 "Rubik", sans-serif; color: var(--text-muted); }
+    .viz-chart-total-number { font: 500 30px/1.3 "Rubik", sans-serif; color: var(--text-primary); margin-bottom: var(--space-12); }
+    .viz-chart-svg-wrap { overflow: visible; }
+    .viz-legend { display: flex; gap: var(--space-32); flex-wrap: wrap; padding-top: var(--space-16); }
+    .viz-legend-item { display: flex; flex-direction: column; gap: var(--space-4); font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-legend-item-label { font: 14px/1.3 "Rubik", sans-serif; color: var(--text-muted); }
+    .viz-legend-days { font: 500 14px/1 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-legend-item-row { display: flex; align-items: center; gap: var(--space-8); }
+    .viz-legend-dot { width: 12px; height: 12px; border-radius: var(--radius-full); flex-shrink: 0; }
+
+    .viz-fp-number { font: 500 30px/1.3 "Rubik", sans-serif; color: var(--text-primary); }
+    .viz-fp-sub { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); margin-top: var(--space-8); display: flex; align-items: center; gap: var(--space-8); flex-wrap: wrap; }
+    .viz-fp-sub strong { color: var(--text-primary); font-weight: 500; }
+    .viz-fp-action { color: var(--text-action); text-decoration: none; display: inline-flex; align-items: center; gap: var(--space-4); }
+    .viz-fp-action svg { width: 16px; height: 16px; }
+    .viz-color-bar { display: flex; height: 20px; border-radius: var(--radius-default); overflow: hidden; width: 100%; margin-top: var(--space-20); background: var(--surface-disabled); }
+    .viz-bar-legend { display: flex; gap: var(--space-24); flex-wrap: wrap; margin-top: var(--space-12); }
+    .viz-bar-legend-item { display: flex; align-items: center; gap: var(--space-8); font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    .viz-bar-legend-pct { font: 500 14px/1 "Rubik", sans-serif; color: var(--text-primary); }
+
+    /* ---- Modal (hentet fra statistikk.html) ---- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--surface-modal);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.is-open { display: flex; }
+    .modal {
+      background: var(--surface-default);
+      border-radius: var(--radius-default);
+      width: 710px;
+      max-width: calc(100vw - var(--space-32));
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-24);
+      padding: var(--space-32);
+      position: relative;
+      overflow: hidden;
+    }
+    .modal-header { display: flex; flex-direction: column; gap: var(--space-4); }
+    .modal-title { font: 500 20px/1.3 "Rubik", sans-serif; color: var(--text-primary); }
+    .modal-status { display: flex; align-items: center; gap: var(--space-4); font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+    .modal-status-dot { width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0; }
+    .modal-close-btn {
+      position: absolute;
+      top: var(--space-8);
+      right: var(--space-8);
+      width: var(--size-medium);
+      height: var(--size-medium);
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-default);
+      color: var(--text-primary);
+    }
+    .modal-close-btn:hover { background: var(--action-neutral-hover); }
+    .modal-slot { height: 329px; overflow: hidden; display: flex; flex-direction: column; }
+    .modal-table-wrap {
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .modal-search-bar {
+      padding: var(--space-12);
+      border-bottom: 1px solid var(--border-muted);
+      background: var(--surface-default);
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .modal-search-input-wrap { position: relative; display: flex; align-items: center; }
+    .modal-search-input-wrap .input { padding-right: var(--space-40); background: var(--surface-background); }
+    .modal-search-icon { position: absolute; right: var(--space-12); color: var(--text-muted); pointer-events: none; width: 20px; height: 20px; }
+    .modal-table { width: 100%; border-collapse: collapse; font: 14px/1.4 "Rubik", sans-serif; }
+    .modal-table thead { background: var(--surface-info-rest); }
+    .modal-table th {
+      padding: var(--space-8) var(--space-12);
+      text-align: left;
+      font-weight: 500;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border-muted);
+      font-size: 14px;
+    }
+    .modal-table td {
+      padding: var(--space-8) var(--space-12);
+      border-bottom: 1px solid var(--border-muted);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+    .modal-table td.col-bold { font-weight: 500; }
+    .modal-table .col-num { text-align: right; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+    .modal-sort-icon { width: 12px; height: 12px; vertical-align: middle; margin-left: var(--space-2); }
+    .modal-emp-cell { display: flex; align-items: center; gap: var(--space-8); }
+    .modal-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      flex-shrink: 0;
+      background: var(--surface-disabled);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font: 500 10px/1 "Rubik", sans-serif;
+      color: var(--text-primary);
+    }
+    .modal-footer { display: flex; gap: var(--space-8); flex-shrink: 0; }
+
+    /* ---- Widget: Ansatte ikke på jobb i dag ---- */
+    .dash-avatar { width: 28px; height: 28px; border-radius: var(--radius-full); flex-shrink: 0; background: var(--surface-nav); display: inline-flex; align-items: center; justify-content: center; font: 500 11px/1 "Rubik", sans-serif; color: var(--text-primary); }
+    .dash-away-right { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); flex-shrink: 0; }
+    .dash-back { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); white-space: nowrap; }
+
+    /* Vikar-forslag – popover (AI-insight, jf. Atlas-komponent) */
+    .vikar-trigger { display: inline-flex; align-items: center; gap: var(--space-4); }
+    .vikar-spark { width: 16px; height: 16px; flex-shrink: 0; }
+    .vikar-pop { position: fixed; z-index: 200; width: 320px; max-width: calc(100vw - var(--space-32)); background: var(--surface-default); border: 1px solid var(--border-muted); border-radius: var(--radius-default); padding: var(--space-16); display: none; flex-direction: column; gap: var(--space-12); }
+    .vikar-pop.is-open { display: flex; }
+    .vikar-card-title { font: 500 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+    .vikar-pop-basis { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    .vikar-row { display: flex; align-items: center; gap: var(--space-8); }
+    .vikar-row-info { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+    .vikar-row-name { font: 500 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+    .vikar-row-reason { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+
+    /* Dato-velger i header (jf. Atlas widget-periodevelger) */
+    .dash-datepick { display: inline-flex; align-items: center; gap: var(--space-4); background: none; border: none; cursor: pointer; color: var(--text-action); font: 14px/1.4 "Rubik", sans-serif; padding: var(--space-4) var(--space-8); border-radius: var(--radius-default); white-space: nowrap; }
+    .dash-datepick:hover { background: var(--action-secondary-rest); }
+    .dash-datepick svg { width: 16px; height: 16px; }
+    .date-pop { position: fixed; z-index: 200; min-width: 200px; background: var(--surface-default); border: 1px solid var(--border-muted); border-radius: var(--radius-default); padding: var(--space-8); display: none; flex-direction: column; gap: var(--space-4); }
+    .date-pop.is-open { display: flex; }
+    .date-pop > button { text-align: left; background: none; border: none; cursor: pointer; font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); padding: var(--space-8); border-radius: var(--radius-default); }
+    .date-pop > button:hover { background: var(--action-neutral-hover); }
+    .date-pop .input { margin-top: var(--space-4); }
+    .away-empty { display: none; font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); padding: var(--space-16) 0; }
+
+    /* Daily digest – tall-fliser (Alt A) */
+    .digest-tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-12); }
+    .digest-tile { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-16); border: 1px solid var(--border-muted); border-radius: var(--radius-default); }
+    .digest-tile .viz-link { margin-top: var(--space-12); align-self: flex-start; }
+    .digest-num { font: 500 30px/1.2 "Rubik", sans-serif; color: var(--text-primary); }
+    .digest-label { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+
+    /* Daily digest – handlingsliste (Alt B) */
+    .digest-count { font: 500 20px/1.3 "Rubik", sans-serif; color: var(--text-primary); flex-shrink: 0; min-width: 28px; text-align: center; }
+    .digest-text { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); flex: 1; min-width: 0; }
+    .modal-status svg { width: 16px; height: 16px; color: var(--text-action); flex-shrink: 0; }
+    .modal .dash-back { margin-left: auto; }
+
+    /* NAV-refusjoner widget – differanse vist som status */
+    .refund-amount { font-feature-settings: 'tnum' 1, 'lnum' 1; }
+
+    /* NAV-refusjoner – oppsummert variant */
+    .ref-sum-stats { display: flex; flex-direction: column; gap: var(--space-16); }
+    .ref-sum-stat { display: flex; flex-direction: column; gap: var(--space-4); }
+    .ref-sum-label { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); }
+    .ref-sum-value { font: 16px/1.4 "Rubik", sans-serif; color: var(--text-primary); display: inline-flex; align-items: center; gap: var(--space-8); }
+
+    /* SSB-rapport widget */
+    .ssb-frist { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-8); margin: 0 0 var(--space-20); }
+    .ssb-frist-date { font: 500 30px/1.2 "Rubik", sans-serif; color: var(--text-primary); }
+    .ssb-calc-title { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-muted); margin-bottom: var(--space-12); }
+    .ssb-table-wrap { border: 1px solid var(--border-muted); border-radius: var(--radius-default); overflow: hidden; }
+
+    /* Alt B – ukesstripe (inspirert av kalenderen i fraværsoversikt) */
+    .dweek { display: flex; flex-direction: column; border: 1px solid var(--border-muted); border-radius: var(--radius-default); overflow: hidden; }
+    .dweek-row { display: flex; align-items: stretch; }
+    .dweek-row + .dweek-row { border-top: 1px solid var(--border-faint); }
+    .dweek-head { border-bottom: 1px solid var(--border-muted); }
+    .dweek-name { width: 160px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; gap: var(--space-8); padding: var(--space-8) var(--space-12); background: var(--surface-info-rest); border-right: 1px solid var(--border-muted); }
+    .dweek-name-text { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dweek-days { flex: 1; min-width: 0; position: relative; display: flex; }
+    .dweek-day { flex: 1; min-width: 0; box-sizing: border-box; border-right: 1px solid var(--border-faint); background: var(--surface-default); }
+    .dweek-day:last-child { border-right: none; }
+    .dweek-day--weekend { background: var(--surface-error-rest); }
+    .dweek-day--today { background: var(--surface-info-rest); }
+    .dweek-head .dweek-name { height: 48px; }
+    .dweek-head .dweek-day { height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); }
+    .dweek-weekday { font: 14px/1.2 "Rubik", sans-serif; color: var(--text-muted); }
+    .dweek-num { font: 500 14px/1.2 "Rubik", sans-serif; color: var(--text-primary); }
+    .dweek-num--today { background: var(--surface-info-active); color: var(--text-on-action); border-radius: var(--radius-default); padding: var(--space-2) var(--space-8); }
+    .dweek-bodyrow { min-height: 44px; }
+    .dweek-bodyrow .dweek-days { align-items: center; }
+    .dweek-bar { position: absolute; top: 50%; transform: translateY(-50%); height: 24px; box-sizing: border-box; display: flex; align-items: center; padding: 0 var(--space-8); border: 1px solid var(--border-disabled); border-radius: var(--radius-full); background: var(--surface-default); overflow: hidden; }
+    .dweek-bar-label { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dweek-bar--ny { border-color: var(--border-active); background: var(--surface-info-rest); }
+    .dweek-bar--krever { border-color: var(--border-warning); background: var(--surface-warning-rest); }
+    .dweek-bar--aktiv { border-color: var(--border-success); background: var(--surface-success-rest); }
+    .dweek-bar--cont-left { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; }
+    .dweek-bar--cont-right { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- TOPBAR -->
+    <header class="app-topbar">
+      <div class="topbar-left">
+        <button class="topbar-icon-btn" title="Meny">
+          <svg viewBox="0 0 16 16" fill="none"><rect y="2.5" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="7" width="16" height="1.5" rx="0.75" fill="currentColor"/><rect y="11.5" width="16" height="1.5" rx="0.75" fill="currentColor"/></svg>
+        </button>
+        <span class="topbar-logo">tripletex</span>
+        <span class="topbar-sep"></span>
+        <div class="topbar-company">
+          <span class="topbar-company-badge">T</span>
+          <span class="topbar-company-name">Tripletex AS</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-search">
+          <svg viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 9.5L12.5 12.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Søk
+        </div>
+        <button class="topbar-assistant">Assistent ✦</button>
+        <button class="topbar-icon-btn" title="Favoritter"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3.5 3.7.5-2.7 2.6.6 3.7L8 10.5l-3.1 1.8.6-3.7L3 5.5l3.7-.5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+        <button class="topbar-icon-btn" title="Last ned"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2.5v7M5.5 7l2.5 3 2.5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+        <button class="topbar-icon-btn" title="Varsler"><svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5A4.5 4.5 0 003.5 6v3L2 11h12l-1.5-2V6A4.5 4.5 0 008 1.5z" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 11.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.3"/></svg></button>
+        <button class="topbar-icon-btn" title="Meldinger"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="8.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 13.5l1.5-2h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="topbar-icon-btn" title="Hjelp"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 6.5a2 2 0 114 0c0 1.5-2 1.5-2 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+        <button class="topbar-icon-btn" title="Kunngjøringer"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1 3H13l-2.5 2 1 3L8 8.5 4.5 10l1-3L3 5h4L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+        <button class="topbar-icon-btn" title="Rapporter"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4M6 9h4M6 11.5h2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+        <button class="topbar-user-btn" title="Bruker"><svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      </div>
+    </header>
+
+    <div class="app-body">
+
+      <!-- SIDEBAR -->
+      <nav class="sidebar">
+        <a class="nav-item" href="#"><span class="nav-icon" style="color:var(--surface-warning-active);"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.6 3.6 3.9.6-2.8 2.7.7 3.9L8 10.5l-3.4 1.8.7-3.9L2.5 5.7l3.9-.6L8 1.5z"/></svg></span>Favoritter</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M2 7.5l6-5 6 5V14H10.5v-4h-5v4H2V7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Hjem</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Timeliste</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8.5L2 13l1.5-4.5L2 4l11.5 4.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Reiser og utlegg</a>
+        <div class="nav-item nav-item--active"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8h6M5 5.5h4M5 10.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Fravær og ferie</div>
+        <a class="nav-sub nav-sub--active" href="dashbord.html"><span class="nav-bullet"></span>Dashbord</a>
+        <a class="nav-sub" href="fravaersoversikt.html"><span class="nav-bullet"></span>Fraværsoversikt</a>
+        <a class="nav-sub" href="avstemming-refusjoner.html"><span class="nav-bullet"></span>Avstemming av refusjoner</a>
+        <a class="nav-sub" href="inntektsmeldinger.html"><span class="nav-bullet"></span>Inntektsmeldinger</a>
+        <a class="nav-sub" href="statistikk.html"><span class="nav-bullet"></span>Statistikk</a>
+        <a class="nav-sub" href="ssb-rapporter.html"><span class="nav-bullet"></span>SSB-rapporter</a>
+        <a class="nav-sub" href="#"><span class="nav-bullet"></span>Innstillinger</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 2h10v13l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 7h5M5.5 9.5h5M5.5 5h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Faktura</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 2v3H5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>Bilag</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M4 7V5M8 7V5M12 7V5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1.5 5h13l-6.5-3L1.5 5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>Bank</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg></span>Regnskap</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M3 12V8M7 12V5M11 12V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Rapporter</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="4.5" width="12" height="7.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.5v1M6.5 8.5h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>Lønn</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2L2.5 5v6L8 14l5.5-3V5L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 2v12M2.5 5L8 8l5.5-3" stroke="currentColor" stroke-width="1.3"/></svg></span>Prosjekt</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5.5L13 5.5V14H3V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.3"/></svg></span>Dokument</a>
+        <a class="nav-item" href="#"><span class="nav-icon"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2.5 2.5L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Oppgave</a>
+      </nav>
+
+      <!-- MAIN CONTENT -->
+      <main class="main-content">
+        <div class="page">
+
+          <!-- Page header -->
+          <div class="page-header">
+            <h1 class="page-title">Fravær: Dashbord</h1>
+            <div class="page-actions">
+              <button class="btn btn-primary">
+                Registrer fravær
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="dash-grid">
+
+            <!-- Widget 1: Oppdateringer fravær (ny) -->
+            <div class="card dash-w-1of3">
+              <div class="card-header">
+                <div class="dash-card-heading">
+                  <span class="card-title">Oppdateringer fravær</span>
+                  <button class="icon-btn dash-info-btn" title="Siste registreringer på fravær">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="dash-list">
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text">
+                      <span class="dash-list-name">Ingrid Reigstad</span>
+                      <span class="dash-list-sub"><span class="dash-marker dash-marker--warning"></span>Ny sykemelding registrert</span>
+                    </div>
+                    <button class="icon-btn" title="Valg">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20C11.45 20 10.9792 19.8042 10.5875 19.4125C10.1958 19.0208 10 18.55 10 18C10 17.45 10.1958 16.9792 10.5875 16.5875C10.9792 16.1958 11.45 16 12 16C12.55 16 13.0208 16.1958 13.4125 16.5875C13.8042 16.9792 14 17.45 14 18C14 18.55 13.8042 19.0208 13.4125 19.4125C13.0208 19.8042 12.55 20 12 20ZM12 14C11.45 14 10.9792 13.8042 10.5875 13.4125C10.1958 13.0208 10 12.55 10 12C10 11.45 10.1958 10.9792 10.5875 10.5875C10.9792 10.1958 11.45 10 12 10C12.55 10 13.0208 10.1958 13.4125 10.5875C13.8042 10.9792 14 11.45 14 12C14 12.55 13.8042 13.0208 13.4125 13.4125C13.0208 13.8042 12.55 14 12 14ZM12 8C11.45 8 10.9792 7.80417 10.5875 7.4125C10.1958 7.02083 10 6.55 10 6C10 5.45 10.1958 4.97917 10.5875 4.5875C10.9792 4.19583 11.45 4 12 4C12.55 4 13.0208 4.19583 13.4125 4.5875C13.8042 4.97917 14 5.45 14 6C14 6.55 13.8042 7.02083 13.4125 7.4125C13.0208 7.80417 12.55 8 12 8Z"/></svg>
+                    </button>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text">
+                      <span class="dash-list-name">Martin Johnsen</span>
+                      <span class="dash-list-sub"><span class="dash-marker dash-marker--info"></span>Ny egenmelding registrert</span>
+                    </div>
+                    <button class="icon-btn" title="Valg">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20C11.45 20 10.9792 19.8042 10.5875 19.4125C10.1958 19.0208 10 18.55 10 18C10 17.45 10.1958 16.9792 10.5875 16.5875C10.9792 16.1958 11.45 16 12 16C12.55 16 13.0208 16.1958 13.4125 16.5875C13.8042 16.9792 14 17.45 14 18C14 18.55 13.8042 19.0208 13.4125 19.4125C13.0208 19.8042 12.55 20 12 20ZM12 14C11.45 14 10.9792 13.8042 10.5875 13.4125C10.1958 13.0208 10 12.55 10 12C10 11.45 10.1958 10.9792 10.5875 10.5875C10.9792 10.1958 11.45 10 12 10C12.55 10 13.0208 10.1958 13.4125 10.5875C13.8042 10.9792 14 11.45 14 12C14 12.55 13.8042 13.0208 13.4125 13.4125C13.0208 13.8042 12.55 14 12 14ZM12 8C11.45 8 10.9792 7.80417 10.5875 7.4125C10.1958 7.02083 10 6.55 10 6C10 5.45 10.1958 4.97917 10.5875 4.5875C10.9792 4.19583 11.45 4 12 4C12.55 4 13.0208 4.19583 13.4125 4.5875C13.8042 4.97917 14 5.45 14 6C14 6.55 13.8042 7.02083 13.4125 7.4125C13.0208 7.80417 12.55 8 12 8Z"/></svg>
+                    </button>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="10.5" r="0.75" fill="currentColor"/></svg></span>
+                    <div class="dash-list-text">
+                      <span class="dash-list-name">Kari Laurstad</span>
+                      <span class="dash-list-sub"><span class="dash-marker dash-marker--warning"></span>11/12 egenmeldinger brukt</span>
+                    </div>
+                    <button class="icon-btn" title="Valg">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20C11.45 20 10.9792 19.8042 10.5875 19.4125C10.1958 19.0208 10 18.55 10 18C10 17.45 10.1958 16.9792 10.5875 16.5875C10.9792 16.1958 11.45 16 12 16C12.55 16 13.0208 16.1958 13.4125 16.5875C13.8042 16.9792 14 17.45 14 18C14 18.55 13.8042 19.0208 13.4125 19.4125C13.0208 19.8042 12.55 20 12 20ZM12 14C11.45 14 10.9792 13.8042 10.5875 13.4125C10.1958 13.0208 10 12.55 10 12C10 11.45 10.1958 10.9792 10.5875 10.5875C10.9792 10.1958 11.45 10 12 10C12.55 10 13.0208 10.1958 13.4125 10.5875C13.8042 10.9792 14 11.45 14 12C14 12.55 13.8042 13.0208 13.4125 13.4125C13.0208 13.8042 12.55 14 12 14ZM12 8C11.45 8 10.9792 7.80417 10.5875 7.4125C10.1958 7.02083 10 6.55 10 6C10 5.45 10.1958 4.97917 10.5875 4.5875C10.9792 4.19583 11.45 4 12 4C12.55 4 13.0208 4.19583 13.4125 4.5875C13.8042 4.97917 14 5.45 14 6C14 6.55 13.8042 7.02083 13.4125 7.4125C13.0208 7.80417 12.55 8 12 8Z"/></svg>
+                    </button>
+                  </li>
+                </ul>
+                <div class="dash-card-footer"><a href="#" class="viz-link" onclick="åpneModal('modal-oppdateringer');return false;">Se alle</a><a href="fravaersoversikt.html" class="viz-link">Gå til oversikt</a></div>
+              </div>
+            </div>
+
+            <!-- Widget 2: Kommende frister (ny) -->
+            <div class="card dash-w-1of3">
+              <div class="card-header">
+                <div class="dash-card-heading">
+                  <span class="card-title">Kommende frister</span>
+                  <button class="icon-btn dash-info-btn" title="Frister som nærmer seg">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="dash-list">
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text">
+                      <span class="dash-list-name">Ingrid Reigstad</span>
+                      <span class="dash-list-sub">Dialogmøte | Frist: 12.06.26</span>
+                    </div>
+                    <button class="icon-btn" title="Valg">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20C11.45 20 10.9792 19.8042 10.5875 19.4125C10.1958 19.0208 10 18.55 10 18C10 17.45 10.1958 16.9792 10.5875 16.5875C10.9792 16.1958 11.45 16 12 16C12.55 16 13.0208 16.1958 13.4125 16.5875C13.8042 16.9792 14 17.45 14 18C14 18.55 13.8042 19.0208 13.4125 19.4125C13.0208 19.8042 12.55 20 12 20ZM12 14C11.45 14 10.9792 13.8042 10.5875 13.4125C10.1958 13.0208 10 12.55 10 12C10 11.45 10.1958 10.9792 10.5875 10.5875C10.9792 10.1958 11.45 10 12 10C12.55 10 13.0208 10.1958 13.4125 10.5875C13.8042 10.9792 14 11.45 14 12C14 12.55 13.8042 13.0208 13.4125 13.4125C13.0208 13.8042 12.55 14 12 14ZM12 8C11.45 8 10.9792 7.80417 10.5875 7.4125C10.1958 7.02083 10 6.55 10 6C10 5.45 10.1958 4.97917 10.5875 4.5875C10.9792 4.19583 11.45 4 12 4C12.55 4 13.0208 4.19583 13.4125 4.5875C13.8042 4.97917 14 5.45 14 6C14 6.55 13.8042 7.02083 13.4125 7.4125C13.0208 7.80417 12.55 8 12 8Z"/></svg>
+                    </button>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text">
+                      <span class="dash-list-name">Martin Johnsen</span>
+                      <span class="dash-list-sub">Siste utbetaling fra NAV | Frist: 12.06.26</span>
+                    </div>
+                    <button class="icon-btn" title="Valg">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20C11.45 20 10.9792 19.8042 10.5875 19.4125C10.1958 19.0208 10 18.55 10 18C10 17.45 10.1958 16.9792 10.5875 16.5875C10.9792 16.1958 11.45 16 12 16C12.55 16 13.0208 16.1958 13.4125 16.5875C13.8042 16.9792 14 17.45 14 18C14 18.55 13.8042 19.0208 13.4125 19.4125C13.0208 19.8042 12.55 20 12 20ZM12 14C11.45 14 10.9792 13.8042 10.5875 13.4125C10.1958 13.0208 10 12.55 10 12C10 11.45 10.1958 10.9792 10.5875 10.5875C10.9792 10.1958 11.45 10 12 10C12.55 10 13.0208 10.1958 13.4125 10.5875C13.8042 10.9792 14 11.45 14 12C14 12.55 13.8042 13.0208 13.4125 13.4125C13.0208 13.8042 12.55 14 12 14ZM12 8C11.45 8 10.9792 7.80417 10.5875 7.4125C10.1958 7.02083 10 6.55 10 6C10 5.45 10.1958 4.97917 10.5875 4.5875C10.9792 4.19583 11.45 4 12 4C12.55 4 13.0208 4.19583 13.4125 4.5875C13.8042 4.97917 14 5.45 14 6C14 6.55 13.8042 7.02083 13.4125 7.4125C13.0208 7.80417 12.55 8 12 8Z"/></svg>
+                    </button>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text">
+                      <span class="dash-list-name">Sjokoladefabrikken</span>
+                      <span class="dash-list-sub">Send SSB-rapport | Frist: 12.06.26</span>
+                    </div>
+                    <button class="icon-btn" title="Valg">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20C11.45 20 10.9792 19.8042 10.5875 19.4125C10.1958 19.0208 10 18.55 10 18C10 17.45 10.1958 16.9792 10.5875 16.5875C10.9792 16.1958 11.45 16 12 16C12.55 16 13.0208 16.1958 13.4125 16.5875C13.8042 16.9792 14 17.45 14 18C14 18.55 13.8042 19.0208 13.4125 19.4125C13.0208 19.8042 12.55 20 12 20ZM12 14C11.45 14 10.9792 13.8042 10.5875 13.4125C10.1958 13.0208 10 12.55 10 12C10 11.45 10.1958 10.9792 10.5875 10.5875C10.9792 10.1958 11.45 10 12 10C12.55 10 13.0208 10.1958 13.4125 10.5875C13.8042 10.9792 14 11.45 14 12C14 12.55 13.8042 13.0208 13.4125 13.4125C13.0208 13.8042 12.55 14 12 14ZM12 8C11.45 8 10.9792 7.80417 10.5875 7.4125C10.1958 7.02083 10 6.55 10 6C10 5.45 10.1958 4.97917 10.5875 4.5875C10.9792 4.19583 11.45 4 12 4C12.55 4 13.0208 4.19583 13.4125 4.5875C13.8042 4.97917 14 5.45 14 6C14 6.55 13.8042 7.02083 13.4125 7.4125C13.0208 7.80417 12.55 8 12 8Z"/></svg>
+                    </button>
+                  </li>
+                </ul>
+                <div class="dash-card-footer"><a href="#" class="viz-link" onclick="åpneModal('modal-frister');return false;">Se alle</a><a href="fravaersoversikt.html" class="viz-link">Gå til oversikt</a></div>
+              </div>
+            </div>
+
+            <!-- Widget 3: Fraværskvoter (gjenbrukt) -->
+            <div class="card dash-w-1of3">
+              <div class="card-header">
+                <div class="dash-card-heading">
+                  <span class="card-title">Fraværskvoter</span>
+                  <button class="icon-btn dash-info-btn" title="Ansatte som nærmer seg eller har overskredet fraværskvoten">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="viz-quota-row">
+                  <div class="viz-quota-item">
+                    <span class="viz-quota-label">Ansatte nær fraværskvoter</span>
+                    <div class="viz-quota-value-row">
+                      <span class="viz-quota-number">11</span>
+                      <button class="viz-icon-btn-warn" title="Nær kvote">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="10.5" r="0.75" fill="currentColor"/></svg>
+                      </button>
+                    </div>
+                    <a href="#" class="viz-link" onclick="åpneModal('modal-naer-kvote');return false;">Se ansatte</a>
+                  </div>
+                  <div class="viz-quota-item">
+                    <span class="viz-quota-label">Ansatte over fraværskvoter</span>
+                    <div class="viz-quota-value-row">
+                      <span class="viz-quota-number">3</span>
+                      <button class="viz-icon-btn-error" title="Over kvote">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M7.1 2.8l-5.6 9.7A1 1 0 002.4 14h11.2a1 1 0 00.9-1.5L9 2.8a1 1 0 00-1.8 0z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11" r="0.75" fill="currentColor"/></svg>
+                      </button>
+                    </div>
+                    <a href="#" class="viz-link" onclick="åpneModal('modal-over-kvote');return false;">Se ansatte</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Widget 4: Utvikling sykefravær (gjenbrukt diagram) -->
+            <div class="card dash-w-1of2">
+              <div class="card-header">
+                <div class="dash-card-heading">
+                  <span class="card-title">Utvikling sykefravær</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <p class="viz-chart-total-label">Totalt</p>
+                <p class="viz-chart-total-number">174 dager</p>
+                <div class="viz-chart-svg-wrap">
+                  <svg viewBox="0 0 660 220" width="100%" height="240" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;display:block;">
+                    <!-- Grid lines -->
+                    <line x1="52" y1="10"  x2="650" y2="10"  stroke="var(--border-muted)" stroke-width="1"/>
+                    <line x1="52" y1="65"  x2="650" y2="65"  stroke="var(--border-muted)" stroke-width="1"/>
+                    <line x1="52" y1="120" x2="650" y2="120" stroke="var(--border-muted)" stroke-width="1"/>
+                    <line x1="52" y1="175" x2="650" y2="175" stroke="var(--border-muted)" stroke-width="1"/>
+                    <!-- Y labels -->
+                    <text x="44" y="14"  text-anchor="end" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">40 k</text>
+                    <text x="44" y="69"  text-anchor="end" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">20 k</text>
+                    <text x="44" y="124" text-anchor="end" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">10 k</text>
+                    <text x="44" y="179" text-anchor="end" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">5 k</text>
+                    <!-- X labels -->
+                    <text x="100" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">Januar</text>
+                    <text x="215" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">Februar</text>
+                    <text x="330" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">Mars</text>
+                    <text x="445" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">April</text>
+                    <text x="560" y="212" text-anchor="middle" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">Mai</text>
+                    <!-- Korttidsfravær (blå, øverste linje) -->
+                    <path d="M100,60 C145,60 155,90 215,90 C275,90 285,130 330,120 C375,110 395,145 445,155 C495,165 510,160 560,165" fill="none" stroke="var(--action-primary-rest)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Langtidsfravær (rosa, nedre linje) -->
+                    <path d="M100,155 C145,148 170,140 215,145 C260,150 300,130 330,140 C360,150 400,165 445,168 C490,171 525,158 560,162" fill="none" stroke="var(--global-red-40)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Tooltip dot on Mars -->
+                    <circle cx="330" cy="120" r="5" fill="var(--action-primary-rest)" stroke="var(--surface-default)" stroke-width="2"/>
+                    <line x1="330" y1="10" x2="330" y2="175" stroke="var(--border-muted)" stroke-width="1" stroke-dasharray="3,3"/>
+                    <!-- Tooltip box -->
+                    <rect x="340" y="80" width="175" height="68" rx="4" fill="var(--surface-default)" stroke="var(--border-muted)" filter="drop-shadow(0 2px 6px rgba(0,0,0,0.10))"/>
+                    <text x="352" y="99" font-size="12" fill="var(--text-muted)" font-family="Rubik,sans-serif">26. februar 2025</text>
+                    <circle cx="352" cy="113" r="5" fill="var(--action-primary-rest)"/>
+                    <text x="362" y="117" font-size="12" fill="var(--text-primary)" font-family="Rubik,sans-serif">Korttidsfravær</text>
+                    <text x="492" y="117" font-size="12" fill="var(--text-primary)" font-family="Rubik,sans-serif" text-anchor="end">1 ansatt</text>
+                    <circle cx="352" cy="131" r="5" fill="var(--global-red-40)"/>
+                    <text x="362" y="135" font-size="12" fill="var(--text-primary)" font-family="Rubik,sans-serif">Langtidsfravær</text>
+                    <text x="492" y="135" font-size="12" fill="var(--text-primary)" font-family="Rubik,sans-serif" text-anchor="end">0 ansatte</text>
+                  </svg>
+                </div>
+                <div class="viz-legend">
+                  <div class="viz-legend-item">
+                    <span class="viz-legend-item-label">Totalt</span>
+                    <span class="viz-legend-days">72 dager</span>
+                    <div class="viz-legend-item-row"><span class="viz-legend-dot" style="background:var(--action-primary-rest);"></span>Korttidsfravær</div>
+                  </div>
+                  <div class="viz-legend-item">
+                    <span class="viz-legend-item-label">Totalt</span>
+                    <span class="viz-legend-days">102 dager</span>
+                    <div class="viz-legend-item-row"><span class="viz-legend-dot" style="background:var(--global-red-40);"></span>Langtidsfravær</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Widget 5: Fraværsprosent (gjenbrukt) -->
+            <div class="card dash-w-1of2">
+              <div class="card-header">
+                <div class="dash-card-heading">
+                  <span class="card-title">Fraværsprosent</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <p class="viz-fp-number">12,5 %</p>
+                <p class="viz-fp-sub">
+                  Det er <strong>5 %</strong> mer enn forrige måned.
+                  <a href="#" class="viz-fp-action">
+                    Mulige årsaker
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg>
+                  </a>
+                </p>
+                <div class="viz-color-bar">
+                  <div style="flex:50;background:var(--action-primary-rest);"></div>
+                  <div style="flex:24;background:var(--global-red-40);"></div>
+                </div>
+                <div class="viz-bar-legend">
+                  <div class="viz-bar-legend-item">
+                    <span class="viz-legend-dot" style="background:var(--action-primary-rest);"></span>
+                    Korttidsfravær <span class="viz-bar-legend-pct">50 %</span>
+                  </div>
+                  <div class="viz-bar-legend-item">
+                    <span class="viz-legend-dot" style="background:var(--global-red-40);"></span>
+                    Langtidsfravær <span class="viz-bar-legend-pct">24 %</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== Widget (ny): Ansatte ikke på jobb i dag — ALT A (liste) ===== -->
+            <div class="card dash-w-1of3">
+              <div class="card-header">
+                <div>
+                  <div class="dash-card-heading">
+                  <span class="card-title">Ansatte ikke på jobb i dag</span>
+                  <button class="icon-btn dash-info-btn" title="Ansatte med registrert fravær i dag">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg>
+                  </button>
+                  </div>
+                  <div class="card-subtitle" id="away-count">5 borte i dag</div>
+                </div>
+                <button class="dash-datepick" onclick="toggleDatePop(this, 'away-date-pop')"><span id="away-date-label">I dag</span> <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 22c-.55 0-1.02-.196-1.413-.587A1.926 1.926 0 0 1 3 20V6c0-.55.196-1.02.587-1.412A1.926 1.926 0 0 1 5 4h1V2h2v2h8V2h2v2h1c.55 0 1.02.196 1.413.588.391.391.587.862.587 1.412v14c0 .55-.196 1.02-.587 1.413A1.926 1.926 0 0 1 19 22H5Zm0-2h14V10H5v10ZM5 8h14V6H5v2Z"/></svg></button>
+              </div>
+              <div class="date-pop" id="away-date-pop">
+                <button onclick="setAwayDate('2026-11-17')">I dag</button>
+                <button onclick="setAwayDate('2026-11-18')">I morgen</button>
+                <input class="input" type="date" value="2026-11-17" onchange="setAwayDate(this.value)">
+              </div>
+              <div class="card-body">
+                <ul class="dash-list" id="away-list">
+                  <li class="dash-list-item" data-start="2026-11-17" data-end="2026-11-18">
+                      <span class="dash-avatar">IR</span>
+                      <div class="dash-list-text">
+                        <span class="dash-list-name">Ingrid Reigstad</span>
+                        <span class="dash-list-sub">Egenmelding</span>
+                      </div>
+                      <div class="dash-away-right">
+                        <span class="dash-back">Tilbake 19.11.26</span>
+                        <a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a>
+                      </div>
+                    <div class="vikar-pop">
+                        <p class="vikar-card-title">Vikar for Ingrid Reigstad · 17.11.26–18.11.26</p>
+                        <div class="vikar-row"><span class="dash-avatar">MN</span><div class="vikar-row-info"><span class="vikar-row-name">Mari Nilsen</span><span class="vikar-row-reason">Ledig 17.11.26–18.11.26 · samme avdeling</span></div></div>
+                        <div class="vikar-row"><span class="dash-avatar">PA</span><div class="vikar-row-info"><span class="vikar-row-name">Petter Aas</span><span class="vikar-row-reason">Ledig 17.11.26–18.11.26 · har hatt rollen før</span></div></div>
+                      <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+                    </div>
+                  </li>
+                  <li class="dash-list-item" data-start="2026-11-17" data-end="2026-11-18">
+                      <span class="dash-avatar">TL</span>
+                      <div class="dash-list-text">
+                        <span class="dash-list-name">Thomas Lie</span>
+                        <span class="dash-list-sub">Omsorgsdager</span>
+                      </div>
+                      <div class="dash-away-right">
+                        <span class="dash-back">Tilbake 19.11.26</span>
+                        <a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a>
+                      </div>
+                    <div class="vikar-pop">
+                        <p class="vikar-card-title">Vikar for Thomas Lie · 17.11.26–18.11.26</p>
+                        <div class="vikar-row"><span class="dash-avatar">SH</span><div class="vikar-row-info"><span class="vikar-row-name">Sara Holt</span><span class="vikar-row-reason">Ledig 17.11.26–18.11.26 · samme team</span></div></div>
+                        <div class="vikar-row"><span class="dash-avatar">OV</span><div class="vikar-row-info"><span class="vikar-row-name">Ola Vik</span><span class="vikar-row-reason">Ledig 18.11.26 · lav belastning denne uka</span></div></div>
+                      <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+                    </div>
+                  </li>
+                  <li class="dash-list-item" data-start="2026-11-03" data-end="2026-11-30">
+                      <span class="dash-avatar">JP</span>
+                      <div class="dash-list-text">
+                        <span class="dash-list-name">Jakob Pettersen</span>
+                        <span class="dash-list-sub">Fraværsperiode</span>
+                      </div>
+                      <div class="dash-away-right">
+                        <span class="dash-back">Tilbake 01.12.26</span>
+                        <a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a>
+                      </div>
+                    <div class="vikar-pop">
+                        <p class="vikar-card-title">Vikar for Jakob Pettersen · 17.11.26–30.11.26</p>
+                        <div class="vikar-row"><span class="dash-avatar">EL</span><div class="vikar-row-info"><span class="vikar-row-name">Eva Lund</span><span class="vikar-row-reason">Tilgjengelig fra 18.11.26 · samme avdeling</span></div></div>
+                        <div class="vikar-row"><span class="dash-avatar">NB</span><div class="vikar-row-info"><span class="vikar-row-name">Nina Berg</span><span class="vikar-row-reason">Kan dekke deler av perioden</span></div></div>
+                      <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+                    </div>
+                  </li>
+                  <li class="dash-list-item" data-start="2026-11-10" data-end="2026-11-23">
+                      <span class="dash-avatar">LE</span>
+                      <div class="dash-list-text">
+                        <span class="dash-list-name">Lars Eriksen</span>
+                        <span class="dash-list-sub">Sykemelding</span>
+                      </div>
+                      <div class="dash-away-right">
+                        <span class="dash-back">Tilbake 24.11.26</span>
+                        <a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a>
+                      </div>
+                    <div class="vikar-pop">
+                        <p class="vikar-card-title">Vikar for Lars Eriksen · 17.11.26–23.11.26</p>
+                        <div class="vikar-row"><span class="dash-avatar">PD</span><div class="vikar-row-info"><span class="vikar-row-name">Per Dahl</span><span class="vikar-row-reason">Ledig hele perioden · samme avdeling</span></div></div>
+                        <div class="vikar-row"><span class="dash-avatar">KM</span><div class="vikar-row-info"><span class="vikar-row-name">Kari Moen</span><span class="vikar-row-reason">Ledig man–ons</span></div></div>
+                      <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+                    </div>
+                  </li>
+                  <li class="dash-list-item" data-start="2026-09-01" data-end="2027-03-01">
+                      <span class="dash-avatar">SB</span>
+                      <div class="dash-list-text">
+                        <span class="dash-list-name">Sofia Berg</span>
+                        <span class="dash-list-sub">Foreldrepermisjon</span>
+                      </div>
+                      <div class="dash-away-right">
+                        <span class="dash-back">Tilbake 02.03.27</span>
+                        <a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a>
+                      </div>
+                    <div class="vikar-pop">
+                        <p class="vikar-card-title">Vikar for Sofia Berg · 17.11.26–01.03.27</p>
+                        <div class="vikar-row"><span class="dash-avatar">MJ</span><div class="vikar-row-info"><span class="vikar-row-name">Maria Johnsen</span><span class="vikar-row-reason">Allerede engasjert som vikar</span></div></div>
+                        <div class="vikar-row"><span class="dash-avatar">JE</span><div class="vikar-row-info"><span class="vikar-row-name">Jon Ek</span><span class="vikar-row-reason">Ledig fra 01.12.26 · samme team</span></div></div>
+                      <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+                    </div>
+                  </li>
+                </ul>
+                <p class="away-empty" id="away-empty">Ingen ansatte er borte denne dagen.</p>
+                <div class="dash-card-footer"><a href="fravaersoversikt.html" class="viz-link">Se kalender</a></div>
+              </div>
+            </div>
+
+            <!-- Widget: NAV-refusjoner (oppsummert) -->
+            <div class="card dash-w-1of3">
+              <div class="card-header">
+                <div>
+                  <div class="dash-card-heading">
+                    <span class="card-title">NAV-refusjoner</span>
+                  </div>
+                  <div class="card-subtitle"><span class="status-dot status-dot--success">Sjekket</span></div>
+                </div>
+                <button class="dash-datepick" onclick="toggleDatePop(this, 'ref2-date-pop')"><span id="ref2-month-label">Mai 2026</span> <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 22c-.55 0-1.02-.196-1.413-.587A1.926 1.926 0 0 1 3 20V6c0-.55.196-1.02.587-1.412A1.926 1.926 0 0 1 5 4h1V2h2v2h8V2h2v2h1c.55 0 1.02.196 1.413.588.391.391.587.862.587 1.412v14c0 .55-.196 1.02-.587 1.413A1.926 1.926 0 0 1 19 22H5Zm0-2h14V10H5v10ZM5 8h14V6H5v2Z"/></svg></button>
+              </div>
+              <div class="date-pop" id="ref2-date-pop">
+                <button onclick="stepRefMonth('ref2-month-label', -1)">Forrige måned</button>
+                <button onclick="stepRefMonth('ref2-month-label', 1)">Neste måned</button>
+                <input class="input" type="month" value="2026-05" onchange="setRefMonthFromInput('ref2-month-label', this.value)">
+              </div>
+              <div class="card-body">
+                <div class="ref-sum-stats">
+                  <div class="ref-sum-stat"><span class="ref-sum-label">Sum avvik</span><span class="ref-sum-value"><span class="dash-marker dash-marker--warning"></span>−201,00</span></div>
+                  <div class="ref-sum-stat"><span class="ref-sum-label">Antall avvik</span><span class="ref-sum-value"><span class="dash-marker dash-marker--warning"></span>3</span></div>
+                  <div class="ref-sum-stat"><span class="ref-sum-label">Refusjoner mottatt</span><span class="ref-sum-value">03.05.2026</span></div>
+                  <div class="ref-sum-stat"><span class="ref-sum-label">Avsetning etter månedsslutt</span><span class="ref-sum-value">901 039 kr</span></div>
+                </div>
+                <div class="dash-card-footer"><a href="avstemming-refusjoner.html" class="viz-link">Gå til oversikt</a></div>
+              </div>
+            </div>
+
+            <!-- Widget (ny): Inntektsmeldinger -->
+            <div class="card dash-w-1of3">
+              <div class="card-header">
+                <div>
+                  <div class="dash-card-heading">
+                    <span class="card-title">Inntektsmeldinger</span>
+                    <button class="icon-btn dash-info-btn" title="Inntektsmeldinger til NAV">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76767 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76767 20 12 20Z"/></svg>
+                    </button>
+                  </div>
+                  <div class="card-subtitle">2 ikke sendt</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="dash-list">
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Ole Berg</span><span class="dash-list-sub">Egenmelding</span></div><div class="dash-away-right"><span class="status-dot status-dot--warning">Ikke sendt</span><a href="inntektsmeldinger.html" class="viz-link">Send</a></div></li>
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Maria Johansen</span><span class="dash-list-sub">Foreldrepermisjon</span></div><div class="dash-away-right"><span class="status-dot status-dot--warning">Ikke sendt</span><a href="inntektsmeldinger.html" class="viz-link">Send</a></div></li>
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Ingrid Reigstad</span><span class="dash-list-sub">Foreldrepermisjon</span></div><div class="dash-away-right"><span class="status-dot status-dot--success">Sendt</span><a href="inntektsmeldinger.html" class="viz-link">Send endring</a></div></li>
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Kari Hansen</span><span class="dash-list-sub">Egenmelding</span></div><div class="dash-away-right"><span class="status-dot status-dot--success">Sendt</span><a href="inntektsmeldinger.html" class="viz-link">Send endring</a></div></li>
+                </ul>
+                <div class="dash-card-footer"><a href="inntektsmeldinger.html" class="viz-link">Se alle</a></div>
+              </div>
+            </div>
+
+            <!-- Widget (ny): SSB-rapport -->
+            <div class="card dash-w-1of2">
+              <div class="card-header">
+                <div>
+                  <div class="dash-card-heading">
+                    <span class="card-title">SSB-rapport</span>
+                    <button class="icon-btn dash-info-btn" title="Frist for neste innsending til SSB">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76767 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76767 20 12 20Z"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <p class="ssb-calc-title">Neste rapport sendes</p>
+                <div class="ssb-frist"><span class="ssb-frist-date">01.01.27–16.01.27</span><span class="status-chip status-chip--success">om 46 dager</span></div>
+                <div class="ssb-table-wrap">
+                  <table class="modal-table">
+                    <thead>
+                      <tr>
+                        <th>Foreløpig beregning</th>
+                        <th class="col-num"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>Antall personer med egenmelding</td><td class="col-num">20</td></tr>
+                      <tr><td>Antall egenmeldingstilfeller</td><td class="col-num">21</td></tr>
+                      <tr><td>Antall arbeidsdager med egenmelding</td><td class="col-num">23</td></tr>
+                      <tr><td>Antall dagsverk tapt til egenmelding</td><td class="col-num">23</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="dash-card-footer"><a href="ssb-rapporter.html" class="viz-link">Gå til SSB-rapporter</a></div>
+              </div>
+            </div>
+
+          </div><!-- /dash-grid -->
+
+          <!-- Parkerte alternativer (ikke del av selve dashbordet) -->
+          <section class="dash-alt-section">
+            <h2 class="dash-alt-heading">Alternative widgets</h2>
+            <p class="dash-alt-note">Alternative løsninger vi har vurdert, parkert for referanse.</p>
+            <div class="dash-grid">
+
+            <!-- Alternativ: Ansatte ikke på jobb i dag (kalender-variant) -->
+            <div class="card dash-w-full">
+              <div class="card-header">
+                <div class="dash-card-heading">
+                  <span class="card-title">Ansatte ikke på jobb i dag (kalender-variant)</span>
+                  <button class="icon-btn dash-info-btn" title="Fravær denne uka — i dag uthevet">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg>
+                  </button>
+                </div>
+                <span class="chip">Uke 47</span>
+              </div>
+              <div class="card-body">
+                <div class="dweek">
+                  <!-- Header -->
+                  <div class="dweek-row dweek-head">
+                    <div class="dweek-name"><span class="dweek-name-text" style="color:var(--text-muted);">Ansatt</span></div>
+                    <div class="dweek-days">
+                      <div class="dweek-day"><span class="dweek-weekday">Man</span><span class="dweek-num">16</span></div>
+                      <div class="dweek-day dweek-day--today"><span class="dweek-weekday">Tir</span><span class="dweek-num dweek-num--today">17</span></div>
+                      <div class="dweek-day"><span class="dweek-weekday">Ons</span><span class="dweek-num">18</span></div>
+                      <div class="dweek-day"><span class="dweek-weekday">Tor</span><span class="dweek-num">19</span></div>
+                      <div class="dweek-day"><span class="dweek-weekday">Fre</span><span class="dweek-num">20</span></div>
+                      <div class="dweek-day dweek-day--weekend"><span class="dweek-weekday">Lør</span><span class="dweek-num">21</span></div>
+                      <div class="dweek-day dweek-day--weekend"><span class="dweek-weekday">Søn</span><span class="dweek-num">22</span></div>
+                    </div>
+                  </div>
+                  <!-- Ingrid: Egenmelding tir–ons -->
+                  <div class="dweek-row dweek-bodyrow">
+                    <div class="dweek-name"><span class="dash-avatar">IR</span><span class="dweek-name-text">Ingrid Reigstad</span></div>
+                    <div class="dweek-days">
+                      <div class="dweek-day"></div><div class="dweek-day dweek-day--today"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day dweek-day--weekend"></div><div class="dweek-day dweek-day--weekend"></div>
+                      <div class="dweek-bar dweek-bar--ny" style="left:calc(100% / 7 * 1); width:calc(100% / 7 * 2);"><span class="dweek-bar-label">Egenmelding</span></div>
+                    </div>
+                  </div>
+                  <!-- Thomas: Omsorgsdager tir–ons -->
+                  <div class="dweek-row dweek-bodyrow">
+                    <div class="dweek-name"><span class="dash-avatar">TL</span><span class="dweek-name-text">Thomas Lie</span></div>
+                    <div class="dweek-days">
+                      <div class="dweek-day"></div><div class="dweek-day dweek-day--today"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day dweek-day--weekend"></div><div class="dweek-day dweek-day--weekend"></div>
+                      <div class="dweek-bar dweek-bar--aktiv" style="left:calc(100% / 7 * 1); width:calc(100% / 7 * 2);"><span class="dweek-bar-label">Omsorgsdager</span></div>
+                    </div>
+                  </div>
+                  <!-- Jakob: Fraværsperiode hele uka (fortsetter begge veier) -->
+                  <div class="dweek-row dweek-bodyrow">
+                    <div class="dweek-name"><span class="dash-avatar">JP</span><span class="dweek-name-text">Jakob Pettersen</span></div>
+                    <div class="dweek-days">
+                      <div class="dweek-day"></div><div class="dweek-day dweek-day--today"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day dweek-day--weekend"></div><div class="dweek-day dweek-day--weekend"></div>
+                      <div class="dweek-bar dweek-bar--krever dweek-bar--cont-left dweek-bar--cont-right" style="left:0; width:100%;"><span class="dweek-bar-label">Fraværsperiode</span></div>
+                    </div>
+                  </div>
+                  <!-- Lars: Sykemelding man–fre -->
+                  <div class="dweek-row dweek-bodyrow">
+                    <div class="dweek-name"><span class="dash-avatar">LE</span><span class="dweek-name-text">Lars Eriksen</span></div>
+                    <div class="dweek-days">
+                      <div class="dweek-day"></div><div class="dweek-day dweek-day--today"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day dweek-day--weekend"></div><div class="dweek-day dweek-day--weekend"></div>
+                      <div class="dweek-bar dweek-bar--aktiv" style="left:0; width:calc(100% / 7 * 5);"><span class="dweek-bar-label">Sykemelding</span></div>
+                    </div>
+                  </div>
+                  <!-- Sofia: Foreldrepermisjon hele uka (fortsetter begge veier) -->
+                  <div class="dweek-row dweek-bodyrow">
+                    <div class="dweek-name"><span class="dash-avatar">SB</span><span class="dweek-name-text">Sofia Berg</span></div>
+                    <div class="dweek-days">
+                      <div class="dweek-day"></div><div class="dweek-day dweek-day--today"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day"></div><div class="dweek-day dweek-day--weekend"></div><div class="dweek-day dweek-day--weekend"></div>
+                      <div class="dweek-bar dweek-bar--aktiv dweek-bar--cont-left dweek-bar--cont-right" style="left:0; width:100%;"><span class="dweek-bar-label">Foreldrepermisjon</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="dash-card-footer"><a href="fravaersoversikt.html" class="viz-link">Se full kalender</a></div>
+              </div>
+            </div>
+
+            <!-- Alternativ: Daily digest — Alt A (tall-fliser) -->
+            <div class="card dash-w-full">
+              <div class="card-header">
+                <div class="dash-card-heading">
+                  <span class="card-title">Daily digest — Alt A (tall-fliser)</span>
+                  <button class="icon-btn dash-info-btn" title="Oppsummering av dagens aktivitet i fraværsmodulen">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="digest-tiles">
+                  <div class="digest-tile"><span class="digest-num">3</span><span class="digest-label">Frister i dag</span><a href="#" class="viz-link" onclick="åpneModal('modal-frister');return false;">Se frister</a></div>
+                  <div class="digest-tile"><span class="digest-num">2</span><span class="digest-label">Nye oppdateringer</span><a href="#" class="viz-link" onclick="åpneModal('modal-oppdateringer');return false;">Se oppdateringer</a></div>
+                  <div class="digest-tile"><span class="digest-num">5</span><span class="digest-label">Ansatte borte i dag</span><a href="#" class="viz-link" onclick="åpneModal('modal-borte');return false;">Se hvem</a></div>
+                  <div class="digest-tile"><span class="digest-num">10</span><span class="digest-label">Nye refusjoner registrert</span><a href="avstemming-refusjoner.html" class="viz-link">Gå til oversikt</a></div>
+                  <div class="digest-tile"><span class="digest-num">2</span><span class="digest-label">Inntektsmeldinger ikke sendt</span><a href="#" class="viz-link vikar-trigger" onclick="åpneModal('modal-im-forslag');return false;">Sett opp forslag <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alternativ: Daily digest — Alt B (handlingsliste) -->
+            <div class="card dash-w-1of2">
+              <div class="card-header">
+                <div class="dash-card-heading">
+                  <span class="card-title">Daily digest — Alt B (liste)</span>
+                  <button class="icon-btn dash-info-btn" title="Oppsummering av dagens aktivitet i fraværsmodulen">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76667 20 12 20Z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="dash-list">
+                  <li class="dash-list-item"><span class="digest-count">2</span><span class="digest-text">inntektsmeldinger ikke sendt</span><a href="#" class="viz-link vikar-trigger" onclick="åpneModal('modal-im-forslag');return false;">Sett opp forslag <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a></li>
+                  <li class="dash-list-item"><span class="digest-count">10</span><span class="digest-text">nye refusjoner registrert</span><a href="avstemming-refusjoner.html" class="viz-link">Gå til oversikt</a></li>
+                  <li class="dash-list-item"><span class="digest-count">3</span><span class="digest-text">frister i dag</span><a href="#" class="viz-link" onclick="åpneModal('modal-frister');return false;">Se frister</a></li>
+                  <li class="dash-list-item"><span class="digest-count">5</span><span class="digest-text">ansatte borte i dag</span><a href="#" class="viz-link" onclick="åpneModal('modal-borte');return false;">Se hvem</a></li>
+                  <li class="dash-list-item"><span class="digest-count">2</span><span class="digest-text">nye oppdateringer</span><a href="#" class="viz-link" onclick="åpneModal('modal-oppdateringer');return false;">Se oppdateringer</a></li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Alternativ: NAV-refusjoner (liste) -->
+            <div class="card dash-w-1of2">
+              <div class="card-header">
+                <div>
+                  <div class="dash-card-heading">
+                    <span class="card-title">NAV-refusjoner</span>
+                    <button class="icon-btn dash-info-btn" title="Registrerte refusjoner fra NAV">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76667 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76767 20 12 20Z"/></svg>
+                    </button>
+                  </div>
+                  <div class="card-subtitle">3 med differanse</div>
+                </div>
+                <button class="dash-datepick" onclick="toggleDatePop(this, 'ref-date-pop')"><span id="ref-month-label">Juni 2026</span> <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 22c-.55 0-1.02-.196-1.413-.587A1.926 1.926 0 0 1 3 20V6c0-.55.196-1.02.587-1.412A1.926 1.926 0 0 1 5 4h1V2h2v2h8V2h2v2h1c.55 0 1.02.196 1.413.588.391.391.587.862.587 1.412v14c0 .55-.196 1.02-.587 1.413A1.926 1.926 0 0 1 19 22H5Zm0-2h14V10H5v10ZM5 8h14V6H5v2Z"/></svg></button>
+              </div>
+              <div class="date-pop" id="ref-date-pop">
+                <button onclick="stepRefMonth('ref-month-label', -1)">Forrige måned</button>
+                <button onclick="stepRefMonth('ref-month-label', 1)">Neste måned</button>
+                <input class="input" type="month" value="2026-06" onchange="setRefMonthFromInput('ref-month-label', this.value)">
+              </div>
+              <div class="card-body">
+                <ul class="dash-list">
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Jakob Pettersen</span><span class="dash-list-sub">Fraværsperiode</span></div><span class="status-dot status-dot--warning refund-amount">−40 000,00</span></li>
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Lars Eriksen</span><span class="dash-list-sub">Sykefravær</span></div><span class="status-dot status-dot--warning refund-amount">−59 000,00</span></li>
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Sofia Maurstad</span><span class="dash-list-sub">Fraværsperiode</span></div><span class="status-dot status-dot--warning refund-amount">−19 000,00</span></li>
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Kari Laurstad</span><span class="dash-list-sub">Foreldrepermisjon</span></div><span class="status-dot status-dot--success refund-amount">0,00</span></li>
+                  <li class="dash-list-item"><div class="dash-list-text"><span class="dash-list-name">Martin Johnsen</span><span class="dash-list-sub">Egenmelding</span></div><span class="status-dot status-dot--success refund-amount">0,00</span></li>
+                </ul>
+                <div class="dash-card-footer"><a href="avstemming-refusjoner.html" class="viz-link">Se alle</a></div>
+              </div>
+            </div>
+
+            <!-- Alternativ: Gjøremål (frister + oppdateringer kombinert) -->
+            <div class="card dash-w-1of2">
+              <div class="card-header">
+                <div>
+                  <div class="dash-card-heading">
+                    <span class="card-title">Frister og oppdateringer</span>
+                    <button class="icon-btn dash-info-btn" title="Frister og oppdateringer samlet i én prioritert liste">
+                      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17H13V11H11V17ZM12 9C12.2833 9 12.5208 8.90417 12.7125 8.7125C12.9042 8.52083 13 8.28333 13 8C13 7.71667 12.9042 7.47917 12.7125 7.2875C12.5208 7.09583 12.2833 7 12 7C11.7167 7 11.4792 7.09583 11.2875 7.2875C11.0958 7.47917 11 7.71667 11 8C11 8.28333 11.0958 8.52083 11.2875 8.7125C11.4792 8.90417 11.7167 9 12 9ZM12 22C10.6167 22 9.31667 21.7375 8.1 21.2125C6.88333 20.6875 5.825 19.975 4.925 19.075C4.025 18.175 3.3125 17.1167 2.7875 15.9C2.2625 14.6833 2 13.3833 2 12C2 10.6167 2.2625 9.31667 2.7875 8.1C3.3125 6.88333 4.025 5.825 4.925 4.925C5.825 4.025 6.88333 3.3125 8.1 2.7875C9.31667 2.2625 10.6167 2 12 2C13.3833 2 14.6833 2.2625 15.9 2.7875C17.1167 3.3125 18.175 4.025 19.075 4.925C19.975 5.825 20.6875 6.88333 21.2125 8.1C21.7375 9.31667 22 10.6167 22 12C22 13.3833 21.7375 14.6833 21.2125 15.9C20.6875 17.1167 19.975 18.175 19.075 19.075C18.175 19.975 17.1167 20.6875 15.9 21.2125C14.6833 21.7375 13.3833 22 12 22ZM12 20C14.2333 20 16.125 19.225 17.675 17.675C19.225 16.125 20 14.2333 20 12C20 9.76667 19.225 7.875 17.675 6.325C16.125 4.775 14.2333 4 12 4C9.76667 4 7.875 4.775 6.325 6.325C4.775 7.875 4 9.76767 4 12C4 14.2333 4.775 16.125 6.325 17.675C7.875 19.225 9.76767 20 12 20Z"/></svg>
+                    </button>
+                  </div>
+                  <div class="card-subtitle">3 frister · 3 oppdateringer</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <ul class="dash-list">
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text"><span class="dash-list-name">Ingrid Reigstad</span><span class="dash-list-sub">Dialogmøte</span></div>
+                    <span class="dash-back">Frist 12.06.26</span>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text"><span class="dash-list-name">Martin Johnsen</span><span class="dash-list-sub">Siste utbetaling fra NAV</span></div>
+                    <span class="dash-back">Frist 12.06.26</span>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text"><span class="dash-list-name">Sjokoladefabrikken</span><span class="dash-list-sub">Send SSB-rapport</span></div>
+                    <span class="dash-back">Frist 12.06.26</span>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="10.5" r="0.75" fill="currentColor"/></svg></span>
+                    <div class="dash-list-text"><span class="dash-list-name">Kari Laurstad</span><span class="dash-list-sub"><span class="dash-marker dash-marker--warning"></span>11/12 egenmeldinger brukt</span></div>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text"><span class="dash-list-name">Ingrid Reigstad</span><span class="dash-list-sub"><span class="dash-marker dash-marker--warning"></span>Ny sykemelding registrert</span></div>
+                  </li>
+                  <li class="dash-list-item">
+                    <span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span>
+                    <div class="dash-list-text"><span class="dash-list-name">Martin Johnsen</span><span class="dash-list-sub"><span class="dash-marker dash-marker--info"></span>Ny egenmelding registrert</span></div>
+                  </li>
+                </ul>
+                <div class="dash-card-footer"><a href="#" class="viz-link">Se alle</a></div>
+              </div>
+            </div>
+
+            </div><!-- /alt dash-grid -->
+          </section>
+
+        </div><!-- /page -->
+      </main>
+    </div><!-- /app-body -->
+  </div><!-- /app-shell -->
+
+  <!-- Modal: Ansatte nær fraværskvoter (11 ansatte) -->
+  <div class="modal-overlay" id="modal-naer-kvote" onclick="lukkModalVedKlikk(event, this)">
+    <div class="modal">
+      <div class="modal-header">
+        <p class="modal-title">Ansatte nær fraværskvoter</p>
+        <div class="modal-status">
+          <span class="modal-status-dot" style="background:var(--surface-warning-active);"></span>
+          11 ansatte
+        </div>
+      </div>
+      <button class="modal-close-btn" onclick="lukkModal('modal-naer-kvote')" title="Lukk">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <div class="modal-slot">
+        <div class="modal-table-wrap">
+          <div class="modal-search-bar">
+            <div class="modal-search-input-wrap">
+              <input class="input" type="search" placeholder="Søk...">
+              <svg class="modal-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Ansatt <svg class="modal-sort-icon" viewBox="0 0 12 12" fill="none"><path d="M6 9V3M3 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></th>
+                <th>Egenmeldingskvote</th>
+                <th>Omsorgsdager kvote</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">IR</span>Ingrid Reigstad</div></td><td>1/4 perioder og 3/12 dager</td><td>–</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">KL</span>Kari Laurstad</div></td><td class="col-bold">3/4 perioder og 8/12 dager</td><td>–</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">MJ</span>Martin Johnsen</div></td><td class="col-bold">3/4 perioder og 8/12 dager</td><td>–</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">JJ</span>Jeanette Johnsrud</div></td><td class="col-bold">3/4 perioder og 7/12 dager</td><td>2/10</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">OP</span>Olav Pedersen</div></td><td class="col-bold">3/4 perioder og 9/12 dager</td><td>1/10</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">JP</span>Jens Pettersen</div></td><td class="col-bold">3/4 perioder og 9/12 dager</td><td>–</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">KH</span>Kari Hansen</div></td><td class="col-bold">3/4 perioder og 10/12 dager</td><td>–</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">TN</span>Turid Nilsen</div></td><td class="col-bold">2/4 perioder og 8/12 dager</td><td>3/10</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="lukkModal('modal-naer-kvote')">Lukk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Ansatte over fraværskvoter (3 ansatte) -->
+  <div class="modal-overlay" id="modal-over-kvote" onclick="lukkModalVedKlikk(event, this)">
+    <div class="modal">
+      <div class="modal-header">
+        <p class="modal-title">Ansatte over fraværskvoter</p>
+        <div class="modal-status">
+          <span class="modal-status-dot" style="background:var(--surface-error-active);"></span>
+          3 ansatte
+        </div>
+      </div>
+      <button class="modal-close-btn" onclick="lukkModal('modal-over-kvote')" title="Lukk">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <div class="modal-slot">
+        <div class="modal-table-wrap">
+          <div class="modal-search-bar">
+            <div class="modal-search-input-wrap">
+              <input class="input" type="search" placeholder="Søk...">
+              <svg class="modal-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <table class="modal-table">
+            <thead>
+              <tr>
+                <th>Ansatt <svg class="modal-sort-icon" viewBox="0 0 12 12" fill="none"><path d="M6 9V3M3 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></th>
+                <th>Egenmeldingskvote</th>
+                <th>Omsorgsdager kvote</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">IR</span>Ingrid Reigstad</div></td><td class="col-bold">5/4 perioder og 13/12 dager</td><td class="col-bold">11/10</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">KL</span>Kari Laurstad</div></td><td class="col-bold">6/4 perioder og 14/12 dager</td><td>–</td></tr>
+              <tr><td><div class="modal-emp-cell"><span class="modal-avatar">MJ</span>Martin Johnsen</div></td><td class="col-bold">5/4 perioder og 13/12 dager</td><td class="col-bold">12/10</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="lukkModal('modal-over-kvote')">Lukk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Kommende frister (digest) -->
+  <div class="modal-overlay" id="modal-frister" onclick="lukkModalVedKlikk(event, this)">
+    <div class="modal">
+      <div class="modal-header">
+        <p class="modal-title">Kommende frister</p>
+        <div class="modal-status"><span class="modal-status-dot" style="background:var(--surface-info-active);"></span>5 frister</div>
+      </div>
+      <button class="modal-close-btn" onclick="lukkModal('modal-frister')" title="Lukk"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <ul class="dash-list">
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Ingrid Reigstad</span><span class="dash-list-sub">Dialogmøte · Frist: 12.06.26</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Martin Johnsen</span><span class="dash-list-sub">Siste utbetaling fra NAV · Frist: 12.06.26</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Sjokoladefabrikken</span><span class="dash-list-sub">Send SSB-rapport · Frist: 12.06.26</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Kari Laurstad</span><span class="dash-list-sub">Oppfølgingsplan · Frist: 20.06.26</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Lars Eriksen</span><span class="dash-list-sub">Oppfølgingsmøte · Frist: 25.06.26</span></div></li>
+      </ul>
+      <div class="modal-footer"><button class="btn btn-primary" onclick="lukkModal('modal-frister')">Lukk</button><a href="fravaersoversikt.html" class="btn btn-secondary">Gå til oversikt</a></div>
+    </div>
+  </div>
+
+  <!-- Modal: Ansatte borte i dag (digest) -->
+  <div class="modal-overlay" id="modal-borte" onclick="lukkModalVedKlikk(event, this)">
+    <div class="modal">
+      <div class="modal-header">
+        <p class="modal-title">Ansatte borte i dag</p>
+        <div class="modal-status"><span class="modal-status-dot" style="background:var(--border-secondary);"></span>5 ansatte</div>
+      </div>
+      <button class="modal-close-btn" onclick="lukkModal('modal-borte')" title="Lukk"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <ul class="dash-list">
+        <li class="dash-list-item">
+          <span class="dash-avatar">IR</span>
+          <div class="dash-list-text"><span class="dash-list-name">Ingrid Reigstad</span><span class="dash-list-sub">Egenmelding</span></div>
+          <div class="dash-away-right"><span class="dash-back">Tilbake 19.11.26</span><a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a></div>
+          <div class="vikar-pop">
+            <p class="vikar-card-title">Vikar for Ingrid Reigstad · 17.11.26–18.11.26</p>
+            <div class="vikar-row"><span class="dash-avatar">MN</span><div class="vikar-row-info"><span class="vikar-row-name">Mari Nilsen</span><span class="vikar-row-reason">Ledig 17.11.26–18.11.26 · samme avdeling</span></div></div>
+            <div class="vikar-row"><span class="dash-avatar">PA</span><div class="vikar-row-info"><span class="vikar-row-name">Petter Aas</span><span class="vikar-row-reason">Ledig 17.11.26–18.11.26 · har hatt rollen før</span></div></div>
+            <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+          </div>
+        </li>
+        <li class="dash-list-item">
+          <span class="dash-avatar">TL</span>
+          <div class="dash-list-text"><span class="dash-list-name">Thomas Lie</span><span class="dash-list-sub">Omsorgsdager</span></div>
+          <div class="dash-away-right"><span class="dash-back">Tilbake 19.11.26</span><a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a></div>
+          <div class="vikar-pop">
+            <p class="vikar-card-title">Vikar for Thomas Lie · 17.11.26–18.11.26</p>
+            <div class="vikar-row"><span class="dash-avatar">SH</span><div class="vikar-row-info"><span class="vikar-row-name">Sara Holt</span><span class="vikar-row-reason">Ledig 17.11.26–18.11.26 · samme team</span></div></div>
+            <div class="vikar-row"><span class="dash-avatar">OV</span><div class="vikar-row-info"><span class="vikar-row-name">Ola Vik</span><span class="vikar-row-reason">Ledig 18.11.26 · lav belastning denne uka</span></div></div>
+            <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+          </div>
+        </li>
+        <li class="dash-list-item">
+          <span class="dash-avatar">JP</span>
+          <div class="dash-list-text"><span class="dash-list-name">Jakob Pettersen</span><span class="dash-list-sub">Fraværsperiode</span></div>
+          <div class="dash-away-right"><span class="dash-back">Tilbake 01.12.26</span><a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a></div>
+          <div class="vikar-pop">
+            <p class="vikar-card-title">Vikar for Jakob Pettersen · 17.11.26–30.11.26</p>
+            <div class="vikar-row"><span class="dash-avatar">EL</span><div class="vikar-row-info"><span class="vikar-row-name">Eva Lund</span><span class="vikar-row-reason">Tilgjengelig fra 18.11.26 · samme avdeling</span></div></div>
+            <div class="vikar-row"><span class="dash-avatar">NB</span><div class="vikar-row-info"><span class="vikar-row-name">Nina Berg</span><span class="vikar-row-reason">Kan dekke deler av perioden</span></div></div>
+            <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+          </div>
+        </li>
+        <li class="dash-list-item">
+          <span class="dash-avatar">LE</span>
+          <div class="dash-list-text"><span class="dash-list-name">Lars Eriksen</span><span class="dash-list-sub">Sykemelding</span></div>
+          <div class="dash-away-right"><span class="dash-back">Tilbake 24.11.26</span><a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a></div>
+          <div class="vikar-pop">
+            <p class="vikar-card-title">Vikar for Lars Eriksen · 17.11.26–23.11.26</p>
+            <div class="vikar-row"><span class="dash-avatar">PD</span><div class="vikar-row-info"><span class="vikar-row-name">Per Dahl</span><span class="vikar-row-reason">Ledig hele perioden · samme avdeling</span></div></div>
+            <div class="vikar-row"><span class="dash-avatar">KM</span><div class="vikar-row-info"><span class="vikar-row-name">Kari Moen</span><span class="vikar-row-reason">Ledig man–ons</span></div></div>
+            <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+          </div>
+        </li>
+        <li class="dash-list-item">
+          <span class="dash-avatar">SB</span>
+          <div class="dash-list-text"><span class="dash-list-name">Sofia Berg</span><span class="dash-list-sub">Foreldrepermisjon</span></div>
+          <div class="dash-away-right"><span class="dash-back">Tilbake 02.03.27</span><a href="#" class="viz-link vikar-trigger" onclick="toggleVikar(this);return false;">Foreslå vikar <svg class="vikar-spark" viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg></a></div>
+          <div class="vikar-pop">
+            <p class="vikar-card-title">Vikar for Sofia Berg · 17.11.26–01.03.27</p>
+            <div class="vikar-row"><span class="dash-avatar">MJ</span><div class="vikar-row-info"><span class="vikar-row-name">Maria Johnsen</span><span class="vikar-row-reason">Allerede engasjert som vikar</span></div></div>
+            <div class="vikar-row"><span class="dash-avatar">JE</span><div class="vikar-row-info"><span class="vikar-row-name">Jon Ek</span><span class="vikar-row-reason">Ledig fra 01.12.26 · samme team</span></div></div>
+            <p class="vikar-pop-basis">Forslag basert på tilgjengelighet og avdeling</p>
+          </div>
+        </li>
+      </ul>
+      <div class="modal-footer"><button class="btn btn-primary" onclick="lukkModal('modal-borte')">Lukk</button></div>
+    </div>
+  </div>
+
+  <!-- Modal: Nye oppdateringer (digest) -->
+  <div class="modal-overlay" id="modal-oppdateringer" onclick="lukkModalVedKlikk(event, this)">
+    <div class="modal">
+      <div class="modal-header">
+        <p class="modal-title">Oppdateringer fravær</p>
+        <div class="modal-status"><span class="modal-status-dot" style="background:var(--border-secondary);"></span>6 oppdateringer</div>
+      </div>
+      <button class="modal-close-btn" onclick="lukkModal('modal-oppdateringer')" title="Lukk"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <ul class="dash-list">
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Ingrid Reigstad</span><span class="dash-list-sub"><span class="dash-marker dash-marker--warning"></span>Ny sykemelding registrert</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Martin Johnsen</span><span class="dash-list-sub"><span class="dash-marker dash-marker--info"></span>Ny egenmelding registrert</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Kari Laurstad</span><span class="dash-list-sub"><span class="dash-marker dash-marker--warning"></span>11/12 egenmeldinger brukt</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Sofia Berg</span><span class="dash-list-sub"><span class="dash-marker dash-marker--info"></span>Foreldrepermisjon registrert</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Lars Eriksen</span><span class="dash-list-sub"><span class="dash-marker dash-marker--warning"></span>Sykmelding forlenget</span></div></li>
+        <li class="dash-list-item"><span class="dash-row-icon"><svg viewBox="-1.6 -1.6 19.3 19.3" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8.00008 0C9.58234 0 11.129 0.469287 12.4447 1.34835C13.7602 2.22741 14.7857 3.47683 15.3912 4.93863C15.9966 6.40038 16.1549 8.00876 15.8463 9.56053C15.5376 11.1124 14.776 12.5382 13.6536 13.6605C12.3569 14.8716 11.0139 15.5571 9.55576 15.847C7.80527 16.1342 6.30763 15.9581 4.93872 15.3911C3.47692 14.7856 2.22751 13.7601 1.34845 12.4445C0.442139 11.0881 -0.028705 9.48622 0.00135471 7.85286L1.47061 7.85274C1.44035 9.19548 1.82471 10.5136 2.56953 11.6284C3.28718 12.7024 4.30741 13.5395 5.5008 14.0339C6.69418 14.5282 8.00739 14.6575 9.27428 14.4055C10.462 14.1693 11.5589 13.6078 12.4404 12.7894C13.5293 11.7073 14.1533 10.5427 14.4056 9.27417C14.6576 8.0073 14.5283 6.69408 14.034 5.50071C13.5396 4.30732 12.7024 3.28708 11.6284 2.56944C10.531 1.83618 8.57159 1.49463 7.25048 1.51176L7.15056 0.0338784C7.67037 -0.00936707 7.66734 0.00486725 8.00008 0Z"/><path d="M8.62298 3.86454V7.6809L11.2362 10.294L10.2034 11.3269L7.15056 8.27404V3.86454H8.62298Z"/><path d="M5.75037 1.45986C5.75037 1.90168 5.3922 2.25986 4.95037 2.25986C4.50854 2.25986 4.15037 1.90168 4.15037 1.45986C4.15037 1.01803 4.50854 0.659856 4.95037 0.659856C5.3922 0.659856 5.75037 1.01803 5.75037 1.45986Z"/><path d="M3.47195 3.1482C3.47195 3.59003 3.11378 3.9482 2.67195 3.9482C2.23012 3.9482 1.87195 3.59003 1.87195 3.1482C1.87195 2.70637 2.23012 2.3482 2.67195 2.3482C3.11378 2.3482 3.47195 2.70637 3.47195 3.1482Z"/><path d="M1.97197 5.63251C1.97197 6.07434 1.61379 6.43251 1.17197 6.43251C0.730139 6.43251 0.371966 6.07434 0.371966 5.63251C0.371966 5.19068 0.730139 4.83251 1.17197 4.83251C1.61379 4.83251 1.97197 5.19068 1.97197 5.63251Z"/></svg></span><div class="dash-list-text"><span class="dash-list-name">Thomas Lie</span><span class="dash-list-sub"><span class="dash-marker dash-marker--info"></span>Omsorgsdager registrert</span></div></li>
+      </ul>
+      <div class="modal-footer"><button class="btn btn-primary" onclick="lukkModal('modal-oppdateringer')">Lukk</button><a href="fravaersoversikt.html" class="btn btn-secondary">Gå til oversikt</a></div>
+    </div>
+  </div>
+
+  <!-- Modal: Forslag til inntektsmeldinger (digest, AI-assistert) -->
+  <div class="modal-overlay" id="modal-im-forslag" onclick="lukkModalVedKlikk(event, this)">
+    <div class="modal">
+      <div class="modal-header">
+        <p class="modal-title">Forslag til inntektsmeldinger</p>
+        <div class="modal-status"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m19 9 1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9Z"/><path d="M11.5 9.5 9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Zm-1.51 3.49L9 15.17l-.99-2.18L5.83 12l2.18-.99L9 8.83l.99 2.18 2.18.99-2.18.99Z"/></svg>Satt opp av assistenten</div>
+      </div>
+      <button class="modal-close-btn" onclick="lukkModal('modal-im-forslag')" title="Lukk"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+      <p class="vikar-pop-basis">Assistenten har forberedt 2 inntektsmeldinger basert på registrert fravær. Se over og send.</p>
+      <ul class="dash-list">
+        <li class="dash-list-item"><span class="dash-avatar">OB</span><div class="dash-list-text"><span class="dash-list-name">Ole Berg</span><span class="dash-list-sub">Egenmelding · 05.11.26–07.11.26</span></div><span class="status-dot status-dot--success">Forslag klart</span></li>
+        <li class="dash-list-item"><span class="dash-avatar">MJ</span><div class="dash-list-text"><span class="dash-list-name">Maria Johansen</span><span class="dash-list-sub">Foreldrepermisjon · 01.11.26–31.01.27</span></div><span class="status-dot status-dot--success">Forslag klart</span></li>
+      </ul>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="lukkModal('modal-im-forslag')">Avbryt</button><button class="btn btn-primary" onclick="lukkModal('modal-im-forslag')">Send begge</button></div>
+    </div>
+  </div>
+
+  <script>
+    let vikarOpenPop = null;
+    function closeVikarPop() {
+      if (vikarOpenPop) { vikarOpenPop.classList.remove('is-open'); vikarOpenPop = null; }
+    }
+    function toggleVikar(link) {
+      const pop = link.closest('.dash-list-item').querySelector('.vikar-pop');
+      const wasOpen = pop.classList.contains('is-open');
+      closeVikarPop();
+      if (wasOpen) return;
+      pop.classList.add('is-open');
+      vikarOpenPop = pop;
+      const r = link.getBoundingClientRect();
+      pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
+      pop.style.top = (r.bottom + 6) + 'px';
+    }
+    let datePopOpen = null;
+    function closeDatePop() { if (datePopOpen) { datePopOpen.classList.remove('is-open'); datePopOpen = null; } }
+    function toggleDatePop(btn, popId) {
+      const pop = document.getElementById(popId || 'away-date-pop');
+      const wasOpen = pop.classList.contains('is-open');
+      closeDatePop();
+      if (wasOpen) return;
+      pop.classList.add('is-open'); datePopOpen = pop;
+      const r = btn.getBoundingClientRect();
+      pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
+      pop.style.top = (r.bottom + 6) + 'px';
+    }
+    const AWAY_TODAY = '2026-11-17', AWAY_TMRW = '2026-11-18';
+    function awayFmt(iso) { const p = iso.split('-'); return p[2] + '.' + p[1] + '.' + p[0].slice(2); }
+    function setAwayDate(iso) {
+      if (!iso) return;
+      closeVikarPop(); closeDatePop();
+      let count = 0;
+      document.querySelectorAll('#away-list .dash-list-item').forEach(li => {
+        const show = iso >= li.dataset.start && iso <= li.dataset.end;
+        li.style.display = show ? '' : 'none';
+        if (show) count++;
+      });
+      document.getElementById('away-empty').style.display = count ? 'none' : 'block';
+      const when = iso === AWAY_TODAY ? 'i dag' : iso === AWAY_TMRW ? 'i morgen' : 'den ' + awayFmt(iso);
+      document.getElementById('away-count').textContent = count + ' borte ' + when;
+      const lbl = iso === AWAY_TODAY ? 'I dag' : iso === AWAY_TMRW ? 'I morgen' : awayFmt(iso);
+      document.getElementById('away-date-label').textContent = lbl;
+      const inp = document.querySelector('#away-date-pop input'); if (inp) inp.value = iso;
+    }
+    document.addEventListener('click', e => {
+      if (vikarOpenPop && !e.target.closest('.vikar-pop') && !e.target.closest('.vikar-trigger')) closeVikarPop();
+      if (datePopOpen && !e.target.closest('.date-pop') && !e.target.closest('.dash-datepick')) closeDatePop();
+    });
+    window.addEventListener('scroll', () => { closeVikarPop(); closeDatePop(); }, true);
+
+    const REF_MONTHS = ['Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'];
+    const refState = {
+      'ref-month-label':  { idx: 5, year: 2026, pop: 'ref-date-pop' },   // Juni 2026
+      'ref2-month-label': { idx: 4, year: 2026, pop: 'ref2-date-pop' },  // Mai 2026
+    };
+    function renderRefMonth(labelId) {
+      const s = refState[labelId];
+      document.getElementById(labelId).textContent = REF_MONTHS[s.idx] + ' ' + s.year;
+      const inp = document.querySelector('#' + s.pop + ' input');
+      if (inp) inp.value = s.year + '-' + String(s.idx + 1).padStart(2, '0');
+    }
+    function stepRefMonth(labelId, delta) {
+      const s = refState[labelId];
+      s.idx += delta;
+      if (s.idx > 11) { s.idx = 0; s.year++; }
+      if (s.idx < 0) { s.idx = 11; s.year--; }
+      renderRefMonth(labelId);
+      closeDatePop();
+    }
+    function setRefMonthFromInput(labelId, val) {
+      if (!val) return;
+      const [y, m] = val.split('-');
+      const s = refState[labelId];
+      s.year = parseInt(y, 10); s.idx = parseInt(m, 10) - 1;
+      renderRefMonth(labelId);
+      closeDatePop();
+    }
+    function åpneModal(id) {
+      document.getElementById(id).classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+    function lukkModal(id) {
+      document.getElementById(id).classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+    function lukkModalVedKlikk(event, overlay) {
+      if (event.target === overlay) lukkModal(overlay.id);
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.is-open').forEach(m => lukkModal(m.id));
+      }
+    });
+  </script>
+</body>
+</html>

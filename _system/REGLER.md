@@ -36,6 +36,7 @@ Filene i denne mappen (`tokens.css`, `components.css`, `layout.css`) er en **lok
 7. **Kun Atlas-godkjente tekststørrelser** — 12px, 14px, 16px, 20px, 30px. Ingen andre.
 8. **Ingen kursiv tekst** — bruk aldri `font-style: italic`. Bruk `font-weight: 500` for betoning.
 9. **Ingen emoji i UI-strenger** — labels, knapper, titler, navigasjon, systemmmeldinger. Bruk ikoner fra Atlas-biblioteket.
+10. **Ingen dekorative streker som ikke finnes i designet** — ikke legg til skillelinjer, kanter eller `border` for å «strukturere» et oppsett med mindre skissen viser dem. Skillelinjer er opt-in: f.eks. `.card-header` har ingen strek som standard; legg til `.card-header--divider` bare når designet faktisk har en linje under headeren.
 
 ---
 

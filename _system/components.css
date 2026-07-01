@@ -809,6 +809,10 @@ select.input {
 /* ----------------------------------------
  * KORT (CARD)
  * Bruk: <div class="card"><div class="card-header">...</div><div class="card-body">...</div></div>
+ *
+ * Skillelinje under header er OPT-IN, ikke default: legg til
+ * .card-header--divider KUN når designet faktisk viser en strek.
+ * Ikke legg til dekorative streker som ikke finnes i skissen.
  * ---------------------------------------- */
 
 .card {
@@ -823,7 +827,15 @@ select.input {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-16);
-  padding: var(--space-16) var(--space-24);
+  /* Ingen bunn-padding som default — body-en sin topp-padding gir
+     mellomrommet, så vi unngår dobbelt mellomrom under headeren. */
+  padding: var(--space-16) var(--space-24) 0;
+}
+
+/* Opt-in skillelinje under header — bruk bare når designet har den.
+   Gjenoppretter bunn-padding så streken ikke klemmes mot innholdet. */
+.card-header--divider {
+  padding-bottom: var(--space-16);
   border-bottom: 1px solid var(--border-faint);
 }
 
@@ -1678,16 +1690,17 @@ select.input {
   height: var(--size-small);
   padding: 0 var(--space-8);
   border-radius: var(--radius-full);
-  font: 500 12px/1 "Rubik", sans-serif;
+  border: 1px solid transparent;
+  font: 14px/1 "Rubik", sans-serif;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.status-chip--success { background: var(--surface-success-rest); color: var(--text-primary); }
-.status-chip--warning { background: var(--surface-warning-rest); color: var(--text-primary); }
-.status-chip--error   { background: var(--surface-error-rest);   color: var(--text-primary); }
-.status-chip--info    { background: var(--surface-info-rest);    color: var(--text-primary); }
-.status-chip--neutral { background: var(--surface-disabled);     color: var(--text-muted); }
+.status-chip--success { background: var(--surface-success-rest); color: var(--text-primary); border-color: var(--border-success); }
+.status-chip--warning { background: var(--surface-warning-rest); color: var(--text-primary); border-color: var(--border-warning); }
+.status-chip--error   { background: var(--surface-error-rest);   color: var(--text-primary); border-color: var(--border-error); }
+.status-chip--info    { background: var(--surface-info-rest);    color: var(--text-primary); border-color: var(--border-info); }
+.status-chip--neutral { background: var(--surface-disabled);     color: var(--text-muted);   border-color: var(--border-muted); }
 
 
 /* ----------------------------------------
