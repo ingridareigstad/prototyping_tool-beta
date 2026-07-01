@@ -923,13 +923,39 @@
     .cal-nav-btn svg { width: var(--icon-small); height: var(--icon-small); }
 
     /* ====== KALENDER-GRID ====== */
-    .cal-grid { width: 100%; overflow: hidden; position: relative; }
+    .cal-grid { width: 100%; overflow-x: auto; overflow-y: visible; position: relative; }
+    /* Skjul den native scrollbaren – vi bruker en egen, alltid synlig (se .cal-scrollbar) */
+    .cal-grid { scrollbar-width: none; }                 /* Firefox */
+    .cal-grid::-webkit-scrollbar { height: 0; width: 0; }  /* Chrome/Safari */
+
+    /* Egen horisontal scrollbar: subtil overlay (Google-stil) – ligger oppå innholdet, ikke egen rad.
+       Dekker kun dags-området (ikke Ansatt-kolonnen). */
+    .cal-scrollbar {
+      position: sticky; bottom: var(--space-4); z-index: 7;
+      height: var(--space-12);
+      margin-top: calc(-1 * var(--space-12));             /* overlapp innholdet i stedet for å ta egen høyde */
+      display: none;                                       /* vises kun ved overflow (JS) */
+      pointer-events: none;                                /* klikk går gjennom til kalenderen */
+    }
+    .cal-scrollbar-track {
+      position: absolute; left: 242px; right: var(--space-8); top: 50%; transform: translateY(-50%);
+      height: var(--space-8);
+      background: transparent; border-radius: var(--radius-full);
+      pointer-events: auto;
+    }
+    .cal-scrollbar-thumb {
+      position: absolute; top: 0; left: 0; height: 100%; min-width: var(--space-40);
+      background: var(--border-secondary); border-radius: var(--radius-full);
+      opacity: 0.75; cursor: grab; pointer-events: auto;
+    }
+    .cal-scrollbar-thumb:hover { opacity: 1; }
+    .cal-scrollbar-thumb.dragging { opacity: 1; background: var(--text-muted); cursor: grabbing; }
     .cal-today-line {
       position: absolute; top: 50px; bottom: 0; width: 2px;
       background: var(--surface-info-active); transform: translateX(-1px);
       pointer-events: none; z-index: 5;   /* foran alle bjelker/pills */
     }
-    .cal-row { display: flex; align-items: stretch; width: 100%; }
+    .cal-row { display: flex; align-items: stretch; width: 100%; min-width: calc(242px + var(--cal-cols, 7) * 65px); }
     .cal-head-row { border-bottom: 1px solid var(--border-muted); }
     .cal-ansatt-cell {
       width: 242px; flex-shrink: 0; box-sizing: border-box;
@@ -937,18 +963,19 @@
       padding: var(--space-8) var(--space-12);
       background: var(--surface-info-rest);
       border-right: 1px solid var(--border-muted);
+      position: sticky; left: 0; z-index: 6;   /* holdes fast når kalenderen scrolles horisontalt */
     }
     .cal-ansatt-head { justify-content: flex-start; height: 50px; }
     .cal-ansatt-head .cal-ansatt-name { font-weight: 500; }
     .cal-ansatt-name { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cal-days-area { flex: 1; min-width: 0; position: relative; display: flex; }
     .cal-day-cell {
-      flex: 1; min-width: 0; box-sizing: border-box;
+      flex: 1; min-width: 65px; box-sizing: border-box;
       border-right: 1px solid var(--border-faint);
       background: var(--surface-default);
     }
     .cal-day-cell:last-child { border-right: none; }
-    .cal-day-cell--weekend { background: var(--surface-error-rest); }
+    .cal-head-row .cal-day-cell--weekend { background: var(--surface-error-rest); }
     .cal-head-row .cal-day-cell {
       height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2);
       container-type: inline-size;
@@ -966,7 +993,7 @@
       border-radius: var(--radius-default); padding: var(--space-2) var(--space-8);
     }
     .cal-body-row { min-height: 45px; border-bottom: 1px solid var(--border-faint); }
-    .cal-body-row .cal-days-area { align-items: center; }
+    .cal-body-row .cal-days-area { align-items: stretch; }
 
     /* Fraværsbjelke */
     .cal-bar {
@@ -1002,9 +1029,9 @@
     }
     .cal-tooltip[hidden] { display: none; }
     /* Nytt tag-design (uten stroke): sterkere bakgrunnstint per status */
-    .cal-bar--ny { background: var(--surface-info-hover); }
+    .cal-bar--ny { background: var(--surface-info-highlight); }
     .cal-bar--krever { background: var(--surface-warning-highlight); }
-    .cal-bar--aktiv { background: var(--surface-success-hover); }
+    .cal-bar--aktiv { background: var(--surface-success-highlight); }
     .cal-bar--avsluttet { background: var(--surface-disabled); }
     .cal-bar--ny .cal-bar-label, .cal-bar--krever .cal-bar-label { font-weight: 500; }
     .cal-bar--cont-left { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; }
@@ -1060,18 +1087,20 @@
     .kebab-item:hover { background: var(--action-secondary-rest); }
     .kebab-item .kebab-icon { display: inline-flex; flex-shrink: 0; }
     .kebab-item svg { width: 20px; height: 20px; color: var(--text-primary); }
-    /* Datarekka ligger under headingen; skillestrek mot seksjonene */
-    .cal-popover .detail-title-row { padding: var(--space-8) var(--space-32) var(--space-8); }
-    .cal-popover .detail-header { padding: var(--space-4) var(--space-32) var(--space-24); }
-    .cal-popover .detail-content { padding: 0 var(--space-32) var(--space-32); gap: 0; }
-    /* Skillestrek lik seksjons-skillene (innrykket, ikke ut i kanten) */
-    .cal-popover .popover-divider { border-top: 1px solid var(--border-muted); }
-    /* Kompakt: ingen kort-bokser – bare skillelinjer, med god luft rundt */
-    .cal-popover .detail-section { border: none; border-radius: 0; overflow: visible; }
-    .cal-popover .detail-section + .detail-section { border-top: 1px solid var(--border-muted); }
-    .cal-popover .detail-section-header { padding: var(--space-24) 0 var(--space-16); }
-    .cal-popover .detail-section:first-child .detail-section-header { padding-top: var(--space-4); }
-    .cal-popover .detail-section-body { padding: 0 0 var(--space-24); }
+    /* Trimmet detalj-popover: tittel, status-linje, detalj-grid, evt. Krever handling */
+    .cal-popover .detail-title-row { padding: var(--space-4) var(--space-24) 0; gap: var(--space-12); }
+    .cal-popover .pop-status {
+      display: flex; align-items: center; gap: var(--space-8);
+      padding: var(--space-8) var(--space-24) 0;
+      font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary);
+    }
+    .cal-popover .pop-status-sep { color: var(--text-muted); }
+    .cal-popover .popover-divider { border-top: 1px solid var(--border-muted); margin: var(--space-20) var(--space-24); }
+    .cal-popover .detail-grid { padding: 0 var(--space-24); grid-template-columns: 1fr 1fr; }
+    /* Bunn-luft når grid'en er siste element (fravær uten «Krever handling») */
+    .cal-popover .detail-grid:last-child { padding-bottom: var(--space-24); }
+    .cal-popover .pop-krever { padding: 0 var(--space-24) var(--space-24); }
+    .cal-popover .pop-section-title { font: 500 16px/1.4 "Rubik", sans-serif; color: var(--text-primary); margin: 0 0 var(--space-12); }
     /* Hover på bjelke: bakgrunnsfargens hover-versjon */
     .cal-bar { transition: background-color 0.1s; }
     .cal-bar--ny:hover { background: var(--surface-info-highlight); }
@@ -1079,10 +1108,12 @@
     .cal-bar--aktiv:hover { background: var(--surface-success-highlight); }
     .cal-bar--avsluttet:hover { background: var(--border-muted); }
     /* Markert bjelke (valgt fravær): bakgrunn et nivå opp til highlight-versjonen */
-    .cal-bar--ny.cal-bar--selected { background: var(--surface-info-highlight); }
-    .cal-bar--krever.cal-bar--selected { background: var(--surface-warning-highlight); }
-    .cal-bar--aktiv.cal-bar--selected { background: var(--surface-success-highlight); }
-    .cal-bar--avsluttet.cal-bar--selected { background: var(--surface-neutral-active); }
+    /* Valgt fravær (åpen popover): stroke i statusens sterke fargenyanse */
+    .cal-bar--selected { border: 1px solid transparent; }
+    .cal-bar--ny.cal-bar--selected { border-color: var(--surface-info-active); }
+    .cal-bar--krever.cal-bar--selected { border-color: var(--surface-warning-active); }
+    .cal-bar--aktiv.cal-bar--selected { border-color: var(--surface-success-active); }
+    .cal-bar--avsluttet.cal-bar--selected { border-color: var(--border-secondary); }
   </style>
 </head>
 <body>
@@ -1601,6 +1632,10 @@
                           <span class="detail-grid-label">Arbeidsgiverperiode</span>
                           <span class="detail-grid-value">31.10.26–15.11.26</span>
                         </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Bestemmende fraværsdag</span>
+                          <span class="detail-grid-value">31.10.26</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1809,6 +1844,10 @@
                         <div class="detail-grid-item">
                           <span class="detail-grid-label">Arbeidsgiverperiode</span>
                           <span class="detail-grid-value">01.07.26–16.07.26</span>
+                        </div>
+                        <div class="detail-grid-item">
+                          <span class="detail-grid-label">Bestemmende fraværsdag</span>
+                          <span class="detail-grid-value">01.07.26</span>
                         </div>
                       </div>
                     </div>
@@ -2354,16 +2393,6 @@
             <!-- Kalender-verktøylinje (rad 2) -->
             <div class="cal-toolbar">
               <div class="cal-toolbar-left">
-                <span class="cal-period-label" id="cal-period-label">Uke 47 2026</span>
-              </div>
-              <div class="cal-toolbar-right">
-                <a href="#" class="cal-today-link" onclick="calToday(event)">I dag</a>
-                <button class="icon-btn cal-nav-btn" onclick="calNav(-1)" aria-label="Forrige">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 18L8 12L14 6L15.4 7.4L10.8 12L15.4 16.6L14 18Z"/></svg>
-                </button>
-                <button class="icon-btn cal-nav-btn" onclick="calNav(1)" aria-label="Neste">
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.6 12L8 7.4L9.4 6L15.4 12L9.4 18L8 16.6L12.6 12Z"/></svg>
-                </button>
                 <!-- Tidsoppløsning -->
                 <div class="atl-content-switcher cal-gran-switcher" id="cal-gran-switcher">
                   <div class="atl-content-switch atl-content-switch--single">
@@ -2386,11 +2415,35 @@
                   </div>
                   <div class="atl-content-switcher__border"></div>
                 </div>
+                <a href="#" class="cal-today-link" onclick="calToday(event)">I dag</a>
+                <button class="icon-btn cal-nav-btn" onclick="calNav(-1)" aria-label="Forrige">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 18L8 12L14 6L15.4 7.4L10.8 12L15.4 16.6L14 18Z"/></svg>
+                </button>
+                <button class="icon-btn cal-nav-btn" onclick="calNav(1)" aria-label="Neste">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.6 12L8 7.4L9.4 6L15.4 12L9.4 18L8 16.6L12.6 12Z"/></svg>
+                </button>
+                <span class="cal-period-label" id="cal-period-label">Uke 47 2026</span>
+              </div>
+              <div class="cal-toolbar-right">
+                <div class="toggle-wrap">
+                  <label class="toggle">
+                    <input type="checkbox" onchange="toggleWeekend(this.checked)">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="toggle-label">Vis helgedager</span>
+                </div>
               </div>
             </div>
 
             <!-- Kalender-grid (bygges av JS) -->
             <div class="cal-grid" id="cal-grid"></div>
+
+            <!-- Egen horisontal scrollbar (alltid synlig ved behov) -->
+            <div class="cal-scrollbar" id="cal-scrollbar">
+              <div class="cal-scrollbar-track" id="cal-scrollbar-track">
+                <div class="cal-scrollbar-thumb" id="cal-scrollbar-thumb"></div>
+              </div>
+            </div>
 
           </div>
           <!-- /view-kalender -->
@@ -3676,6 +3729,7 @@
     if (radio) radio.checked = true;
     atlUpdateBorder(document.getElementById('view-switcher'), false);
     if (isCal) {
+      calScrollToToday = true;
       renderCalendar();
       requestAnimationFrame(function() { atlUpdateBorder(document.getElementById('cal-gran-switcher'), false); });
     }
@@ -3747,6 +3801,8 @@
   var calAnchor = startOfDay(CAL_TODAY);           // dato visningen sentreres rundt
   var calSelectedCardId = null;                    // markert fravær
   var calRowOrder = null;                           // fast radrekkefølge, satt fra default-uka
+  var calShowWeekend = false;                       // vis helgedager (lør/søn) – skjult som default
+  var calScrollToToday = true;                      // sentrer visningen på dagens dato ved neste render
 
   function parseDate(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function fmtDate(d) { var p = function(x){ return (x < 10 ? '0' : '') + x; }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2); }
@@ -3772,11 +3828,13 @@
     if (calGran === 'year') calAnchor = new Date(calAnchor.getFullYear() + n, calAnchor.getMonth(), 1);
     else if (calGran === 'month') calAnchor = new Date(calAnchor.getFullYear(), calAnchor.getMonth() + n, 1);
     else calAnchor = addDays(calAnchor, n * 7);
+    calScrollToToday = true;
     renderCalendar();
   }
   function calToday(e) {
     if (e) e.preventDefault();
     calAnchor = startOfDay(CAL_TODAY);
+    calScrollToToday = true;
     renderCalendar();
   }
   function setCalGran(g) {
@@ -3784,53 +3842,55 @@
     var radio = document.getElementById('gran-' + g);
     if (radio) radio.checked = true;
     atlUpdateBorder(document.getElementById('cal-gran-switcher'), true);
+    calScrollToToday = true;
     renderCalendar();
   }
+  function toggleWeekend(show) { calShowWeekend = show; calScrollToToday = true; renderCalendar(); }
 
-  // Bygg kolonnene for gjeldende visning (uke = dager, måned = dager, år = måneder)
+  function isWeekendDay(d) { var g = d.getDay(); return g === 0 || g === 6; }  // søn/lør
+
+  // Bygg kolonnene for gjeldende visning (uke = dager, måned = dager, år = måneder).
+  // Hver kolonne har start + end (eksklusiv), så helgedager kan filtreres bort uten å ødelegge bjelke-plassering.
   function buildColumns() {
-    var cols = [], endExcl, label;
+    var cols = [], label;
     if (calGran === 'year') {
       var y = calAnchor.getFullYear();
       for (var m = 0; m < 12; m++) {
-        cols.push({ start: new Date(y, m, 1), top: '', bottom: MONTHS_LONG[m], bottomShort: MONTHS_ABBR[m], weekend: false,
-                    today: (y === CAL_TODAY.getFullYear() && m === CAL_TODAY.getMonth()), current: false });
+        cols.push({ start: new Date(y, m, 1), end: new Date(y, m + 1, 1), top: '', bottom: MONTHS_LONG[m], bottomShort: MONTHS_ABBR[m],
+                    weekend: false, today: (y === CAL_TODAY.getFullYear() && m === CAL_TODAY.getMonth()) });
       }
-      endExcl = new Date(y + 1, 0, 1);
       label = String(y);
     } else if (calGran === 'month') {
       var first = new Date(calAnchor.getFullYear(), calAnchor.getMonth(), 1);
       var dim = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
       for (var d = 1; d <= dim; d++) {
         var dd = new Date(first.getFullYear(), first.getMonth(), d);
-        cols.push({ start: dd, top: WEEKDAYS_SHORT[(dd.getDay() + 6) % 7], bottom: String(d),
-                    weekend: (dd.getDay() === 0), today: sameDay(dd, CAL_TODAY), current: false });
+        if (!calShowWeekend && isWeekendDay(dd)) continue;
+        cols.push({ start: dd, end: addDays(dd, 1), top: WEEKDAYS_SHORT[(dd.getDay() + 6) % 7], bottom: String(d),
+                    weekend: (dd.getDay() === 0), today: sameDay(dd, CAL_TODAY) });
       }
-      endExcl = new Date(first.getFullYear(), first.getMonth() + 1, 1);
       label = MONTHS_LONG[first.getMonth()] + ' ' + first.getFullYear();
     } else {
       var mon = mondayOf(calAnchor);
       for (var i = 0; i < 7; i++) {
         var wd = addDays(mon, i);
-        cols.push({ start: wd, top: WEEKDAYS[i], bottom: String(wd.getDate()),
-                    weekend: (wd.getDay() === 0), today: sameDay(wd, CAL_TODAY), current: false });
+        if (!calShowWeekend && isWeekendDay(wd)) continue;
+        cols.push({ start: wd, end: addDays(wd, 1), top: WEEKDAYS[i], bottom: String(wd.getDate()),
+                    weekend: (wd.getDay() === 0), today: sameDay(wd, CAL_TODAY) });
       }
-      endExcl = addDays(mon, 7);
       label = 'Uke ' + isoWeek(mon) + ' ' + mon.getFullYear();
     }
-    return { cols: cols, endExcl: endExcl, label: label };
+    return { cols: cols, label: label };
   }
 
-  // Brøk-posisjon (0..n) for en dato på tvers av kolonnene – håndterer både dag- og måned-kolonner
-  function posOf(date, cols, endExcl) {
+  // Brøk-posisjon (0..n) for en dato på tvers av synlige kolonner. Datoer i skjulte
+  // helge-gap snappes til nærmeste kolonnekant, så bjelker fortsatt spenner riktig.
+  function posOf(date, cols) {
     var t = startOfDay(date).getTime();
-    var t0 = cols[0].start.getTime(), tEnd = endExcl.getTime();
-    if (t <= t0) return 0;
-    if (t >= tEnd) return cols.length;
     for (var i = 0; i < cols.length; i++) {
-      var cs = cols[i].start.getTime();
-      var ce = (i + 1 < cols.length) ? cols[i + 1].start.getTime() : tEnd;
-      if (t >= cs && t < ce) return i + (t - cs) / (ce - cs);
+      var cs = cols[i].start.getTime(), ce = cols[i].end.getTime();
+      if (t < cs) return i;                              // i gap før denne kolonnen → venstre kant
+      if (t < ce) return i + (t - cs) / (ce - cs);       // inni kolonnen
     }
     return cols.length;
   }
@@ -3859,12 +3919,12 @@
     var grid = document.getElementById('cal-grid');
 
     var built = buildColumns();
-    var cols = built.cols, endExcl = built.endExcl, n = cols.length;
-    var rangeStart = cols[0].start, rangeEndIncl = addDays(endExcl, -1);
+    var cols = built.cols, n = cols.length;
+    var rangeStart = cols[0].start, rangeEndIncl = addDays(cols[n - 1].end, -1);
     document.getElementById('cal-period-label').textContent = built.label;
 
     function cellCls(c) {
-      return 'cal-day-cell' + (c.weekend ? ' cal-day-cell--weekend' : '') + (c.current ? ' cal-day-cell--current' : '');
+      return 'cal-day-cell' + (c.weekend ? ' cal-day-cell--weekend' : '');
     }
 
     var html = '';
@@ -3910,7 +3970,7 @@
       cols.forEach(function(c) { html += '<div class="' + cellCls(c) + '"></div>'; });
       if (a) {
         var s = parseDate(a.start), e = parseDate(a.end), eExcl = addDays(e, 1);
-        var leftPos = posOf(s, cols, endExcl), rightPos = posOf(eExcl, cols, endExcl);
+        var leftPos = posOf(s, cols), rightPos = posOf(eExcl, cols);
         var left = (leftPos / n) * 100;
         var width = ((rightPos - leftPos) / n) * 100;
         var meta = STATUS_META[a.status];
@@ -3942,12 +4002,40 @@
 
     // Vertikal "i dag"-strek. Uke/måned: midt i dagskolonnen. År: plassert etter hvor i måneden vi er.
     if (CAL_TODAY >= rangeStart && CAL_TODAY <= rangeEndIncl) {
-      var pos = (calGran === 'year') ? posOf(CAL_TODAY, cols, endExcl)
-                                     : Math.floor(posOf(CAL_TODAY, cols, endExcl)) + 0.5;
-      html += '<div class="cal-today-line" style="left: calc(242px + (100% - 242px) / ' + n + ' * ' + pos + ');"></div>';
+      var pos = (calGran === 'year') ? posOf(CAL_TODAY, cols)
+                                     : Math.floor(posOf(CAL_TODAY, cols)) + 0.5;
+      html += '<div class="cal-today-line" data-pos="' + pos + '"></div>';
     }
 
+    // Antall kolonner styrer min-bredden per rad (65px per dag) → horisontal scroll når de ikke får plass
+    grid.style.setProperty('--cal-cols', n);
+
     grid.innerHTML = html;
+
+    // "I dag"-streken plasseres i piksler ut fra faktisk kolonnebredde (fungerer også når kalenderen scroller)
+    var todayLine = grid.querySelector('.cal-today-line');
+    var todayContentX = null;
+    if (todayLine) {
+      var daysArea = grid.querySelector('.cal-days-area');
+      if (daysArea) {
+        var colW = daysArea.offsetWidth / n;
+        todayContentX = daysArea.offsetLeft + parseFloat(todayLine.getAttribute('data-pos')) * colW;
+        todayLine.style.left = todayContentX + 'px';
+      }
+    }
+
+    // Grunnposisjon: sentrer visningen på dagens dato (slik at man kan scrolle både fram og tilbake).
+    // Kun ved navigasjon/visningsbytte – ikke når man f.eks. lukker en popover.
+    if (calScrollToToday) {
+      var maxScroll = grid.scrollWidth - grid.clientWidth;
+      if (todayContentX != null && maxScroll > 0) {
+        var center = 242 + (grid.clientWidth - 242) / 2;   // midt i dags-området (utenom fast Ansatt-kolonne)
+        grid.scrollLeft = Math.max(0, Math.min(maxScroll, todayContentX - center));
+      } else {
+        grid.scrollLeft = 0;   // dagens dato ikke i visningen → start på periodens begynnelse
+      }
+      calScrollToToday = false;
+    }
 
     // Tilpass innhold til bjelkens faktiske bredde:
     // full = type + status, md = full type, sm = forkortet type, mini = kun farge.
@@ -3956,7 +4044,78 @@
       var tier = (w < 56) ? 'mini' : (w < 110) ? 'sm' : (w < 200) ? 'md' : 'full';
       if (tier !== 'full') b.classList.add('cal-bar--' + tier);
     });
+
+    updateCalScrollbar();
   }
+
+  /* ---- Egen horisontal scrollbar (alltid synlig ved behov, kun over dags-området) ---- */
+  var ANSATT_W = 242;   // bredde på fast Ansatt-kolonne (matcher .cal-ansatt-cell)
+
+  function updateCalScrollbar() {
+    var grid = document.getElementById('cal-grid');
+    var bar = document.getElementById('cal-scrollbar');
+    var track = document.getElementById('cal-scrollbar-track');
+    var thumb = document.getElementById('cal-scrollbar-thumb');
+    if (!grid || !bar || !track || !thumb) return;
+
+    var maxScroll = grid.scrollWidth - grid.clientWidth;
+    if (maxScroll <= 1) { bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+
+    var trackW = track.clientWidth;
+    var viewDays = grid.clientWidth - ANSATT_W;
+    var totalDays = grid.scrollWidth - ANSATT_W;
+    var thumbW = Math.max(40, trackW * (viewDays / totalDays));   // min 40px (matcher CSS min-width)
+    var travel = trackW - thumbW;
+    var left = travel * (grid.scrollLeft / maxScroll);
+    thumb.style.width = thumbW + 'px';
+    thumb.style.left = left + 'px';
+  }
+
+  (function initCalScrollbar() {
+    var grid = document.getElementById('cal-grid');
+    var track = document.getElementById('cal-scrollbar-track');
+    var thumb = document.getElementById('cal-scrollbar-thumb');
+    if (!grid || !track || !thumb) return;
+
+    // Grid scroller (hjul/touchpad) → oppdater thumb
+    grid.addEventListener('scroll', updateCalScrollbar);
+    window.addEventListener('resize', updateCalScrollbar);
+
+    // Dra i thumb → scroll grid
+    var dragStartX = 0, dragStartLeft = 0;
+    function onDrag(e) {
+      var maxScroll = grid.scrollWidth - grid.clientWidth;
+      var travel = track.clientWidth - thumb.offsetWidth;
+      if (travel <= 0) return;
+      var newLeft = Math.max(0, Math.min(travel, dragStartLeft + (e.clientX - dragStartX)));
+      grid.scrollLeft = maxScroll * (newLeft / travel);   // scroll-listener oppdaterer thumb
+    }
+    function endDrag() {
+      thumb.classList.remove('dragging');
+      document.removeEventListener('mousemove', onDrag);
+      document.removeEventListener('mouseup', endDrag);
+    }
+    thumb.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      dragStartX = e.clientX;
+      dragStartLeft = thumb.offsetLeft;
+      thumb.classList.add('dragging');
+      document.addEventListener('mousemove', onDrag);
+      document.addEventListener('mouseup', endDrag);
+    });
+
+    // Klikk i sporet (utenfor thumb) → hopp dit
+    track.addEventListener('mousedown', function(e) {
+      if (e.target === thumb) return;
+      var rect = track.getBoundingClientRect();
+      var maxScroll = grid.scrollWidth - grid.clientWidth;
+      var travel = track.clientWidth - thumb.offsetWidth;
+      if (travel <= 0) return;
+      var target = Math.max(0, Math.min(travel, (e.clientX - rect.left) - thumb.offsetWidth / 2));
+      grid.scrollLeft = maxScroll * (target / travel);
+    });
+  })();
 
   /* ============================================================
    * DETALJ-POPOVER (gjenbruker Oversikt sine detaljpaneler)
@@ -3967,6 +4126,10 @@
   function openCalDetail(cardId, detailKind, ev) {
     if (ev) ev.stopPropagation();   // hindrer at klikk-utenfor-lytteren lukker med en gang
     calOpenCardId = cardId;
+    // Marker valgt fravær (stroke) mens popoveren er åpen
+    calSelectedCardId = cardId;
+    document.querySelectorAll('#cal-grid .cal-bar--selected').forEach(function(b) { b.classList.remove('cal-bar--selected'); });
+    if (ev && ev.currentTarget) ev.currentTarget.classList.add('cal-bar--selected');
     // Gjenbruk detaljpanelene fra Oversikt (klones inn i popoveren)
     if (detailKind === 'egenmelding') populateEgenmeldingDetail(cardId);
     if (detailKind === 'omsorgsdager') populateOmsorgsdagDetail(cardId);
@@ -3976,46 +4139,76 @@
     body.innerHTML = '';
     if (src) {
       var clone = src.cloneNode(true);
-      clone.style.display = 'block';
-      clone.removeAttribute('id');
       clone.querySelectorAll('[id]').forEach(function(node) { node.removeAttribute('id'); });
-      clone.querySelectorAll('.detail-close').forEach(function(btn) { btn.setAttribute('onclick', 'closeCalDetail()'); });
-
-      // Synket med Altinn? Da er Endre/Slett ikke tilgjengelig i kebab-menyen
       popoverSynced = !!clone.querySelector('.detail-sync');
 
-      // Bygg topp-actionrad (Google-stil): flytt Avvis-knapp + lukk opp i høyre hjørne, legg til kebab
-      var clHeader = clone.querySelector('.detail-header');
-      if (clHeader) {
-        var actions = document.createElement('div');
-        actions.className = 'popover-actions';
-        var actionBtn = clHeader.querySelector('.btn');           // f.eks. «Avvis fravær» (kun noen fravær)
-        if (actionBtn) actions.appendChild(actionBtn);
-        var existingKebab = clHeader.querySelector('.detail-kebab');  // unngå dobbel kebab fra split view-oppsett
-        if (existingKebab) existingKebab.remove();
-        var kebab = document.createElement('button');
-        kebab.className = 'detail-kebab';
-        kebab.title = 'Flere valg';
-        kebab.setAttribute('data-synced', popoverSynced ? 'true' : 'false');
-        kebab.innerHTML = '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>';
-        kebab.addEventListener('click', openKebabMenu);
-        actions.appendChild(kebab);
-        var closeBtn = clHeader.querySelector('.detail-close');
-        if (closeBtn) actions.appendChild(closeBtn);
-        clone.insertBefore(actions, clone.firstChild);
+      function popDivider() { var d = document.createElement('div'); d.className = 'popover-divider'; return d; }
 
-        // Flytt datarekka (dato/dager/avdeling) ned under headingen (tittelen)
-        var content = clone.querySelector('.detail-content');
-        if (content) {
-          content.parentNode.insertBefore(clHeader, content);
-          // Skillestrek (innrykket, lik seksjons-skillene) mellom sidetopp og seksjoner
-          var sep = document.createElement('div');
-          sep.className = 'popover-divider';
-          content.insertBefore(sep, content.firstChild);
-        }
+      // --- Actionrad: åpne i ny fane + kebab + lukk ---
+      var actions = document.createElement('div');
+      actions.className = 'popover-actions';
+      var openBtn = document.createElement('button');
+      openBtn.className = 'detail-kebab';
+      openBtn.title = 'Åpne i ny fane';
+      openBtn.innerHTML = '<svg viewBox="0 0 20 20" fill="none"><path d="M11.5 3.5H16.5V8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16.5 3.5L9 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 11.5V15.5A1 1 0 0 1 12.5 16.5H4.5A1 1 0 0 1 3.5 15.5V7.5A1 1 0 0 1 4.5 6.5H8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      actions.appendChild(openBtn);
+      var kebab = document.createElement('button');
+      kebab.className = 'detail-kebab';
+      kebab.title = 'Flere valg';
+      kebab.setAttribute('data-synced', popoverSynced ? 'true' : 'false');
+      kebab.innerHTML = '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="5" r="1.2" fill="currentColor"/><circle cx="10" cy="10" r="1.2" fill="currentColor"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>';
+      kebab.addEventListener('click', openKebabMenu);
+      actions.appendChild(kebab);
+      var closeBtn = document.createElement('button');
+      closeBtn.className = 'detail-close';
+      closeBtn.title = 'Lukk';
+      closeBtn.setAttribute('onclick', 'closeCalDetail()');
+      closeBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+      actions.appendChild(closeBtn);
+      body.appendChild(actions);
+
+      // --- Tittel: avatar + navn · type ---
+      var titleRow = clone.querySelector('.detail-title-row');
+      if (titleRow) body.appendChild(titleRow);
+
+      // --- Status-linje: status (+ evt. synk) ---
+      var statusLine = document.createElement('div');
+      statusLine.className = 'pop-status';
+      var a = null;
+      for (var i = 0; i < absenceData.length; i++) { if (absenceData[i].cardId === cardId) { a = absenceData[i]; break; } }
+      if (a) {
+        var meta = STATUS_META[a.status];
+        statusLine.innerHTML = '<span class="status-dot ' + meta.dot + '">' + meta.text + '</span>';
       }
+      var sync = clone.querySelector('.detail-sync');
+      if (sync) {
+        var sep = document.createElement('span');
+        sep.className = 'pop-status-sep';
+        sep.textContent = '·';
+        statusLine.appendChild(sep);
+        statusLine.appendChild(sync);
+      }
+      body.appendChild(statusLine);
 
-      body.appendChild(clone);
+      // --- Detaljer (kun grid, ingen heading/boks) ---
+      var grid = clone.querySelector('.detail-grid');
+      if (grid) { body.appendChild(popDivider()); body.appendChild(grid); }
+
+      // --- Krever handling (kun hvis fraværet har det) ---
+      var kreverSection = null;
+      clone.querySelectorAll('.detail-section').forEach(function(sec) {
+        var t = sec.querySelector('.detail-section-title');
+        if (t && t.textContent.trim().indexOf('Krever handling') === 0) kreverSection = sec;
+      });
+      var box = kreverSection ? kreverSection.querySelector('.handling-box') : null;
+      if (box) {
+        body.appendChild(popDivider());
+        var kh = document.createElement('div');
+        kh.className = 'pop-krever';
+        kh.innerHTML = '<p class="pop-section-title">Krever handling</p>';
+        kh.appendChild(box);
+        body.appendChild(kh);
+      }
     }
 
     // Vis og forankre popoveren ved bjelken som ble klikket
@@ -4047,6 +4240,9 @@
     document.getElementById('cal-popover').hidden = true;
     document.getElementById('cal-detail-body').innerHTML = '';
     closeKebabMenu();
+    // Fjern valgt-markeringen
+    calSelectedCardId = null;
+    document.querySelectorAll('#cal-grid .cal-bar--selected').forEach(function(b) { b.classList.remove('cal-bar--selected'); });
     // «Ny» → «Aktiv» når fraværet er sett (åpnet og forlatt) – samme logikk som split view
     if (calOpenCardId) {
       for (var i = 0; i < absenceData.length; i++) {
