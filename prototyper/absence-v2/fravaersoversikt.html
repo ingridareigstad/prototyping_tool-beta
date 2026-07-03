@@ -923,10 +923,13 @@
     .cal-nav-btn svg { width: var(--icon-small); height: var(--icon-small); }
 
     /* ====== KALENDER-GRID ====== */
-    .cal-grid { width: 100%; overflow-x: auto; overflow-y: visible; position: relative; }
-    /* Skjul den native scrollbaren – vi bruker en egen, alltid synlig (se .cal-scrollbar) */
-    .cal-grid { scrollbar-width: none; }                 /* Firefox */
-    .cal-grid::-webkit-scrollbar { height: 0; width: 0; }  /* Chrome/Safari */
+    /* Kalenderen fyller tilgjengelig høyde og scroller internt: vertikalt blant ansatte
+       og horisontalt mellom dager. Verktøylinjene over ligger fast (utenfor scroll-området). */
+    .cal-grid { width: 100%; flex: 1; min-height: 0; overflow: auto; position: relative; }
+    /* Native scrollbarer skjules – vi bruker egne overlays for begge akser
+       (.cal-scrollbar for horisontal, .cal-vscrollbar for vertikal). */
+    .cal-grid { scrollbar-width: none; }                    /* Firefox */
+    .cal-grid::-webkit-scrollbar { height: 0; width: 0; }   /* Chrome/Safari */
 
     /* Egen horisontal scrollbar: subtil overlay (Google-stil) – ligger oppå innholdet, ikke egen rad.
        Dekker kun dags-området (ikke Ansatt-kolonnen). */
@@ -950,13 +953,39 @@
     }
     .cal-scrollbar-thumb:hover { opacity: 1; }
     .cal-scrollbar-thumb.dragging { opacity: 1; background: var(--text-muted); cursor: grabbing; }
+
+    /* Egen vertikal scrollbar: samme subtile overlay-stil som den horisontale.
+       Dekker kun ansatt-radene (ikke den faste dags-headeren). Posisjon settes i JS. */
+    .cal-vscrollbar {
+      position: absolute; right: var(--space-4); z-index: 7;
+      width: var(--space-12);
+      display: none;                                       /* vises kun ved overflow (JS) */
+      pointer-events: none;
+    }
+    .cal-vscrollbar-track {
+      position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: var(--space-8);
+      background: transparent; border-radius: var(--radius-full);
+      pointer-events: auto;
+    }
+    .cal-vscrollbar-thumb {
+      position: absolute; left: 0; top: 0; width: 100%; min-height: var(--space-40);
+      background: var(--border-secondary); border-radius: var(--radius-full);
+      opacity: 0.75; cursor: grab; pointer-events: auto;
+    }
+    .cal-vscrollbar-thumb:hover { opacity: 1; }
+    .cal-vscrollbar-thumb.dragging { opacity: 1; background: var(--text-muted); cursor: grabbing; }
     .cal-today-line {
-      position: absolute; top: 50px; bottom: 0; width: 2px;
+      position: absolute; top: 50px; width: 2px;   /* høyde settes i JS (spenner alle rader) */
       background: var(--surface-info-active); transform: translateX(-1px);
       pointer-events: none; z-index: 5;   /* foran alle bjelker/pills */
     }
     .cal-row { display: flex; align-items: stretch; width: 100%; min-width: calc(242px + var(--cal-cols, 7) * 65px); }
-    .cal-head-row { border-bottom: 1px solid var(--border-muted); }
+    /* Dags-headeren holdes fast øverst når man scroller blant ansatte */
+    .cal-head-row {
+      border-bottom: 1px solid var(--border-muted);
+      position: sticky; top: 0; z-index: 7;
+    }
     .cal-ansatt-cell {
       width: 242px; flex-shrink: 0; box-sizing: border-box;
       display: flex; align-items: center; gap: var(--space-8);
@@ -993,6 +1022,12 @@
       border-radius: var(--radius-default); padding: var(--space-2) var(--space-8);
     }
     .cal-body-row { min-height: 45px; border-bottom: 1px solid var(--border-faint); }
+    /* Flere fravær på samme rad ligger på én linje: de som er på ulike dager står side om side.
+       Raden beholder fast høyde (ingen vertikal stabling). */
+    /* Nederste rad får litt ekstra høyde KUN når den horisontale scrollbaren vises (.cal-grid--hscroll),
+       så scrollbaren får plass inne i raden. Bjelken topp-forankres så ekstra-lufta havner nederst. */
+    .cal-grid--hscroll .cal-body-row--last { min-height: 64px; }
+    .cal-grid--hscroll .cal-body-row--last .cal-bar { top: var(--space-12); transform: none; }
     .cal-body-row .cal-days-area { align-items: stretch; }
 
     /* Fraværsbjelke */
@@ -1037,13 +1072,75 @@
     .cal-bar--cont-left { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; }
     .cal-bar--cont-right { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; }
 
+    /* ====== OPPRETT FRAVÆR I KALENDEREN (Google Calendar-stil) ====== */
+    /* Tomme celler i ansatt-rader signaliserer at man kan opprette fravær der */
+    .cal-body-row .cal-day-cell { cursor: pointer; }
+    .cal-body-row .cal-day-cell:hover { background: var(--surface-info-rest); }
+    .cal-head-row .cal-day-cell, .cal-body-row .cal-day-cell--weekend:hover { cursor: default; }
+
+    /* Draft-bjelke som opprettes/redigeres. Egen tint kun før type velges;
+       når type er valgt overtar status-klassen (cal-bar--aktiv m.fl.) bakgrunnen. */
+    .cal-bar--draft { cursor: grab; outline: 1px solid var(--border-success); outline-offset: -1px; z-index: 4; }
+    .cal-bar--draft.dragging { cursor: grabbing; }
+    /* Resize-håndtak i hver kant av draften */
+    .cal-bar-handle { position: absolute; top: 0; bottom: 0; width: var(--space-8); cursor: ew-resize; z-index: 2; }
+    .cal-bar-handle--left { left: 0; }
+    .cal-bar-handle--right { right: 0; }
+
+    /* Datovelger (år/måned/dag) for start- og sluttdato i create-popoveren */
+    .cal-datepicker {
+      position: fixed; z-index: 320;
+      background: var(--surface-default);
+      border: 1px solid var(--border-muted);
+      border-radius: var(--radius-default);
+      box-shadow: 0 4px 16px rgba(46, 56, 77, 0.18);
+      padding: var(--space-8);
+      width: 264px;
+    }
+    .cal-datepicker[hidden] { display: none; }
+    .cal-dp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-8); }
+    .cal-dp-title {
+      font: 500 14px/1.4 "Rubik", sans-serif; color: var(--text-primary);
+      background: none; border: none; cursor: pointer;
+      padding: var(--space-4) var(--space-8); border-radius: var(--radius-default);
+    }
+    .cal-dp-title:hover { background: var(--action-tertiary-hover); }
+    .cal-dp-nav { display: flex; gap: var(--space-2); }
+    .cal-dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); }
+    .cal-dp-dow { font: 12px/1.4 "Rubik", sans-serif; color: var(--text-muted); text-align: center; padding: var(--space-2) 0; }
+    .cal-dp-day {
+      font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary);
+      background: none; border: none; cursor: pointer;
+      height: var(--size-medium); border-radius: var(--radius-default);
+    }
+    .cal-dp-day:hover { background: var(--action-tertiary-hover); }
+    .cal-dp-day--muted { color: var(--text-disabled); }
+    .cal-dp-day--today { outline: 1px solid var(--border-active); outline-offset: -1px; }
+    .cal-dp-day--selected { background: var(--surface-info-active); color: var(--text-on-action); }
+    .cal-dp-months, .cal-dp-years { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+    .cal-dp-cell {
+      font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary);
+      background: none; border: none; cursor: pointer;
+      padding: var(--space-8); border-radius: var(--radius-default);
+    }
+    .cal-dp-cell:hover { background: var(--action-tertiary-hover); }
+    .cal-dp-cell--selected { background: var(--surface-info-active); color: var(--text-on-action); }
+    /* Create-popover: samme 24px sideinnrykk som detalj-popoveren */
+    .pop-create-title { font: 500 20px/1.3 "Rubik", sans-serif; color: var(--text-primary); padding: var(--space-4) var(--space-24) 0; }
+    .pop-create-form { display: flex; flex-direction: column; gap: var(--space-16); padding: var(--space-16) var(--space-24) 0; }
+    .pop-create-footer { display: flex; gap: var(--space-8); padding: var(--space-16) var(--space-24) var(--space-24); }
+    /* Info-notis i create-popover: kun ikon + tekst (som i fraværsskjema-modalen) */
+    .pop-create-note { display: flex; align-items: flex-start; gap: var(--space-8); }
+    .pop-create-note svg { flex-shrink: 0; color: var(--text-muted); }
+    .pop-create-note p { font: 14px/1.4 "Rubik", sans-serif; color: var(--text-primary); }
+
     /* ====== VISNINGER ====== */
     #view-oversikt, #view-kalender { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-    /* Kalender-modus: kortet vokser med radene (full tabellhøyde), ytre side scroller. */
-    .main-content--cal { overflow-y: auto; }
-    .page--cal { flex: 0 0 auto; overflow: visible; }
-    .content-card--cal { flex: 0 0 auto; overflow: visible; }
-    .content-card--cal #view-kalender { flex: 0 0 auto; min-height: 0; }
+    #view-kalender { position: relative; }   /* forankrer den vertikale scrollbar-overlayen */
+    /* Kalender-modus: kortet hugger innholdet i stedet for å fylle skjermen.
+       Ved få rader blir kortet bare så høyt som radene; ved mange rader begrenses høyden
+       til tilgjengelig plass og grid-et (.cal-grid) scroller internt med sticky verktøylinjer. */
+    .content-card--cal { flex: 0 1 auto; }
     /* ===== POPOVER-TEST: detalj forankret ved bjelken (Google Calendar-stil) ===== */
     .cal-popover {
       position: fixed;
@@ -1206,7 +1303,7 @@
 
         <div id="tab-ansatte" style="display:contents;">
         <!-- INNHOLDSKORT med split view -->
-        <div class="content-card">
+        <div class="content-card" id="ansatte-card">
 
           <!-- FILTERLINJE -->
           <div class="table-toolbar">
@@ -2445,19 +2542,15 @@
               </div>
             </div>
 
+            <!-- Egen vertikal scrollbar (alltid synlig ved behov, over ansatt-radene) -->
+            <div class="cal-vscrollbar" id="cal-vscrollbar">
+              <div class="cal-vscrollbar-track" id="cal-vscrollbar-track">
+                <div class="cal-vscrollbar-thumb" id="cal-vscrollbar-thumb"></div>
+              </div>
+            </div>
+
           </div>
           <!-- /view-kalender -->
-
-          <!-- DETALJ-POPOVER (kalender, forankret ved bjelken) -->
-          <div class="cal-popover" id="cal-popover" hidden>
-            <div class="cal-detail-body" id="cal-detail-body"></div>
-          </div>
-
-          <!-- KEBAB-MENY (Slett/Endre/Endringslogg) — bygges av JS -->
-          <div class="kebab-menu" id="kebab-menu" hidden></div>
-
-          <!-- TOOLTIP for fraværsbjelker (vises når teksten ikke får plass) -->
-          <div class="cal-tooltip" id="cal-tooltip" hidden></div>
 
         </div>
         <!-- /content-card -->
@@ -2493,7 +2586,7 @@
           </div>
 
           <!-- INNHOLDSKORT -->
-          <div class="content-card">
+          <div class="content-card" id="mitt-card">
 
             <div class="table-toolbar">
               <div class="table-toolbar-filters">
@@ -2501,9 +2594,27 @@
                   <input class="input" type="search" placeholder="Søk...">
                   <svg class="input-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                 </div>
+
+                <!-- Visningsbytte: liste / kalender (kun meg) -->
+                <div class="atl-content-switcher view-switcher" id="view-switcher-mitt">
+                  <div class="atl-content-switch atl-content-switch--single">
+                    <input class="atl-content-switch__input" type="radio" name="cal-view-mitt" id="view-list-mitt" checked onchange="setView('oversikt')">
+                    <div class="atl-content-switch__label-background"></div>
+                    <label class="atl-content-switch__label atl-content-switch__label--selected" for="view-list-mitt" title="Liste" aria-label="Liste"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 19V17H21V19H9ZM9 13V11H21V13H9ZM9 7V5H21V7H9ZM5 20C4.45 20 3.97917 19.8042 3.5875 19.4125C3.19583 19.0208 3 18.55 3 18C3 17.45 3.19583 16.9792 3.5875 16.5875C3.97917 16.1958 4.45 16 5 16C5.55 16 6.02083 16.1958 6.4125 16.5875C6.80417 16.9792 7 17.45 7 18C7 18.55 6.80417 19.0208 6.4125 19.4125C6.02083 19.8042 5.55 20 5 20ZM5 14C4.45 14 3.97917 13.8042 3.5875 13.4125C3.19583 13.0208 3 12.55 3 12C3 11.45 3.19583 10.9792 3.5875 10.5875C3.97917 10.1958 4.45 10 5 10C5.55 10 6.02083 10.1958 6.4125 10.5875C6.80417 10.9792 7 11.45 7 12C7 12.55 6.80417 13.0208 6.4125 13.4125C6.02083 13.8042 5.55 14 5 14ZM5 8C4.45 8 3.97917 7.80417 3.5875 7.4125C3.19583 7.02083 3 6.55 3 6C3 5.45 3.19583 4.97917 3.5875 4.5875C3.97917 4.19583 4.45 4 5 4C5.55 4 6.02083 4.19583 6.4125 4.5875C6.80417 4.97917 7 5.45 7 6C7 6.55 6.80417 7.02083 6.4125 7.4125C6.02083 7.80417 5.55 8 5 8Z"/></svg></label>
+                    <div class="atl-content-switch__label atl-content-switch__label--deselected"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 19V17H21V19H9ZM9 13V11H21V13H9ZM9 7V5H21V7H9ZM5 20C4.45 20 3.97917 19.8042 3.5875 19.4125C3.19583 19.0208 3 18.55 3 18C3 17.45 3.19583 16.9792 3.5875 16.5875C3.97917 16.1958 4.45 16 5 16C5.55 16 6.02083 16.1958 6.4125 16.5875C6.80417 16.9792 7 17.45 7 18C7 18.55 6.80417 19.0208 6.4125 19.4125C6.02083 19.8042 5.55 20 5 20ZM5 14C4.45 14 3.97917 13.8042 3.5875 13.4125C3.19583 13.0208 3 12.55 3 12C3 11.45 3.19583 10.9792 3.5875 10.5875C3.97917 10.1958 4.45 10 5 10C5.55 10 6.02083 10.1958 6.4125 10.5875C6.80417 10.9792 7 11.45 7 12C7 12.55 6.80417 13.0208 6.4125 13.4125C6.02083 13.8042 5.55 14 5 14ZM5 8C4.45 8 3.97917 7.80417 3.5875 7.4125C3.19583 7.02083 3 6.55 3 6C3 5.45 3.19583 4.97917 3.5875 4.5875C3.97917 4.19583 4.45 4 5 4C5.55 4 6.02083 4.19583 6.4125 4.5875C6.80417 4.97917 7 5.45 7 6C7 6.55 6.80417 7.02083 6.4125 7.4125C6.02083 7.80417 5.55 8 5 8Z"/></svg></div>
+                  </div>
+                  <div class="atl-content-switch atl-content-switch--single">
+                    <input class="atl-content-switch__input" type="radio" name="cal-view-mitt" id="view-cal-mitt" onchange="setView('kalender')">
+                    <div class="atl-content-switch__label-background"></div>
+                    <label class="atl-content-switch__label atl-content-switch__label--selected" for="view-cal-mitt" title="Kalender" aria-label="Kalender"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 22c-.55 0-1.02-.196-1.413-.587A1.926 1.926 0 0 1 3 20V6c0-.55.196-1.02.587-1.412A1.926 1.926 0 0 1 5 4h1V2h2v2h8V2h2v2h1c.55 0 1.02.196 1.413.588.391.391.587.862.587 1.412v14c0 .55-.196 1.02-.587 1.413A1.926 1.926 0 0 1 19 22H5Zm0-2h14V10H5v10ZM5 8h14V6H5v2Z"/></svg></label>
+                    <div class="atl-content-switch__label atl-content-switch__label--deselected"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 22c-.55 0-1.02-.196-1.413-.587A1.926 1.926 0 0 1 3 20V6c0-.55.196-1.02.587-1.412A1.926 1.926 0 0 1 5 4h1V2h2v2h8V2h2v2h1c.55 0 1.02.196 1.413.588.391.391.587.862.587 1.412v14c0 .55-.196 1.02-.587 1.413A1.926 1.926 0 0 1 19 22H5Zm0-2h14V10H5v10ZM5 8h14V6H5v2Z"/></svg></div>
+                  </div>
+                  <div class="atl-content-switcher__border"></div>
+                </div>
               </div>
             </div>
 
+            <div id="view-mitt-liste">
             <div class="split-body">
 
               <!-- VENSTRE: Ingrid sine fravær -->
@@ -3178,6 +3289,7 @@
               </div><!-- /split-right -->
 
             </div><!-- /split-body -->
+            </div><!-- /view-mitt-liste -->
 
           </div><!-- /content-card -->
 
@@ -3188,6 +3300,13 @@
 
   </div>
 </div>
+
+<!-- DELTE KALENDER-OVERLAYS: utenfor fanene så de vises i begge (Ansatte + Mitt); forankres via position:fixed -->
+<div class="cal-popover" id="cal-popover" hidden>
+  <div class="cal-detail-body" id="cal-detail-body"></div>
+</div>
+<div class="kebab-menu" id="kebab-menu" hidden></div>
+<div class="cal-tooltip" id="cal-tooltip" hidden></div>
 
 <!-- MODAL: Nytt fravær (Ansattes fravær – leder) -->
 <div class="modal-overlay" id="modal-nytt-fravaer-leder" style="display:none;" onclick="if(event.target===this)closeNyttFravaerLeder()">
@@ -3391,6 +3510,8 @@
     document.getElementById('tab-btn-mitt').classList.toggle('tx-tab--active', tab === 'mitt');
     document.getElementById('tab-ansatte').style.display = tab === 'ansatte' ? 'contents' : 'none';
     document.getElementById('tab-mitt').style.display = tab === 'mitt' ? 'contents' : 'none';
+    // Gjenopprett fanens valgte visning (relokerer kalenderen inn i riktig kort ved behov)
+    setView(tabView[tab] === 'kalender' ? 'kalender' : 'oversikt', tab);
   }
 
   var mittDetailIds = ['mitt-state-empty', 'mitt-detail-egenmelding', 'mitt-detail-ferie', 'mitt-detail-fp', 'mitt-detail-omsorg', 'mitt-detail-ferie2', 'mitt-detail-eg2', 'mitt-detail-eg3', 'mitt-detail-eg4'];
@@ -3715,24 +3836,45 @@
     container.style.setProperty('--border-bottom-right-radius', isLast ? 'var(--radius-default)' : '0px');
   }
 
-  function setView(mode) {
+  function setView(mode, tab) {
+    tab = tab || currentTab();
     var isCal = (mode === 'kalender');
-    document.getElementById('view-oversikt').style.display = isCal ? 'none' : '';
-    document.getElementById('view-kalender').style.display = isCal ? '' : 'none';
-    var calCard = document.getElementById('view-kalender').closest('.content-card');
-    if (calCard) calCard.classList.toggle('content-card--cal', isCal);
+    tabView[tab] = isCal ? 'kalender' : 'liste';
+
+    var listEl = document.getElementById(tab === 'mitt' ? 'view-mitt-liste' : 'view-oversikt');
+    var cardEl = document.getElementById(tab === 'mitt' ? 'mitt-card' : 'ansatte-card');
+    var switcherId = tab === 'mitt' ? 'view-switcher-mitt' : 'view-switcher';
+    var vk = document.getElementById('view-kalender');
+
+    // Nullstill kalender-klasser overalt; settes på nytt for aktivt kort under
+    document.querySelectorAll('.content-card--cal').forEach(function(c) { c.classList.remove('content-card--cal'); });
     var mainEl = document.querySelector('.main-content');
     if (mainEl) mainEl.classList.toggle('main-content--cal', isCal);
-    var pageEl = document.querySelector('.page');
-    if (pageEl) pageEl.classList.toggle('page--cal', isCal);
-    var radio = document.getElementById(isCal ? 'view-cal' : 'view-list');
-    if (radio) radio.checked = true;
-    atlUpdateBorder(document.getElementById('view-switcher'), false);
+
     if (isCal) {
+      calScope = (tab === 'mitt') ? MY_NAME : null;   // Mitt fravær = kun meg
+      calRowOrder = null;                              // refiltrer rader for gjeldende scope
+      if (listEl) listEl.style.display = 'none';
+      cardEl.appendChild(vk);                          // flytt kalenderen inn i aktivt kort
+      vk.style.display = '';
+      cardEl.classList.add('content-card--cal');
       calScrollToToday = true;
       renderCalendar();
-      requestAnimationFrame(function() { atlUpdateBorder(document.getElementById('cal-gran-switcher'), false); });
+      requestAnimationFrame(function() {
+        atlUpdateBorder(document.getElementById(switcherId), false);
+        atlUpdateBorder(document.getElementById('cal-gran-switcher'), false);
+      });
+    } else {
+      vk.style.display = 'none';
+      if (listEl) listEl.style.display = '';
     }
+
+    // Kryss av riktig switcher-radio + oppdater border
+    var radioId = isCal ? (tab === 'mitt' ? 'view-cal-mitt' : 'view-cal')
+                        : (tab === 'mitt' ? 'view-list-mitt' : 'view-list');
+    var radio = document.getElementById(radioId);
+    if (radio) radio.checked = true;
+    atlUpdateBorder(document.getElementById(switcherId), false);
   }
 
   /* ============================================================
@@ -3743,9 +3885,15 @@
 
   var absenceData = [
     { name: 'Jakob Pettersen', initials: 'JP', type: 'Fraværsperiode', status: 'krever', start: '2026-10-31', end: '2026-11-30', cardId: 'card-jakob', detailKind: 'jakob' },
-    { name: 'Lars Eriksen', initials: 'LE', type: 'Fraværsperiode', status: 'krever', start: '2026-07-01', end: '2026-09-30', cardId: 'card-lars', detailKind: 'lars' },
+    { name: 'Lars Eriksen', initials: 'LE', type: 'Fraværsperiode', status: 'avsluttet', start: '2026-07-01', end: '2026-09-30', cardId: 'card-lars', detailKind: 'lars' },
     { name: 'Erik Dahl', initials: 'ED', type: 'Ferie', status: 'krever', start: '2026-11-18', end: '2026-11-21', cardId: 'card-erik', detailKind: 'ferie' },
     { name: 'Ingrid Reigstad', initials: 'IR', type: 'Egenmelding', status: 'ny', start: '2026-11-17', end: '2026-11-18', cardId: 'card-ingrid', detailKind: 'egenmelding' },
+    // Ingrids øvrige fravær (fra «Mitt fravær»-lista) – delt datasett, vises i begge faner.
+    // Holdt ikke-overlappende så default-visningen ikke blir en stabel.
+    { name: 'Ingrid Reigstad', initials: 'IR', type: 'Ferie', status: 'krever', start: '2026-11-19', end: '2026-11-21', cardId: 'card-ingrid-ferie1', detailKind: 'ferie' },
+    { name: 'Ingrid Reigstad', initials: 'IR', type: 'Omsorgsdager', status: 'avsluttet', start: '2026-11-10', end: '2026-11-12', cardId: 'card-ingrid-omsorg', detailKind: 'omsorgsdager' },
+    { name: 'Ingrid Reigstad', initials: 'IR', type: 'Egenmelding', status: 'avsluttet', start: '2026-10-05', end: '2026-10-07', cardId: 'card-ingrid-eg2', detailKind: 'egenmelding' },
+    { name: 'Ingrid Reigstad', initials: 'IR', type: 'Egenmelding', status: 'avsluttet', start: '2026-08-15', end: '2026-08-17', cardId: 'card-ingrid-eg4', detailKind: 'egenmelding' },
     { name: 'Sofia Berg', initials: 'SB', type: 'Foreldrepermisjon', status: 'aktiv', start: '2026-09-01', end: '2027-02-28', cardId: 'card-sofia-fp', detailKind: 'foreldrepermisjon' },
     { name: 'Thomas Lie', initials: 'TL', type: 'Omsorgsdager', status: 'aktiv', start: '2026-11-17', end: '2026-11-18', cardId: 'card-thomas', detailKind: 'omsorgsdager' },
     { name: 'Martin Johansen', initials: 'MJ', type: 'Egenmelding', status: 'avsluttet', start: '2026-11-16', end: '2026-11-17', cardId: 'card-martin', detailKind: 'egenmelding' },
@@ -3789,6 +3937,13 @@
     aktiv:     { cls: 'cal-bar--aktiv',     dot: 'status-dot--success', text: 'Aktiv' },
     avsluttet: { cls: 'cal-bar--avsluttet', dot: 'status-dot--neutral', text: 'Avsluttet' }
   };
+  // I «Mitt fravær» (calScope) gir «Krever handling» ikke mening for eget fravær – det er jeg som
+  // venter på leder. Vis «Til godkjenning» i stedet (samme fargetema som Mitt-lista).
+  function statusMeta(status) {
+    var m = STATUS_META[status];
+    if (calScope && status === 'krever') return { cls: m.cls, dot: m.dot, text: 'Til godkjenning' };
+    return m;
+  }
 
   var MONTHS_SHORT = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];
   var MONTHS_LONG = ['Januar', 'Februar', 'Mars', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Desember'];
@@ -3803,6 +3958,24 @@
   var calRowOrder = null;                           // fast radrekkefølge, satt fra default-uka
   var calShowWeekend = false;                       // vis helgedager (lør/søn) – skjult som default
   var calScrollToToday = true;                      // sentrer visningen på dagens dato ved neste render
+  // Kolonne-kontekst for gjeldende render (brukes av hit-testing ved opprettelse)
+  var calCols = [], calN = 0, calRangeStart = null, calRangeEndIncl = null;
+  // Draft-fravær som opprettes/redigeres direkte i kalenderen ({empIdx, empName, start, end, type} eller null)
+  var calDraft = null;
+  var calCreateOpen = false;                        // er «Nytt fravær»-popoveren åpen?
+  // Avgrensning: null = alle ansatte (ledervisning), ellers ett navn (Mitt fravær = kun meg)
+  var calScope = null;
+  var MY_NAME = 'Ingrid Reigstad';                  // innlogget bruker (prototype)
+  // Husker hver fanes valgte visning så fanebytte gjenoppretter riktig
+  var tabView = { ansatte: 'oversikt', mitt: 'liste' };
+  function currentTab() {
+    var mitt = document.getElementById('tab-btn-mitt');
+    return (mitt && mitt.classList.contains('tx-tab--active')) ? 'mitt' : 'ansatte';
+  }
+  // Ansatte i gjeldende scope (kalenderen filtreres til disse radene)
+  function calEmployees() {
+    return calScope ? companyEmployees.filter(function(e) { return e.name === calScope; }) : companyEmployees;
+  }
 
   function parseDate(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function fmtDate(d) { var p = function(x){ return (x < 10 ? '0' : '') + x; }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2); }
@@ -3895,12 +4068,49 @@
     return cols.length;
   }
 
+  // Delt bjelke-geometri: left/width i % av .cal-days-area for et fravær fra dato s til e (inklusiv),
+  // med 4px innrykk på sider som ikke fortsetter utenfor visningen. Bruker gjeldende render-kontekst.
+  function barGeometry(s, e) {
+    var eExcl = addDays(e, 1);
+    var leftPos = posOf(s, calCols), rightPos = posOf(eExcl, calCols);
+    var left = (leftPos / calN) * 100;
+    var width = ((rightPos - leftPos) / calN) * 100;
+    var contLeft = s < calRangeStart, contRight = e > calRangeEndIncl;
+    var styleLeft = contLeft ? (left + '%') : ('calc(' + left + '% + var(--space-4))');
+    var insets = (contLeft ? 0 : 1) + (contRight ? 0 : 1);
+    var styleWidth = (insets === 0) ? (width + '%')
+                   : (insets === 1) ? ('calc(' + width + '% - var(--space-4))')
+                   : ('calc(' + width + '% - var(--space-8))');
+    return { styleLeft: styleLeft, styleWidth: styleWidth, contLeft: contLeft, contRight: contRight };
+  }
+
+  // Alle synlige fravær for en ansatt, pakket i baner (lanes) slik at overlappende
+  // fravær stables vertikalt mens ikke-overlappende deler bane. count = antall baner brukt.
+  function rowLanes(empName) {
+    var items = [];
+    for (var i = 0; i < absenceData.length; i++) {
+      var a = absenceData[i];
+      if (a.name !== empName) continue;
+      var s = parseDate(a.start), e = parseDate(a.end);
+      if (e >= calRangeStart && s <= calRangeEndIncl) items.push({ a: a, s: s, e: e });
+    }
+    items.sort(function(x, y) { return x.s - y.s; });
+    var laneEnds = [];
+    items.forEach(function(it) {
+      var lane = 0;
+      while (lane < laneEnds.length && it.s <= laneEnds[lane]) lane++;   // overlapper → neste bane
+      it.lane = lane;
+      laneEnds[lane] = it.e;
+    });
+    return { items: items, count: laneEnds.length };
+  }
+
   // Regn ut radrekkefølgen for en gitt uke: fravær den uka øverst (krever → ny → aktiv → avsluttet),
   // deretter resten av selskapet. Kalles én gang for default-uka.
   function computeRowOrder(monday) {
     var ms = startOfDay(monday), me = addDays(ms, 6);
     var withAbs = [], without = [];
-    companyEmployees.forEach(function(emp) {
+    calEmployees().forEach(function(emp) {
       var match = null;
       for (var i = 0; i < absenceData.length; i++) {
         var a = absenceData[i];
@@ -3921,6 +4131,8 @@
     var built = buildColumns();
     var cols = built.cols, n = cols.length;
     var rangeStart = cols[0].start, rangeEndIncl = addDays(cols[n - 1].end, -1);
+    // Del kolonne-konteksten med hit-testing/draft-tegning
+    calCols = cols; calN = n; calRangeStart = rangeStart; calRangeEndIncl = rangeEndIncl;
     document.getElementById('cal-period-label').textContent = built.label;
 
     function cellCls(c) {
@@ -3949,54 +4161,36 @@
     // Fast radrekkefølge – settes ÉN gang fra default-uka og endres aldri (rader flytter seg ikke,
     // heller ikke når man bytter periode/visning eller når status endres fra «Ny» til «Aktiv»).
     if (!calRowOrder) calRowOrder = computeRowOrder(mondayOf(CAL_TODAY));
-    var ordered = calRowOrder.map(function(emp) {
-      var match = null;
-      for (var i = 0; i < absenceData.length; i++) {
-        var a = absenceData[i];
-        if (a.name !== emp.name) continue;
-        var s = parseDate(a.start), e = parseDate(a.end);
-        if (e >= rangeStart && s <= rangeEndIncl) { match = a; break; }
-      }
-      return { emp: emp, abs: match };
-    });
 
-    // Ansatt-rader
-    ordered.forEach(function(item) {
-      var emp = item.emp, a = item.abs;
-      html += '<div class="cal-row cal-body-row">';
+    // Ansatt-rader – alle fravær i perioden stables i baner (så ingenting forsvinner)
+    calRowOrder.forEach(function(emp, empIdx) {
+      var lanes = rowLanes(emp.name);
+      // Nederste rad får litt ekstra høyde til scrollbaren (kun når .cal-grid--hscroll er aktiv)
+      var rowCls = 'cal-row cal-body-row' + (empIdx === calRowOrder.length - 1 ? ' cal-body-row--last' : '');
+      html += '<div class="' + rowCls + '" data-emp="' + emp.name + '" data-empidx="' + empIdx + '">';
       html += '<div class="cal-ansatt-cell"><span class="absence-avatar">' + emp.initials + '</span>' +
               '<span class="cal-ansatt-name">' + emp.name + '</span></div>';
       html += '<div class="cal-days-area">';
-      cols.forEach(function(c) { html += '<div class="' + cellCls(c) + '"></div>'; });
-      if (a) {
-        var s = parseDate(a.start), e = parseDate(a.end), eExcl = addDays(e, 1);
-        var leftPos = posOf(s, cols), rightPos = posOf(eExcl, cols);
-        var left = (leftPos / n) * 100;
-        var width = ((rightPos - leftPos) / n) * 100;
-        var meta = STATUS_META[a.status];
-        var contLeft = s < rangeStart;
-        var contRight = e > rangeEndIncl;
+      cols.forEach(function(c, ci) { html += '<div class="' + cellCls(c) + '" data-col="' + ci + '"></div>'; });
+      // Alle fravær i perioden tegnes (de på ulike dager ligger side om side på samme linje)
+      lanes.items.forEach(function(it) {
+        var a = it.a, s = it.s, e = it.e;
+        var g = barGeometry(s, e);
+        var meta = statusMeta(a.status);
         var cls = 'cal-bar ' + meta.cls;
-        if (contLeft) cls += ' cal-bar--cont-left';
-        if (contRight) cls += ' cal-bar--cont-right';
+        if (g.contLeft) cls += ' cal-bar--cont-left';
+        if (g.contRight) cls += ' cal-bar--cont-right';
         if (a.cardId === calSelectedCardId) cls += ' cal-bar--selected';
-        // Innrykk (4px) bare på sider som IKKE fortsetter utenfor visningen,
-        // så fravær som varer lenger går helt ut i kanten.
-        var styleLeft = contLeft ? (left + '%') : ('calc(' + left + '% + var(--space-4))');
-        var insets = (contLeft ? 0 : 1) + (contRight ? 0 : 1);
-        var styleWidth = (insets === 0) ? (width + '%')
-                       : (insets === 1) ? ('calc(' + width + '% - var(--space-4))')
-                       : ('calc(' + width + '% - var(--space-8))');
         var shortType = TYPE_ABBR[a.type] || a.type;
         var period = sameDay(s, e) ? fmtDate(s) : fmtDate(s) + '–' + fmtDate(e);
         var barTip = a.type + ' · ' + meta.text + ' · ' + period;
-        html += '<div class="' + cls + '" style="left:' + styleLeft + '; width:' + styleWidth + ';" ' +
+        html += '<div class="' + cls + '" style="left:' + g.styleLeft + '; width:' + g.styleWidth + ';" ' +
                 'data-tip="' + barTip + '" ' +
                 'onclick="openCalDetail(\'' + a.cardId + '\', \'' + a.detailKind + '\', event)">' +
                   '<span class="cal-bar-label"><span class="t-full">' + a.type + '</span><span class="t-short">' + shortType + '</span></span>' +
                   '<span class="status-dot ' + meta.dot + '">' + meta.text + '</span>' +
                 '</div>';
-      }
+      });
       html += '</div></div>';
     });
 
@@ -4022,6 +4216,9 @@
         todayContentX = daysArea.offsetLeft + parseFloat(todayLine.getAttribute('data-pos')) * colW;
         todayLine.style.left = todayContentX + 'px';
       }
+      // Streken må spenne alle radene i det interne (vertikalt scrollbare) grid-et,
+      // ikke bare den synlige høyden. Header-raden er 50px, derfor scrollHeight - 50.
+      todayLine.style.height = (grid.scrollHeight - 50) + 'px';
     }
 
     // Grunnposisjon: sentrer visningen på dagens dato (slik at man kan scrolle både fram og tilbake).
@@ -4046,12 +4243,20 @@
     });
 
     updateCalScrollbar();
+    renderDraftBar();   // tegn draft-fraværet (hvis noe er under opprettelse)
   }
 
-  /* ---- Egen horisontal scrollbar (alltid synlig ved behov, kun over dags-området) ---- */
-  var ANSATT_W = 242;   // bredde på fast Ansatt-kolonne (matcher .cal-ansatt-cell)
+  /* ---- Egne scrollbarer (alltid synlig ved behov) ---- */
+  var ANSATT_W = 242;      // bredde på fast Ansatt-kolonne (matcher .cal-ansatt-cell)
+  var CAL_HEADER_H = 50;   // høyde på fast dags-header (matcher .cal-ansatt-head)
 
   function updateCalScrollbar() {
+    updateCalHScrollbar();
+    updateCalVScrollbar();
+  }
+
+  // Horisontal: kun over dags-området (ikke den faste Ansatt-kolonnen).
+  function updateCalHScrollbar() {
     var grid = document.getElementById('cal-grid');
     var bar = document.getElementById('cal-scrollbar');
     var track = document.getElementById('cal-scrollbar-track');
@@ -4059,8 +4264,9 @@
     if (!grid || !bar || !track || !thumb) return;
 
     var maxScroll = grid.scrollWidth - grid.clientWidth;
-    if (maxScroll <= 1) { bar.style.display = 'none'; return; }
+    if (maxScroll <= 1) { bar.style.display = 'none'; grid.classList.remove('cal-grid--hscroll'); return; }
     bar.style.display = 'block';
+    grid.classList.add('cal-grid--hscroll');   // gir nederste rad ekstra høyde til scrollbaren
 
     var trackW = track.clientWidth;
     var viewDays = grid.clientWidth - ANSATT_W;
@@ -4070,6 +4276,32 @@
     var left = travel * (grid.scrollLeft / maxScroll);
     thumb.style.width = thumbW + 'px';
     thumb.style.left = left + 'px';
+  }
+
+  // Vertikal: over ansatt-radene (starter under den faste dags-headeren).
+  function updateCalVScrollbar() {
+    var grid = document.getElementById('cal-grid');
+    var bar = document.getElementById('cal-vscrollbar');
+    var track = document.getElementById('cal-vscrollbar-track');
+    var thumb = document.getElementById('cal-vscrollbar-thumb');
+    if (!grid || !bar || !track || !thumb) return;
+
+    // Overlayen følger grid-et, men starter under headeren.
+    bar.style.top = (grid.offsetTop + CAL_HEADER_H) + 'px';
+    bar.style.height = (grid.clientHeight - CAL_HEADER_H) + 'px';
+
+    var maxScroll = grid.scrollHeight - grid.clientHeight;
+    if (maxScroll <= 1) { bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+
+    var trackH = track.clientHeight;
+    var viewBody = grid.clientHeight - CAL_HEADER_H;
+    var totalBody = grid.scrollHeight - CAL_HEADER_H;
+    var thumbH = Math.max(40, trackH * (viewBody / totalBody));   // min 40px (matcher CSS min-height)
+    var travel = trackH - thumbH;
+    var top = travel * (grid.scrollTop / maxScroll);
+    thumb.style.height = thumbH + 'px';
+    thumb.style.top = top + 'px';
   }
 
   (function initCalScrollbar() {
@@ -4114,6 +4346,49 @@
       if (travel <= 0) return;
       var target = Math.max(0, Math.min(travel, (e.clientX - rect.left) - thumb.offsetWidth / 2));
       grid.scrollLeft = maxScroll * (target / travel);
+    });
+  })();
+
+  (function initCalVScrollbar() {
+    var grid = document.getElementById('cal-grid');
+    var track = document.getElementById('cal-vscrollbar-track');
+    var thumb = document.getElementById('cal-vscrollbar-thumb');
+    if (!grid || !track || !thumb) return;
+
+    // (grid-scroll og resize er allerede lyttet på i initCalScrollbar → updateCalScrollbar)
+
+    // Dra i thumb → scroll grid vertikalt
+    var dragStartY = 0, dragStartTop = 0;
+    function onDrag(e) {
+      var maxScroll = grid.scrollHeight - grid.clientHeight;
+      var travel = track.clientHeight - thumb.offsetHeight;
+      if (travel <= 0) return;
+      var newTop = Math.max(0, Math.min(travel, dragStartTop + (e.clientY - dragStartY)));
+      grid.scrollTop = maxScroll * (newTop / travel);   // scroll-listener oppdaterer thumb
+    }
+    function endDrag() {
+      thumb.classList.remove('dragging');
+      document.removeEventListener('mousemove', onDrag);
+      document.removeEventListener('mouseup', endDrag);
+    }
+    thumb.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      dragStartY = e.clientY;
+      dragStartTop = thumb.offsetTop;
+      thumb.classList.add('dragging');
+      document.addEventListener('mousemove', onDrag);
+      document.addEventListener('mouseup', endDrag);
+    });
+
+    // Klikk i sporet (utenfor thumb) → hopp dit
+    track.addEventListener('mousedown', function(e) {
+      if (e.target === thumb) return;
+      var rect = track.getBoundingClientRect();
+      var maxScroll = grid.scrollHeight - grid.clientHeight;
+      var travel = track.clientHeight - thumb.offsetHeight;
+      if (travel <= 0) return;
+      var target = Math.max(0, Math.min(travel, (e.clientY - rect.top) - thumb.offsetHeight / 2));
+      grid.scrollTop = maxScroll * (target / travel);
     });
   })();
 
@@ -4177,7 +4452,7 @@
       var a = null;
       for (var i = 0; i < absenceData.length; i++) { if (absenceData[i].cardId === cardId) { a = absenceData[i]; break; } }
       if (a) {
-        var meta = STATUS_META[a.status];
+        var meta = statusMeta(a.status);
         statusLine.innerHTML = '<span class="status-dot ' + meta.dot + '">' + meta.text + '</span>';
       }
       var sync = clone.querySelector('.detail-sync');
@@ -4200,8 +4475,9 @@
         var t = sec.querySelector('.detail-section-title');
         if (t && t.textContent.trim().indexOf('Krever handling') === 0) kreverSection = sec;
       });
+      // «Krever handling» (godkjenn/avvis) vises kun for leder – den ansatte kan ikke godkjenne eget fravær
       var box = kreverSection ? kreverSection.querySelector('.handling-box') : null;
-      if (box) {
+      if (box && !calScope) {
         body.appendChild(popDivider());
         var kh = document.createElement('div');
         kh.className = 'pop-krever';
@@ -4255,6 +4531,438 @@
       calOpenCardId = null;
     }
   }
+
+  /* ============================================================
+   * OPPRETT FRAVÆR I KALENDEREN (klikk/dra → draft → «Nytt fravær»-popover)
+   * ============================================================ */
+
+  // Ikoner (gjenbruk fra malene)
+  var DATE_ICON_SVG = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 2v3M11 2v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/></svg>';
+  var NOTE_ICON_SVG = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="5" r="0.75" fill="currentColor"/></svg>';
+  var DP_PREV_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 18L8 12L14 6L15.4 7.4L10.8 12L15.4 16.6L14 18Z"/></svg>';
+  var DP_NEXT_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.6 12L8 7.4L9.4 6L15.4 12L9.4 18L8 16.6L12.6 12Z"/></svg>';
+
+  // Fraværstyper i create-skjemaet (verdi = visningsnavnet som lagres i absenceData)
+  var CREATE_TYPES = ['Egenmelding', 'Sykemelding', 'Ferie', 'Omsorgsdager', 'Foreldrepermisjon', 'Ulønnet permisjon', 'Velferdspermisjon'];
+  // Fraværstype → detaljpanel som åpnes når man senere klikker den ferdige bjelka
+  function typeTilDetailKind(type) {
+    if (type === 'Omsorgsdager') return 'omsorgsdager';
+    if (type === 'Ferie') return 'ferie';
+    if (type === 'Foreldrepermisjon') return 'foreldrepermisjon';
+    return 'egenmelding';   // egenmelding/sykemelding/permisjoner
+  }
+  function fmtISO(d) {
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+  }
+  var calSuppressClick = false;   // hindrer at klikk-ut-lytteren lukker popoveren rett etter mouseup
+
+  /* ---- Hit-testing: kolonne + rad under pekeren ---- */
+  function calColFromX(areaRect, clientX) {
+    var colW = areaRect.width / calN;
+    return Math.max(0, Math.min(calN - 1, Math.floor((clientX - areaRect.left) / colW)));
+  }
+  function colIndexOf(date) { return Math.max(0, Math.min(calN - 1, Math.floor(posOf(date, calCols)))); }
+  function dateFromColStart(idx) { return calCols[Math.max(0, Math.min(calN - 1, idx))].start; }
+  function dateFromColEnd(idx) { return addDays(calCols[Math.max(0, Math.min(calN - 1, idx))].end, -1); }
+
+  /* ---- Draft-bjelke ---- */
+  function removeDraftBarEl() {
+    var old = document.getElementById('cal-draft-bar');
+    if (old && old.parentElement) old.parentElement.removeChild(old);
+  }
+  function renderDraftBar() {
+    removeDraftBarEl();
+    if (!calDraft) return;
+    if (calDraft.end < calRangeStart || calDraft.start > calRangeEndIncl) return;   // utenfor synlig periode
+    var rows = document.querySelectorAll('#cal-grid .cal-body-row');
+    var row = rows[calDraft.empIdx];
+    if (!row) return;
+    var area = row.querySelector('.cal-days-area');
+    if (!area) return;
+    var g = barGeometry(calDraft.start, calDraft.end);
+    var bar = document.createElement('div');
+    var cls = 'cal-bar cal-bar--draft cal-bar--aktiv';   // draften er grønn hele tiden
+    if (g.contLeft) cls += ' cal-bar--cont-left';
+    if (g.contRight) cls += ' cal-bar--cont-right';
+    bar.className = cls;
+    bar.id = 'cal-draft-bar';
+    bar.style.left = g.styleLeft;
+    bar.style.width = g.styleWidth;
+    bar.innerHTML =
+      '<span class="cal-bar-handle cal-bar-handle--left"></span>' +
+      '<span class="cal-bar-label">' + (calDraft.type || 'Nytt fravær') + '</span>' +
+      '<span class="cal-bar-handle cal-bar-handle--right"></span>';
+    area.appendChild(bar);
+    attachDraftDragHandlers(bar);
+  }
+  function updateDraftBarPosition() {
+    var bar = document.getElementById('cal-draft-bar');
+    if (!bar || !calDraft) return;
+    var rows = document.querySelectorAll('#cal-grid .cal-body-row');
+    var row = rows[calDraft.empIdx];
+    if (!row) return;
+    var area = row.querySelector('.cal-days-area');
+    if (bar.parentElement !== area) area.appendChild(bar);
+    var g = barGeometry(calDraft.start, calDraft.end);
+    bar.style.left = g.styleLeft;
+    bar.style.width = g.styleWidth;
+    bar.classList.toggle('cal-bar--cont-left', g.contLeft);
+    bar.classList.toggle('cal-bar--cont-right', g.contRight);
+  }
+
+  /* ---- Flytt og endre størrelse på draften ---- */
+  function attachDraftDragHandlers(bar) {
+    bar.addEventListener('mousedown', function(e) {
+      if (!calDraft || e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // La popoveren slippe pekeren gjennom under draging, så treff-testen mot radene virker
+      // selv når popoveren ligger oppå kalenderen.
+      var pop = document.getElementById('cal-popover');
+      if (pop) pop.style.pointerEvents = 'none';
+      var clearPE = function() {
+        if (pop) pop.style.pointerEvents = '';
+        // Svelg den påfølgende click-en så «klikk-utenfor»-lytteren ikke lukker popoveren
+        // rett etter en flytt/resize. Nullstilles trygt etterpå (i tilfelle ingen click fyres).
+        calSuppressClick = true;
+        setTimeout(function() { calSuppressClick = false; }, 0);
+        document.removeEventListener('mouseup', clearPE);
+      };
+      document.addEventListener('mouseup', clearPE);
+      if (e.target.classList.contains('cal-bar-handle--left')) startDraftResize('start');
+      else if (e.target.classList.contains('cal-bar-handle--right')) startDraftResize('end');
+      else startDraftMove(e);
+    });
+  }
+  function rowsList() { return document.querySelectorAll('#cal-grid .cal-body-row'); }
+  function areaRectOf(idx) { var r = rowsList()[idx]; return r ? r.querySelector('.cal-days-area').getBoundingClientRect() : null; }
+
+  function startDraftMove(e) {
+    var origStartCol = colIndexOf(calDraft.start);
+    var span = colIndexOf(calDraft.end) - origStartCol;
+    var grabCol = calColFromX(areaRectOf(calDraft.empIdx), e.clientX);
+    var bar = document.getElementById('cal-draft-bar');
+    if (bar) bar.classList.add('dragging');
+    function onMove(ev) {
+      var row = calRowUnder(ev.clientX, ev.clientY);
+      if (row && row.hasAttribute('data-empidx')) {
+        var idx = parseInt(row.getAttribute('data-empidx'), 10);
+        if (idx !== calDraft.empIdx) { calDraft.empIdx = idx; calDraft.empName = row.getAttribute('data-emp'); syncCreateEmp(); }
+      }
+      var area = areaRectOf(calDraft.empIdx); if (!area) return;
+      var d = calColFromX(area, ev.clientX) - grabCol;
+      var ns = Math.max(0, Math.min(calN - 1 - span, origStartCol + d));
+      calDraft.start = dateFromColStart(ns);
+      calDraft.end = dateFromColEnd(ns + span);
+      updateDraftBarPosition();
+      syncCreateDates();
+    }
+    function onUp() { if (bar) bar.classList.remove('dragging'); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); repositionCreatePopover(); }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+  function startDraftResize(edge) {
+    function onMove(ev) {
+      var area = areaRectOf(calDraft.empIdx); if (!area) return;
+      var col = calColFromX(area, ev.clientX);
+      if (edge === 'start') { calDraft.start = dateFromColStart(Math.min(col, colIndexOf(calDraft.end))); }
+      else { calDraft.end = dateFromColEnd(Math.max(col, colIndexOf(calDraft.start))); }
+      updateDraftBarPosition();
+      syncCreateDates();
+    }
+    function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); repositionCreatePopover(); }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+  function calRowUnder(x, y) {
+    var el = document.elementFromPoint(x, y);
+    return el ? el.closest('#cal-grid .cal-body-row') : null;
+  }
+
+  /* ---- Opprett ved klikk / dra bortover (delegert på #cal-grid) ---- */
+  function initCalCreate() {
+    var grid = document.getElementById('cal-grid');
+    if (!grid) return;
+    grid.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      if (e.target.closest('.cal-bar')) return;                 // eksisterende bjelke/draft har egen håndtering
+      var row = e.target.closest('.cal-body-row');
+      var cell = e.target.closest('.cal-day-cell');
+      if (!row || !cell) return;
+      e.preventDefault();
+      var empIdx = parseInt(row.getAttribute('data-empidx'), 10);
+      var empName = row.getAttribute('data-emp');
+      var area = row.querySelector('.cal-days-area').getBoundingClientRect();
+      var startCol = calColFromX(area, e.clientX);
+      var downX = e.clientX;
+      calDraft = { empIdx: empIdx, empName: empName, start: dateFromColStart(startCol), end: dateFromColEnd(startCol), type: '' };
+      renderDraftBar();
+      function onMove(ev) {
+        var col = calColFromX(area, ev.clientX);
+        calDraft.start = dateFromColStart(Math.min(startCol, col));
+        calDraft.end = dateFromColEnd(Math.max(startCol, col));
+        updateDraftBarPosition();
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        calSuppressClick = true;   // ikke la den påfølgende click-en lukke popoveren
+        setTimeout(function() { calSuppressClick = false; }, 0);
+        openCalCreate();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  /* ---- «Nytt fravær»-popover ---- */
+  function openCalCreate() {
+    calCreateOpen = true;
+    var body = document.getElementById('cal-detail-body');
+    body.innerHTML = '';
+
+    var actions = document.createElement('div');
+    actions.className = 'popover-actions';
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'detail-close';
+    closeBtn.title = 'Lukk';
+    closeBtn.setAttribute('onclick', 'cancelCreate()');
+    closeBtn.innerHTML = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+    actions.appendChild(closeBtn);
+    body.appendChild(actions);
+
+    var title = document.createElement('div');
+    title.className = 'pop-create-title';
+    title.textContent = 'Nytt fravær';
+    body.appendChild(title);
+
+    var empList = calRowOrder || companyEmployees;
+    var typeOpts = '<option value="" disabled' + (calDraft.type ? '' : ' selected') + '>Fraværstype</option>';
+    CREATE_TYPES.forEach(function(t) { typeOpts += '<option value="' + t + '"' + (calDraft.type === t ? ' selected' : '') + '>' + t + '</option>'; });
+    var empOpts = '';
+    empList.forEach(function(emp, i) { empOpts += '<option value="' + i + '"' + (i === calDraft.empIdx ? ' selected' : '') + '>' + emp.name + '</option>'; });
+    // I «Mitt fravær» (calScope satt) er ansatt alltid meg → skjul ansatt-velgeren
+    var empField = calScope ? '' :
+      '<div class="form-group" style="margin:0;">' +
+        '<label class="input-label">Velg ansatt <span class="required">*</span></label>' +
+        '<select class="input" id="create-emp" onchange="onCreateEmpChange(this.value)">' + empOpts + '</select>' +
+      '</div>';
+    var noteWho = calScope ? 'din leder' : 'din ansatt';
+    // I «Mitt fravær» kan man legge ved kommentar til leder (som i registreringsmodalen)
+    var commentField = calScope ?
+      '<div class="form-group" style="margin:0;">' +
+        '<label class="input-label">Kommentar til leder</label>' +
+        '<textarea class="input" id="create-comment" rows="3" placeholder="Din kommentar"></textarea>' +
+        '<span class="input-hint">Unngå å dele sensitive personopplysninger som diagnoser, symptomer og/eller behandling.</span>' +
+      '</div>' : '';
+
+    var form = document.createElement('div');
+    form.className = 'pop-create-form';
+    form.innerHTML =
+      '<div class="form-group" style="margin:0;">' +
+        '<label class="input-label">Velg fraværstype <span class="required">*</span></label>' +
+        '<select class="input" id="create-type" onchange="onCreateTypeChange(this.value)">' + typeOpts + '</select>' +
+      '</div>' +
+      empField +
+      '<div class="modal-date-row">' +
+        '<div class="form-group">' +
+          '<label class="input-label">Startdato <span class="required">*</span></label>' +
+          '<div class="input-date-wrap">' +
+            '<input class="input" type="text" id="create-start" readonly value="' + fmtISO(calDraft.start) + '" onclick="openDatePickerFor(\'start\', event)">' +
+            '<button type="button" class="input-date-icon" title="Velg dato" onclick="openDatePickerFor(\'start\', event)">' + DATE_ICON_SVG + '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label class="input-label">Sluttdato</label>' +
+          '<div class="input-date-wrap">' +
+            '<input class="input" type="text" id="create-end" readonly value="' + fmtISO(calDraft.end) + '" onclick="openDatePickerFor(\'end\', event)">' +
+            '<button type="button" class="input-date-icon" title="Velg dato" onclick="openDatePickerFor(\'end\', event)">' + DATE_ICON_SVG + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      commentField +
+      '<div class="pop-create-note">' + NOTE_ICON_SVG +
+        '<p>Ved innsendt skjema registreres fraværet og ' + noteWho + ' får beskjed. Timelisten vil bli oppdatert automatisk.</p>' +
+      '</div>';
+    body.appendChild(form);
+
+    var footer = document.createElement('div');
+    footer.className = 'pop-create-footer';
+    footer.innerHTML =
+      '<button class="btn btn-primary" onclick="submitCreate()">Send inn</button>' +
+      '<button class="btn btn-secondary" onclick="cancelCreate()">Avbryt</button>';
+    body.appendChild(footer);
+
+    var pop = document.getElementById('cal-popover');
+    pop.hidden = false;
+    pop.scrollTop = 0;
+    repositionCreatePopover();
+  }
+  function repositionCreatePopover() {
+    var pop = document.getElementById('cal-popover');
+    if (!pop || pop.hidden) return;
+    var bar = document.getElementById('cal-draft-bar');
+    positionPopover(pop, bar ? bar.getBoundingClientRect() : null);
+  }
+  function onCreateTypeChange(val) {
+    calDraft.type = val;
+    var sel = document.getElementById('create-type');
+    if (sel) sel.classList.remove('input-error');
+    renderDraftBar();
+  }
+  function onCreateEmpChange(idxStr) {
+    var idx = parseInt(idxStr, 10);
+    var empList = calRowOrder || companyEmployees;
+    calDraft.empIdx = idx;
+    calDraft.empName = empList[idx] ? empList[idx].name : calDraft.empName;
+    renderDraftBar();
+    repositionCreatePopover();
+  }
+  function syncCreateDates() {
+    var s = document.getElementById('create-start'), e = document.getElementById('create-end');
+    if (s) s.value = fmtISO(calDraft.start);
+    if (e) e.value = fmtISO(calDraft.end);
+  }
+  function syncCreateEmp() {
+    var sel = document.getElementById('create-emp');
+    if (sel) sel.value = String(calDraft.empIdx);
+  }
+  function submitCreate() {
+    var typeSel = document.getElementById('create-type');
+    var type = typeSel ? typeSel.value : '';
+    if (!type) { if (typeSel) typeSel.classList.add('input-error'); return; }
+    // Fravær den ansatte lager selv (calScope) og som krever ledergodkjenning blir «Til godkjenning»
+    // (status 'krever' → gul), ikke aktiv med en gang. Egenmelding/omsorgsdager er selvbetjent → aktiv.
+    var needsApproval = calScope && ['Ferie', 'Ulønnet permisjon', 'Velferdspermisjon', 'Foreldrepermisjon'].indexOf(type) !== -1;
+    absenceData.push({
+      name: calDraft.empName, type: type,
+      start: fmtISO(calDraft.start), end: fmtISO(calDraft.end),
+      status: needsApproval ? 'krever' : 'aktiv', cardId: 'card-ny-' + (absenceData.length + 1), detailKind: typeTilDetailKind(type)
+    });
+    calDraft = null;
+    calCreateOpen = false;
+    closeDatePicker();
+    document.getElementById('cal-popover').hidden = true;
+    document.getElementById('cal-detail-body').innerHTML = '';
+    renderCalendar();
+  }
+  function cancelCreate() {
+    calDraft = null;
+    calCreateOpen = false;
+    closeDatePicker();
+    document.getElementById('cal-popover').hidden = true;
+    document.getElementById('cal-detail-body').innerHTML = '';
+    renderCalendar();
+  }
+
+  /* ---- Datovelger (år/måned/dag) ---- */
+  var dpField = null;
+  var dpState = { view: 'days', month: null, selected: null, onPick: null };
+  function ensureDatePickerEl() {
+    var dp = document.getElementById('cal-datepicker');
+    if (!dp) {
+      dp = document.createElement('div');
+      dp.id = 'cal-datepicker';
+      dp.className = 'cal-datepicker';
+      dp.hidden = true;
+      dp.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+      dp.addEventListener('click', function(e) { e.stopPropagation(); });
+      document.body.appendChild(dp);
+    }
+    return dp;
+  }
+  function openDatePickerFor(which, ev) {
+    if (ev) { ev.stopPropagation(); }
+    dpField = which;
+    var cur = (which === 'start') ? calDraft.start : calDraft.end;
+    var anchor = (ev && ev.currentTarget) ? ev.currentTarget.getBoundingClientRect() : null;
+    openDatePicker(anchor, cur, function(picked) {
+      if (which === 'start') { calDraft.start = picked; if (calDraft.end < calDraft.start) calDraft.end = picked; }
+      else { calDraft.end = picked; if (calDraft.end < calDraft.start) calDraft.start = picked; }
+      syncCreateDates();
+      renderDraftBar();
+      repositionCreatePopover();
+    });
+  }
+  function openDatePicker(anchor, date, onPick) {
+    var dp = ensureDatePickerEl();
+    dpState.selected = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    dpState.month = new Date(date.getFullYear(), date.getMonth(), 1);
+    dpState.view = 'days';
+    dpState.onPick = onPick;
+    renderDatePicker();
+    dp.hidden = false;
+    positionDatePicker(dp, anchor);
+  }
+  function closeDatePicker() { var dp = document.getElementById('cal-datepicker'); if (dp) dp.hidden = true; dpField = null; }
+  function positionDatePicker(dp, anchor) {
+    var pad = 8, vw = window.innerWidth, vh = window.innerHeight, w = dp.offsetWidth, h = dp.offsetHeight, left, top;
+    if (anchor) {
+      left = Math.max(pad, Math.min(vw - w - pad, anchor.left));
+      top = (anchor.bottom + pad + h <= vh) ? (anchor.bottom + pad) : Math.max(pad, anchor.top - pad - h);
+    } else { left = (vw - w) / 2; top = (vh - h) / 2; }
+    dp.style.left = Math.round(left) + 'px';
+    dp.style.top = Math.round(top) + 'px';
+  }
+  function renderDatePicker() {
+    var dp = document.getElementById('cal-datepicker');
+    var m = dpState.month, html = '';
+    if (dpState.view === 'days') {
+      html += '<div class="cal-dp-header">' +
+        '<button class="cal-dp-title" onclick="dpToggleView(event)">' + MONTHS_LONG[m.getMonth()] + ' ' + m.getFullYear() + '</button>' +
+        '<div class="cal-dp-nav">' +
+          '<button class="icon-btn cal-nav-btn" onclick="dpNavMonth(-1, event)" aria-label="Forrige måned">' + DP_PREV_SVG + '</button>' +
+          '<button class="icon-btn cal-nav-btn" onclick="dpNavMonth(1, event)" aria-label="Neste måned">' + DP_NEXT_SVG + '</button>' +
+        '</div></div><div class="cal-dp-grid">';
+      ['Ma', 'Ti', 'On', 'To', 'Fr', 'Lø', 'Sø'].forEach(function(d) { html += '<div class="cal-dp-dow">' + d + '</div>'; });
+      var offset = (new Date(m.getFullYear(), m.getMonth(), 1).getDay() + 6) % 7;
+      var dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+      for (var b = 0; b < offset; b++) html += '<div></div>';
+      for (var d = 1; d <= dim; d++) {
+        var dd = new Date(m.getFullYear(), m.getMonth(), d), cls = 'cal-dp-day';
+        if (dpState.selected && sameDay(dd, dpState.selected)) cls += ' cal-dp-day--selected';
+        if (sameDay(dd, CAL_TODAY)) cls += ' cal-dp-day--today';
+        html += '<button class="' + cls + '" onclick="dpPickDay(' + d + ', event)">' + d + '</button>';
+      }
+      html += '</div>';
+    } else if (dpState.view === 'months') {
+      html += '<div class="cal-dp-header">' +
+        '<button class="cal-dp-title" onclick="dpShowYears(event)">' + m.getFullYear() + '</button>' +
+        '<div class="cal-dp-nav">' +
+          '<button class="icon-btn cal-nav-btn" onclick="dpNavYear(-1, event)" aria-label="Forrige år">' + DP_PREV_SVG + '</button>' +
+          '<button class="icon-btn cal-nav-btn" onclick="dpNavYear(1, event)" aria-label="Neste år">' + DP_NEXT_SVG + '</button>' +
+        '</div></div><div class="cal-dp-months">';
+      for (var mi = 0; mi < 12; mi++) {
+        var mc = 'cal-dp-cell' + (mi === m.getMonth() ? ' cal-dp-cell--selected' : '');
+        html += '<button class="' + mc + '" onclick="dpPickMonth(' + mi + ', event)">' + MONTHS_ABBR[mi] + '</button>';
+      }
+      html += '</div>';
+    } else {
+      var baseY = m.getFullYear() - 6;
+      html += '<div class="cal-dp-header"><span class="cal-dp-title">' + baseY + ' – ' + (baseY + 11) + '</span>' +
+        '<div class="cal-dp-nav">' +
+          '<button class="icon-btn cal-nav-btn" onclick="dpNavYearPage(-1, event)" aria-label="Forrige">' + DP_PREV_SVG + '</button>' +
+          '<button class="icon-btn cal-nav-btn" onclick="dpNavYearPage(1, event)" aria-label="Neste">' + DP_NEXT_SVG + '</button>' +
+        '</div></div><div class="cal-dp-years">';
+      for (var yi = 0; yi < 12; yi++) {
+        var yy = baseY + yi, yc = 'cal-dp-cell' + (yy === m.getFullYear() ? ' cal-dp-cell--selected' : '');
+        html += '<button class="' + yc + '" onclick="dpPickYear(' + yy + ', event)">' + yy + '</button>';
+      }
+      html += '</div>';
+    }
+    dp.innerHTML = html;
+  }
+  function dpToggleView(e) { if (e) e.stopPropagation(); dpState.view = 'months'; renderDatePicker(); }
+  function dpShowYears(e) { if (e) e.stopPropagation(); dpState.view = 'years'; renderDatePicker(); }
+  function dpNavMonth(delta, e) { if (e) e.stopPropagation(); dpState.month = new Date(dpState.month.getFullYear(), dpState.month.getMonth() + delta, 1); renderDatePicker(); }
+  function dpNavYear(delta, e) { if (e) e.stopPropagation(); dpState.month = new Date(dpState.month.getFullYear() + delta, dpState.month.getMonth(), 1); renderDatePicker(); }
+  function dpNavYearPage(delta, e) { if (e) e.stopPropagation(); dpState.month = new Date(dpState.month.getFullYear() + delta * 12, dpState.month.getMonth(), 1); renderDatePicker(); }
+  function dpPickMonth(mi, e) { if (e) e.stopPropagation(); dpState.month = new Date(dpState.month.getFullYear(), mi, 1); dpState.view = 'days'; renderDatePicker(); }
+  function dpPickYear(yy, e) { if (e) e.stopPropagation(); dpState.month = new Date(yy, dpState.month.getMonth(), 1); dpState.view = 'months'; renderDatePicker(); }
+  function dpPickDay(d, e) { if (e) e.stopPropagation(); var picked = new Date(dpState.month.getFullYear(), dpState.month.getMonth(), d); dpState.selected = picked; if (dpState.onPick) dpState.onPick(picked); closeDatePicker(); }
+
+  initCalCreate();
 
   /* ---- Kebab-meny (Slett / Endre / Endringslogg) ---- */
   var ICON_SLETT = '<svg viewBox="0 0 20 20" fill="none"><path d="M4 6h12M8 6V4.5a1 1 0 011-1h2a1 1 0 011 1V6M6 6l.6 9a1.5 1.5 0 001.5 1.4h3.8A1.5 1.5 0 0013.4 15L14 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -4316,17 +5024,23 @@
 
   // Lukk popover / kebab-meny ved klikk utenfor
   document.addEventListener('click', function(e) {
+    if (calSuppressClick) { calSuppressClick = false; return; }   // klikk rett etter opprett-mouseup
+    if (e.target.closest('.cal-datepicker')) return;              // klikk i datovelger lukker ikke popover
     var pop = document.getElementById('cal-popover');
     var menu = document.getElementById('kebab-menu');
     var inMenu = menu && !menu.hidden && menu.contains(e.target);
     if (menu && !menu.hidden && !inMenu && !e.target.closest('.detail-kebab')) closeKebabMenu();
-    if (pop && !pop.hidden && !pop.contains(e.target) && !inMenu) closeCalDetail();
+    if (pop && !pop.hidden && !pop.contains(e.target) && !inMenu) {
+      if (calCreateOpen) cancelCreate(); else closeCalDetail();
+    }
   });
 
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
+      var dp = document.getElementById('cal-datepicker');
+      if (dp && !dp.hidden) { closeDatePicker(); return; }
       closeKebabMenu();
-      closeCalDetail();
+      if (calCreateOpen) cancelCreate(); else closeCalDetail();
     }
   });
 
